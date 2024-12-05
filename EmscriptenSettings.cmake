@@ -209,6 +209,7 @@ function(emscripten_settings)
         "-sENVIRONMENT=node"
       )  
     endif()
+    # TODO: If unit tests change target name to .cjs
   endif()
   list(APPEND emscripten_exported_functions "printf")
 
@@ -249,6 +250,9 @@ emscripten_module(
   DEBUG                         <NONE, READABLE_JS, PROFILE, DEBUG_NATIVE>)
 
 #]==]
+
+# For unit tests
+#   set_target_properties(sampleTest PROPERTIES SUFFIX ".cjs")
 
 function(emscripten_module)
   # Define the arguments that the function accepts
@@ -331,14 +335,17 @@ function(emscripten_module)
     "-sEXPORTED_FUNCTIONS=${exported_functions_str}")
 
   # Position-independent code
-  set(PIC)
+  set(EXTRA_COMPILE_ARGS)
   if (ARGS_SIDE_MODULE OR ARGS_MAIN_MODULE)
-    set(PIC "-fPIC")
+    set(EXTRA_COMPILE_ARGS "-fPIC")
   endif()
-  
+  if (ARGS_THREADING_ENABLED STREQUAL "ON")
+    # TODO: Introduce emscripten_compile_flags
+    # set(EXTRA_COMPILE_ARGS "-fPIC -matomics\ -mbulk-memory")
+  endif()
   # Link and compile options
   target_link_options(${ARGS_TARGET_NAME} PRIVATE ${emscripten_link_options})
-  target_compile_options(${ARGS_TARGET_NAME} PRIVATE ${emscripten_optimization_flags} ${PIC})
+  target_compile_options(${ARGS_TARGET_NAME} PRIVATE ${emscripten_optimization_flags} ${EXTRA_COMPILE_ARGS})
 
   # TODO: Rename threaded output .js to .mjs (required by CTest)
   
