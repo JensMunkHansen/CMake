@@ -193,7 +193,7 @@ function(emscripten_settings)
 
     # Install npm
     add_custom_command(
-      TARGET ${TARGET_NAME}
+      TARGET ${ARGS_TARGET_NAME}
       POST_BUILD
       COMMAND
         npm install
@@ -209,8 +209,6 @@ function(emscripten_settings)
         "-sENVIRONMENT=node"
       )  
     endif()
-    
-    # TODO: If unit tests change target name to .cjs
   endif()
   list(APPEND emscripten_exported_functions "printf")
 
@@ -245,6 +243,7 @@ emscripten_module(
   DEBUG                         <variable>  
   ES6_MODULE                    <ON|OFF>
   SIDE_MODULES                  <list>
+  LIBRARIES                     <list>
   EXPORTED_FUNCTIONS            <list>
   EXPORT_NAME                   <variable>
   OPTIMIZATION                  <NONE, LITTLE, MORE, BEST, SMALL, SMALLEST, SMALLEST_WITH_CLOSURE>
@@ -258,7 +257,7 @@ function(emscripten_module)
   # Define the arguments that the function accepts
   set(options SIDE_MODULE MAIN_MODULE VERBOSE)
   set(one_value_args TARGET_NAME ES6_MODULE EMBIND EXPORT_NAME DEBUG OPTIMIZATION THREADING_ENABLED)
-  set(multi_value_args SOURCE_FILES JAVASCRIPT_FILES SIDE_MODULES EXPORTED_FUNCTIONS)
+  set(multi_value_args SOURCE_FILES JAVASCRIPT_FILES SIDE_MODULES EXPORTED_FUNCTIONS LIBRARIES)
 
   # Parse the arguments using cmake_parse_arguments
   cmake_parse_arguments(ARGS "${options}" "${one_value_args}" "${multi_value_args}" ${ARGV})
@@ -282,6 +281,7 @@ function(emscripten_module)
   # Add executable
   add_executable(${ARGS_TARGET_NAME} ${ARGS_SOURCE_FILES})
 
+  target_link_libraries(${ARGS_TARGET_NAME} PRIVATE ${ARGS_LIBRARIES})
   # Prepare variables for emscripten_settings
   set(emscripten_link_options)
   set(emscripten_optimization_flags)
@@ -320,6 +320,13 @@ function(emscripten_module)
     endif()
   endif()
 
+  if (NOT ARGS_JAVASCRIPT_FILES AND ARGS_ES6_MODULE STREQUAL "OFF")
+    # If not an ES6 module and no JavaScript files, we assume it is
+    # a file to be executed
+    list(APPEND emscripten_exported_functions "main")
+    set_target_properties(${ARGS_TARGET_NAME} PROPERTIES SUFFIX ".cjs")
+  endif()
+  
   # Exported functions
   set(prefixed_functions)
   foreach(func ${emscripten_exported_functions})
@@ -329,7 +336,7 @@ function(emscripten_module)
   # Convert the list to a comma-separated string and wrap in square brackets
   string(REPLACE ";" "," exported_functions_comma "${prefixed_functions}")
   string(CONCAT exported_functions_str "[" "${exported_functions_comma}" "]")
-
+  
   # Here add the exports
   list(APPEND emscripten_link_options
     "-sEXPORTED_FUNCTIONS=${exported_functions_str}")
@@ -356,11 +363,6 @@ function(emscripten_module)
       ${emscripten_optimization_flags} 
       ${emscripten_debug_options}
   )
-  if (NOT ARGS_JAVASCRIPT_FILES AND ARGS_ES6_MODULE STREQUAL "OFF")
-    # Not a ES6 module and no javascript files provided, we assume
-    # it is a unit test to be executed using CTest
-    set_target_properties(${ARGS_TARGET_NAME} PROPERTIES SUFFIX ".cjs")
-  endif()
   
   # Side modules must be renamed
   if (ARGS_SIDE_MODULE)
@@ -373,14 +375,14 @@ function(emscripten_module)
 
   # Copy any JavaScript files
   foreach(javascript_file ${ARGS_JAVASCRIPT_FILES})
-    set(copyTarget ${TARGET_NAME}_copy_${javascript_file})
+    set(copyTarget ${ARGS_TARGET_NAME}_copy_${javascript_file})
     add_custom_target(
       ${copyTarget}
       COMMAND
       ${CMAKE_COMMAND} -E copy_if_different
       "${CMAKE_CURRENT_SOURCE_DIR}/${javascript_file}"
       "${CMAKE_CURRENT_BINARY_DIR}")
-    add_dependencies(${TARGET_NAME} ${copyTarget})
+    add_dependencies(${ARGS_TARGET_NAME} ${copyTarget})
   endforeach()
 endfunction()
 
