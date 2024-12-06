@@ -209,6 +209,7 @@ function(emscripten_settings)
         "-sENVIRONMENT=node"
       )  
     endif()
+    
     # TODO: If unit tests change target name to .cjs
   endif()
   list(APPEND emscripten_exported_functions "printf")
@@ -252,7 +253,6 @@ emscripten_module(
 #]==]
 
 # For unit tests
-#   set_target_properties(sampleTest PROPERTIES SUFFIX ".cjs")
 
 function(emscripten_module)
   # Define the arguments that the function accepts
@@ -356,7 +356,11 @@ function(emscripten_module)
       ${emscripten_optimization_flags} 
       ${emscripten_debug_options}
   )
-  # TODO: Rename threaded output .js to .mjs (required by CTest)
+  if (NOT ARGS_JAVASCRIPT_FILES AND ARGS_ES6_MODULE STREQUAL "OFF")
+    # Not a ES6 module and no javascript files provided, we assume
+    # it is a unit test to be executed using CTest
+    set_target_properties(${ARGS_TARGET_NAME} PROPERTIES SUFFIX ".cjs")
+  endif()
   
   # Side modules must be renamed
   if (ARGS_SIDE_MODULE)
