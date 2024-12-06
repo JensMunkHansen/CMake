@@ -335,20 +335,25 @@ function(emscripten_module)
     "-sEXPORTED_FUNCTIONS=${exported_functions_str}")
 
   # Position-independent code
-  set(EXTRA_COMPILE_ARGS)
+  set(emscripten_compile_options)
   if (ARGS_SIDE_MODULE OR ARGS_MAIN_MODULE)
-    set(EXTRA_COMPILE_ARGS "-fPIC")
+    set(emscripten_compile_options "-fPIC")
   endif()
   if (ARGS_THREADING_ENABLED STREQUAL "ON")
     # TODO: Introduce emscripten_compile_flags
-    # set(EXTRA_COMPILE_ARGS "-fPIC -matomics\ -mbulk-memory")
+    # set(emscripten_compile_options "-fPIC -matomics\ -mbulk-memory")
   endif()
   # Link and compile options
-  target_link_options(${ARGS_TARGET_NAME} PRIVATE ${emscripten_link_options})
+  target_link_options(${ARGS_TARGET_NAME}
+    PRIVATE
+      ${emscripten_link_options}
+      ${emscripten_debug_options}
+  )
   target_compile_options(${ARGS_TARGET_NAME}
     PRIVATE
-      ${emscripten_optimization_flags} ${EXTRA_COMPILE_ARGS})
-
+      ${emscripten_compile_options}
+      ${emscripten_optimization_flags} 
+  )
   # TODO: Rename threaded output .js to .mjs (required by CTest)
   
   # Side modules must be renamed
