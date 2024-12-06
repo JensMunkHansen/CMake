@@ -93,7 +93,7 @@ function(emscripten_settings)
   endif()
 
   # Populate lists
-  set(emscripten_debug_info)
+  set(emscripten_debug_options)
   set(emscripten_link_options)
   set(emscripten_exported_functions)
   
@@ -122,21 +122,21 @@ function(emscripten_settings)
 
   # Set the debug flags based on DEBUG value
   if(ARGS_DEBUG STREQUAL "NONE")
-    list(APPEND emscripten_debug_info
+    list(APPEND emscripten_debug_options
       "-g0")
   elseif(ARGS_DEBUG STREQUAL "READABLE_JS")
-    list(APPEND emscripten_debug_info
+    list(APPEND emscripten_debug_options
       "-g1")
   elseif(ARGS_DEBUG STREQUAL "PROFILE")
-    list(APPEND emscripten_debug_info
+    list(APPEND emscripten_debug_options
       "-g2")
   elseif(ARGS_DEBUG STREQUAL "DEBUG_NATIVE")
-    list(APPEND emscripten_debug_info
+    list(APPEND emscripten_debug_options
       "-g3")
     list(APPEND emscripten_link_options
       "-sASSERTIONS=1")
   elseif(ARGS_DEBUG STREQUAL "SOURCE_MAPS")
-    list(APPEND emscripten_debug_info
+    list(APPEND emscripten_debug_options
       "-gsource-map")
   endif()
 
@@ -159,7 +159,7 @@ function(emscripten_settings)
     list(APPEND emscripten_link_options
       "-sMODULARIZE=1"
       "-sEXPORT_ES6=1"
-      "-sEXPORTED_RUNTIME_METHODS=['ENV', 'FS', 'ccall', 'stringToNewUTF8', 'addFunction']"
+      "-sEXPORTED_RUNTIME_METHODS=['ENV', 'FS', 'ccall', 'cwrap', 'stringToNewUTF8', 'addFunction']"
       "-sINCLUDE_FULL_LIBRARY"
       "-sALLOW_TABLE_GROWTH=1"
       "-sALLOW_MEMORY_GROWTH=1"
@@ -225,7 +225,7 @@ function(emscripten_settings)
   # Assign the options list to the specified variable
   set(${ARGS_EMSCRIPTEN_LINK_OPTIONS} "${emscripten_link_options}" PARENT_SCOPE)
   set(${ARGS_EMSCRIPTEN_OPTIMIZATION_FLAGS} "${emscripten_optimization_flags}" PARENT_SCOPE)
-  set(${ARGS_EMSCRIPTEN_DEBUG_INFO} "${emscripten_debug_info}" PARENT_SCOPE)
+  set(${ARGS_EMSCRIPTEN_DEBUG_INFO} "${emscripten_debug_options}" PARENT_SCOPE)
 endfunction()
 
 #[==[.rst:
@@ -285,7 +285,7 @@ function(emscripten_module)
   # Prepare variables for emscripten_settings
   set(emscripten_link_options)
   set(emscripten_optimization_flags)
-  set(emscripten_debug_info)
+  set(emscripten_debug_options)
   set(emscripten_exported_functions)
 
   # Call emscripten_settings with the provided arguments
@@ -299,7 +299,7 @@ function(emscripten_module)
     EMSCRIPTEN_EXPORTED_FUNCTIONS emscripten_exported_functions
     EMSCRIPTEN_LINK_OPTIONS emscripten_link_options
     EMSCRIPTEN_OPTIMIZATION_FLAGS emscripten_optimization_flags
-    EMSCRIPTEN_DEBUG_INFO emscripten_debug_info
+    EMSCRIPTEN_DEBUG_INFO emscripten_debug_options
   )
 
   if (ARGS_EXPORTED_FUNCTIONS)
@@ -345,7 +345,9 @@ function(emscripten_module)
   endif()
   # Link and compile options
   target_link_options(${ARGS_TARGET_NAME} PRIVATE ${emscripten_link_options})
-  target_compile_options(${ARGS_TARGET_NAME} PRIVATE ${emscripten_optimization_flags} ${EXTRA_COMPILE_ARGS})
+  target_compile_options(${ARGS_TARGET_NAME}
+    PRIVATE
+      ${emscripten_optimization_flags} ${EXTRA_COMPILE_ARGS})
 
   # TODO: Rename threaded output .js to .mjs (required by CTest)
   
@@ -370,3 +372,116 @@ function(emscripten_module)
     add_dependencies(${TARGET_NAME} ${copyTarget})
   endforeach()
 endfunction()
+
+### OLD STUFF
+
+# -----------------------------------------------------------------------------
+# Build and debug options
+# -----------------------------------------------------------------------------
+function(emscripten_default_debug_and_optimization debuginfo optimize)
+  # TODO: Consider supporting that if they arguments are initialized, we
+  #       verify that they are valid and we use them. This function currently
+  #       initializes them to a default that you can change afterwards
+  set(DEBUGINFO "READABLE_JS" CACHE STRING "Type of debug info")
+  set_property(CACHE DEBUGINFO PROPERTY
+    STRINGS
+      NONE              # -g0
+      READABLE_JS       # -g1
+      PROFILE           # -g2
+      DEBUG_NATIVE      # -g3
+  )
+  
+  set(OPTIMIZE "BEST" CACHE STRING "Emscripten optimization")
+  set_property(CACHE OPTIMIZE PROPERTY
+    STRINGS
+      NO_OPTIMIZATION       # -O0
+      LITTLE                # -O1
+      MORE                  # -O2
+      BEST                  # -O3
+      SMALL                 # -Os
+      SMALLEST              # -Oz
+      SMALLEST_WITH_CLOSURE # -Oz --closure 1
+  )
+  set(${debuginfo} "${DEBUGINFO}" PARENT_SCOPE)
+  set(${optimize} "${OPTIMIZE}" PARENT_SCOPE)
+endfunction()
+
+# -----------------------------------------------------------------------------
+# Build options
+# -----------------------------------------------------------------------------
+function(emscripten_set_optimization_flags optimization_flags optimization_string)
+
+  if (NOT DEFINED optimization_string OR "${optimization_string}" STREQUAL "")
+    set(optimization_string "NO_OPTIMIZATION")
+  endif()
+
+  set(flags)
+  if("${optimization_string}" STREQUAL "NO_OPTIMIZATION")
+    list(APPEND flags
+      "-O0")
+  elseif("${optimization_string}" STREQUAL "LITTLE")
+    list(APPEND flags
+      "-O1")
+  elseif("${optimization_string}" STREQUAL "MORE")
+    list(APPEND flags
+      "-O2")
+  elseif("${optimization_string}" STREQUAL "BEST")
+    list(APPEND flags
+      "-O3")
+  elseif("${optimization_string}" STREQUAL "SMALL")
+    list(APPEND flags
+      "-Os"
+    )
+  elseif("${optimization_string}" STREQUAL "SMALLEST")
+    list(APPEND flags
+      "-Oz"
+    )
+  elseif("${optimization_string}" STREQUAL "SMALLEST_WITH_CLOSURE")
+    list(APPEND flags
+      "-Oz"
+    )
+    list(APPEND emscripten_link_options
+      "--closure 1"
+    )
+  endif()
+  set(${optimization_flags} "${flags}" PARENT_SCOPE)
+endfunction()
+
+# -----------------------------------------------------------------------------
+# Debug options
+# -----------------------------------------------------------------------------
+function(emscripten_set_debug_options debug_flags debug_string)
+
+  if (NOT DEFINED debug_string OR "${debug_string}" STREQUAL "")
+    set(debug_string "NONE")
+  endif()
+
+  set(flags)
+  if("${debug_string}" STREQUAL "NONE")
+    list(APPEND flags
+      "-g0"
+    )
+  elseif("${debug_string}" STREQUAL "READABLE_JS")
+    list(APPEND flags
+      "-g1"
+    )
+  elseif("${debug_string}" STREQUAL "PROFILE")
+    list(APPEND flags
+      "-g2"
+    )
+  elseif("${debug_string}" STREQUAL "DEBUG_NATIVE")
+    list(APPEND flags
+      "-g3"
+    )
+    list(APPEND emscripten_link_options
+      "-sASSERTIONS=1"
+    )
+  elseif("${debug_string}" STREQUAL "SOURCE_MAPS")
+    list(APPEND flags
+      "-gsource-map"
+    )
+  endif()
+  set(${debug_flags} "${flags}" PARENT_SCOPE)
+endfunction()
+
+
