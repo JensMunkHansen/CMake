@@ -344,15 +344,17 @@ function(emscripten_module)
     # set(emscripten_compile_options "-fPIC -matomics\ -mbulk-memory")
   endif()
   # Link and compile options
-  target_link_options(${ARGS_TARGET_NAME}
-    PRIVATE
-      ${emscripten_link_options}
-      ${emscripten_debug_options}
-  )
   target_compile_options(${ARGS_TARGET_NAME}
     PRIVATE
       ${emscripten_compile_options}
       ${emscripten_optimization_flags} 
+      ${emscripten_debug_options}
+  )
+  target_link_options(${ARGS_TARGET_NAME}
+    PRIVATE
+      ${emscripten_link_options}
+      ${emscripten_optimization_flags} 
+      ${emscripten_debug_options}
   )
   # TODO: Rename threaded output .js to .mjs (required by CTest)
   
