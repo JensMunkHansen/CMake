@@ -320,7 +320,7 @@ function(emscripten_module)
     endif()
   endif()
 
-  if (NOT ARGS_JAVASCRIPT_FILES AND ARGS_ES6_MODULE STREQUAL "OFF")
+  if (NOT ARGS_JAVASCRIPT_FILES AND ARGS_ES6_MODULE STREQUAL "OFF" AND NOT ARGS_SIDE_MODULE)
     # If not an ES6 module and no JavaScript files, we assume it is
     # a file to be executed
     list(APPEND emscripten_exported_functions "main")
