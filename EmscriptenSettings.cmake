@@ -3,12 +3,14 @@
 Set various variables for Emscripten
 .. code-block:: cmake
 emscripten_settings(
-  TRHEADING_ENABLED             <ON|OFF>
-  EMBIND                        <ON|OFF>
-  ES6_MODULE                    <ON|OFF>
+  TRHEADING_ENABLED             <ON|OFF> (default: OFF)
+  EMBIND                        <ON|OFF> (default: OFF)
+  ES6_MODULE                    <ON|OFF> (default: ON)
   EXPORT_NAME                   <variable>
-  OPTIMIZATION                  <NONE, LITTLE, MORE, BEST, SMALL, SMALLEST, SMALLEST_WITH_CLOSURE>
-  DEBUG                         <NONE, READABLE_JS, PROFILE, DEBUG_NATIVE>
+  OPTIMIZATION                  <NONE, LITTLE, MORE, BEST, SMALL,
+                                 SMALLEST, SMALLEST_WITH_CLOSURE> (default: NONE)
+  DEBUG                         <NONE, READABLE_JS, PROFILE,
+                                 DEBUG_NATIVE> (default: READABLE_JS)
   EMSCRIPTEN_EXPORTED_FUNCTIONS <variable>
   EMSCRIPTEN_DEBUG_INFO         <variable>
   EMSCRIPTEN_LINK_OPTIONS       <variable>
@@ -29,6 +31,8 @@ function(emscripten_settings)
     EXPORT_NAME
     OPTIMIZATION
     DEBUG
+    INITIAL_MEMORY
+    MAXIMUM_MEMORY
     EMSCRIPTEN_LINK_OPTIONS
     EMSCRIPTEN_OPTIMIZATION_FLAGS
     EMSCRIPTEN_DEBUG_INFO
@@ -65,13 +69,19 @@ function(emscripten_settings)
   if (NOT DEFINED ARGS_EMBIND)
     set(ARGS_EMBIND OFF)
   endif()
+  if (NOT DEFINED ARGS_INITIAL_MEMORY)
+    set(ARGS_INITIAL_MEMORY "1GB")
+  endif()
+  if (NOT DEFINED ARGS_MAXIMUM_MEMORY)
+    set(ARGS_INITIAL_MEMORY "4GB")
+  endif()
 
   # Default arguments for debug and optimization
   if (NOT DEFINED ARGS_OPTIMIZATION)
     set(ARGS_OPTIMIZATION "NONE")
   endif()
   if (NOT DEFINED ARGS_DEBUG)
-    set(ARGS_DEBUG "NONE")
+    set(ARGS_DEBUG "READABLE_JS")
   endif()
 
   # Define valid options for OPTIMIZATION
@@ -160,10 +170,13 @@ function(emscripten_settings)
       "-sMODULARIZE=1"
       "-sEXPORT_ES6=1"
       "-sEXPORTED_RUNTIME_METHODS=['ENV', 'FS', 'ccall', 'cwrap', 'stringToNewUTF8', 'addFunction']"
-      "-sINCLUDE_FULL_LIBRARY"
+      "-sINCLUDE_FULL_LIBRARY" # for addFunction
       "-sALLOW_TABLE_GROWTH=1"
       "-sALLOW_MEMORY_GROWTH=1"
-      "-sEXPORT_NAME=${ARGS_EXPORT_NAME}")
+      "-sEXPORT_NAME=${ARGS_EXPORT_NAME}"
+      "-sINITIAL_MEMORY=${ARGS_INITIAL_MEMORY}"
+      "-sMAXIMUM_MEMORY=${ARGS_MAXIMUM_MEMORY}"
+    )
 
     if (ARGS_THREADING_ENABLED STREQUAL "ON")
       list(APPEND emscripten_link_options
@@ -235,16 +248,16 @@ emscripten_module(
   SIDE_MODULE
   MAIN_MODULE
   TARGET_NAME                   <variable>
-  SOURCE_FILES                  <list>
-  JAVASCRIPT_FILES              <list>
-  TRHEADING_ENABLED             <ON|OFF>
-  EMBIND                        <ON|OFF>
-  OPTIMIZATION                  <variable>
-  DEBUG                         <variable>  
-  ES6_MODULE                    <ON|OFF>
-  SIDE_MODULES                  <list>
-  LIBRARIES                     <list>
-  EXPORTED_FUNCTIONS            <list>
+  SOURCE_FILES                  <list>     (.cxx, .c)
+  JAVASCRIPT_FILES              <list>     (copied to outdir)
+  TRHEADING_ENABLED             <ON|OFF>   (default: OFF)
+  EMBIND                        <ON|OFF>   (default: OFF)
+  OPTIMIZATION                  <variable> (default: NONE)
+  DEBUG                         <variable> (default: READABLE_JS) 
+  ES6_MODULE                    <ON|OFF>   (default: OFF)
+  SIDE_MODULES                  <list> (modules (.wasm) to use)
+  LIBRARIES                     <list> (libraries (.a) to link to)
+  EXPORTED_FUNCTIONS            <list> (without '_' prefix)
   EXPORT_NAME                   <variable>
   OPTIMIZATION                  <NONE, LITTLE, MORE, BEST, SMALL, SMALLEST, SMALLEST_WITH_CLOSURE>
   DEBUG                         <NONE, READABLE_JS, PROFILE, DEBUG_NATIVE>)
@@ -347,6 +360,10 @@ function(emscripten_module)
     set(emscripten_compile_options "-fPIC")
   endif()
   if (ARGS_THREADING_ENABLED STREQUAL "ON")
+    # TODO: Verify
+    list(APPEND emscripten_link_options
+      "-sSUPPORT_LONGJMP=1")
+
     # TODO: Introduce emscripten_compile_flags
     # set(emscripten_compile_options "-fPIC -matomics\ -mbulk-memory")
   endif()
