@@ -276,6 +276,7 @@ emscripten_module(
   SOURCE_FILES                  <list>     (.cxx, .c)
   INCLUDE_DIRS                  <list>
   JAVASCRIPT_FILES              <list>     (copied to outdir)
+  PRE_JS                        --pre-js
   TRHEADING_ENABLED             <ON|OFF>   (default: OFF)
   EMBIND                        <ON|OFF>   (default: OFF)
   OPTIMIZATION                  <variable> (default: NONE)
@@ -295,7 +296,7 @@ emscripten_module(
 function(emscripten_module)
   # Define the arguments that the function accepts
   set(options SIDE_MODULE MAIN_MODULE VERBOSE)
-  set(one_value_args TARGET_NAME ES6_MODULE EMBIND EXPORT_NAME DEBUG OPTIMIZATION THREADING_ENABLED)
+  set(one_value_args TARGET_NAME ES6_MODULE EMBIND EXPORT_NAME DEBUG OPTIMIZATION THREADING_ENABLED PRE_JS)
   set(multi_value_args SOURCE_FILES JAVASCRIPT_FILES SIDE_MODULES EXPORTED_FUNCTIONS LIBRARIES INCLUDE_DIRS)
 
   # Parse the arguments using cmake_parse_arguments
@@ -431,6 +432,12 @@ function(emscripten_module)
     target_compile_definitions(${ARGS_TARGET_NAME} PRIVATE IS_MAIN_MODULE)    
   endif()
 
+  if (ARGS_PRE_JS)
+    target_link_options(${ARGS_TARGET_NAME}
+      PRIVATE
+      "--pre-js" "${CMAKE_CURRENT_SOURCE_DIR}/${PRE_JS}")
+  endif()
+  
   # Copy any JavaScript files
   foreach(javascript_file ${ARGS_JAVASCRIPT_FILES})
     set(copyTarget ${ARGS_TARGET_NAME}_copy_${javascript_file})
