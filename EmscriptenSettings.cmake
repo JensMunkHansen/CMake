@@ -435,7 +435,7 @@ function(emscripten_module)
   if (ARGS_PRE_JS)
     target_link_options(${ARGS_TARGET_NAME}
       PRIVATE
-      "--pre-js" "${CMAKE_CURRENT_SOURCE_DIR}/${ARGS_PRE_JS}")
+      "--pre-js" "${ARGS_PRE_JS}")
   endif()
   
   # Copy any JavaScript files
