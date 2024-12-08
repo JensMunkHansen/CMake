@@ -49,9 +49,9 @@ threads.
 function(emscripten_settings)
   # Define the arguments that the function accepts
   set(options
-    DISABLE_NODE
   )  # Boolean options (without ON/OFF).
   set(one_value_args
+    DISABLE_NODE
     THREADING_ENABLED
     THREAD_POOL_SIZE
     EMBIND
@@ -216,7 +216,7 @@ function(emscripten_settings)
     )
 
     if (ARGS_THREADING_ENABLED STREQUAL "ON")
-      if (ARGS_DISABLE_NODE)
+      if ("${ARGS_DISABLE_NODE}" STREQUAL "ON")      
         list(APPEND emscripten_link_options
           "-sENVIRONMENT=web,worker" # VTK is not node
         )
@@ -431,7 +431,6 @@ function(emscripten_module)
   endif()
   if (ARGS_THREADING_ENABLED STREQUAL "ON")
     target_link_libraries(${ARGS_TARGET_NAME} PRIVATE Threads::Threads)
-    # Already added (TODO)
     list(APPEND emscripten_compile_options "-pthread")
     # TODO: Verify why this is needed
     list(APPEND emscripten_link_options
