@@ -228,7 +228,7 @@ function(emscripten_settings)
   # TODO: Handle number of threads
   if (ARGS_THREADING_ENABLED STREQUAL "ON")
     list(APPEND emscripten_link_options
-      #"-pthread"
+      "-pthread"
       "-sUSE_PTHREADS=1"
       "-sSHARED_MEMORY=1"
       "-sINITIAL_MEMORY=64MB"
