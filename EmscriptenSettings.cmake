@@ -156,10 +156,10 @@ function(emscripten_settings)
     "-sERROR_ON_UNDEFINED_SYMBOLS=1"
     "-sNO_EXIT_RUNTIME=0")
 
-  # Not possible with optimization  
+  # Not possible with optimization - also stuff we depend on!!!
   if (ARGS_OPTIMIZATION STREQUAL "NONE")
-    list(APPEND emscripten_link_options
-      "-sSAFE_HEAP=1")
+#    list(APPEND emscripten_link_options
+#      "-sSAFE_HEAP=1")
   endif()
   
   # Link to embind
