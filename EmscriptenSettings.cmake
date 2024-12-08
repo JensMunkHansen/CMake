@@ -302,7 +302,11 @@ function(emscripten_module)
   if (NOT ARGS_DEBUG)
     set(ARGS_DEBUG "NONE")
   endif()
-  
+
+
+  if (ARGS_THREADING_ENABLED STREQUAL "ON")
+    find_package(Threads REQUIRED)
+  endif()
   # Add executable
   add_executable(${ARGS_TARGET_NAME} ${ARGS_SOURCE_FILES})
 
