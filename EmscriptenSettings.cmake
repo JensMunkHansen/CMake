@@ -1,3 +1,5 @@
+include(Hardware)
+
 function(target_info target)
   # Compile options
   get_target_property(COMPILE_OPTIONS ${target} COMPILE_OPTIONS)
@@ -27,6 +29,7 @@ Set various variables for Emscripten
 emscripten_settings(
   TRHEADING_ENABLED             <ON|OFF> (default: OFF)
   THREAD_POOL_SIZE              (default: 4)
+  MAX_NUMBER_OF_THREADS         
   EMBIND                        <ON|OFF> (default: OFF)
   ES6_MODULE                    <ON|OFF> (default: ON)
   EXPORT_NAME                   <variable>
@@ -54,6 +57,7 @@ function(emscripten_settings)
     DISABLE_NODE
     THREADING_ENABLED
     THREAD_POOL_SIZE
+    MAX_NUMBER_OF_THREADS
     EMBIND
     ES6_MODULE
     EXPORT_NAME
@@ -102,6 +106,10 @@ function(emscripten_settings)
   endif()
   if (NOT DEFINED ARGS_THREAD_POOL_SIZE)
     set(ARGS_THREAD_POOL_SIZE 4)
+  endif()
+  if (NOT DEFINED ARGS_MAX_NUMBER_OF_THREADS)
+    sps_get_processor_count(MAX_CONCURRENCY)
+    set(ARGS_MAX_NUMBER_OF_THREADS ${MAX_CONCURRENCY})
   endif()
 
   # Default arguments for debug and optimization
@@ -281,7 +289,11 @@ function(emscripten_settings)
       "-pthread"
       "-sUSE_PTHREADS=1"
       "-sSHARED_MEMORY=1"
+<<<<<<< HEAD
       "-sPTHREAD_POOL_SIZE_STRICT=${ARGS_THREAD_POOL_SIZE}"
+=======
+      "-sPTHREAD_POOL_SIZE_STRICT" # Not working
+>>>>>>> 56fd8da (Strict threads - not working)
       "-sPTHREAD_POOL_SIZE=${ARGS_THREAD_POOL_SIZE}")
   endif()
 
