@@ -4,6 +4,7 @@ Set various variables for Emscripten
 .. code-block:: cmake
 emscripten_settings(
   TRHEADING_ENABLED             <ON|OFF> (default: OFF)
+  THREAD_POOL_SIZE              (default: 4)
   EMBIND                        <ON|OFF> (default: OFF)
   ES6_MODULE                    <ON|OFF> (default: ON)
   EXPORT_NAME                   <variable>
@@ -28,6 +29,7 @@ function(emscripten_settings)
   set(options)  # Boolean options (without ON/OFF).
   set(one_value_args
     THREADING_ENABLED
+    THREAD_POOL_SIZE
     EMBIND
     ES6_MODULE
     EXPORT_NAME
@@ -73,6 +75,9 @@ function(emscripten_settings)
   endif()
   if (NOT DEFINED ARGS_MAXIMUM_MEMORY)
     set(ARGS_MAXIMUM_MEMORY "4GB")
+  endif()
+  if (NOT DEFINED ARGS_THREAD_POOL_SIZE)
+    set(ARGS_THREAD_POOL_SIZE 4)
   endif()
 
   # Default arguments for debug and optimization
@@ -237,7 +242,7 @@ function(emscripten_settings)
       "-pthread"
       "-sUSE_PTHREADS=1"
       "-sSHARED_MEMORY=1"
-      "-sPTHREAD_POOL_SIZE=4")
+      "-sPTHREAD_POOL_SIZE=${ARGS_THREAD_POOL_SIZE}")
   endif()
 
   # Assign the options list to the specified variable
