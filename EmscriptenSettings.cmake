@@ -73,7 +73,7 @@ function(emscripten_settings)
     set(ARGS_INITIAL_MEMORY "1GB")
   endif()
   if (NOT DEFINED ARGS_MAXIMUM_MEMORY)
-    set(ARGS_INITIAL_MEMORY "4GB")
+    set(ARGS_MAXIMUM_MEMORY "4GB")
   endif()
 
   # Default arguments for debug and optimization
@@ -228,6 +228,7 @@ function(emscripten_settings)
   # TODO: Handle number of threads
   if (ARGS_THREADING_ENABLED STREQUAL "ON")
     list(APPEND emscripten_link_options
+      #"-pthread"
       "-sUSE_PTHREADS=1"
       "-sSHARED_MEMORY=1"
       "-sINITIAL_MEMORY=64MB"
@@ -334,6 +335,7 @@ function(emscripten_module)
   endif()
 
   if (ARGS_ES6_MODULE STREQUAL "OFF" AND NOT ARGS_SIDE_MODULE)
+    message("RENAMED")
     # If not an ES6 module and no JavaScript files, we assume it is
     # a file to be executed
     list(APPEND emscripten_exported_functions "main")
@@ -360,6 +362,7 @@ function(emscripten_module)
     set(emscripten_compile_options "-fPIC")
   endif()
   if (ARGS_THREADING_ENABLED STREQUAL "ON")
+    list(APPEND emscripten_compile_options "-pthread")
     # TODO: Verify
     list(APPEND emscripten_link_options
       "-sSUPPORT_LONGJMP=1")
