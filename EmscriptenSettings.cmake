@@ -281,6 +281,7 @@ function(emscripten_settings)
       "-pthread"
       "-sUSE_PTHREADS=1"
       "-sSHARED_MEMORY=1"
+      "-sPTHREAD_POOL_SIZE_STRICT" # Not working
       "-sPTHREAD_POOL_SIZE=${ARGS_THREAD_POOL_SIZE}")
   endif()
 
