@@ -159,7 +159,9 @@ function(emscripten_settings)
   list(APPEND emscripten_link_options
     "-sASSERTIONS=1"
     "-sERROR_ON_UNDEFINED_SYMBOLS=1"
-    "-sNO_EXIT_RUNTIME=0")
+    "-sNO_EXIT_RUNTIME=0"
+    "-sDISABLE_EXCEPTION_CATCHING=0"
+  )
 
   # Not possible with optimization - also stuff we depend on!!!
   if (ARGS_OPTIMIZATION STREQUAL "NONE")
@@ -377,10 +379,12 @@ function(emscripten_module)
   list(APPEND emscripten_link_options
     "-sEXPORTED_FUNCTIONS=${exported_functions_str}")
 
+  # C++-exceptions
+  set(emscripten_compile_options "-fexceptions")
   # Position-independent code
-  set(emscripten_compile_options)
   if (ARGS_SIDE_MODULE OR ARGS_MAIN_MODULE)
-    set(emscripten_compile_options "-fPIC")
+    # Shared libraries with WASM
+    list(APPEND emscripten_compile_options "-fPIC")
   endif()
   if (ARGS_THREADING_ENABLED STREQUAL "ON")
     target_link_libraries(${ARGS_TARGET_NAME} PRIVATE Threads::Threads)
