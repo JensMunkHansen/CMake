@@ -357,9 +357,8 @@ function(emscripten_module)
   endif()
   
   if (ARGS_ES6_MODULE STREQUAL "OFF" AND NOT ARGS_SIDE_MODULE)
-    message("RENAMED")
     # If not an ES6 module and no JavaScript files, we assume it is
-    # a file to be executed
+    # a file to be executed. Linking to Catch2 requires main
     list(APPEND emscripten_exported_functions "main")
     set_target_properties(${ARGS_TARGET_NAME} PROPERTIES SUFFIX ".cjs")
   endif()
