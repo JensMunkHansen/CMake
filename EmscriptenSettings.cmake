@@ -186,7 +186,7 @@ function(emscripten_settings)
 
     if (ARGS_THREADING_ENABLED STREQUAL "ON")
       list(APPEND emscripten_link_options
-        "-sENVIRONMENT=web,node,worker"
+        "-sENVIRONMENT=web,node,worker" # VTK is not node
       )
     else()
       list(APPEND emscripten_link_options
@@ -255,6 +255,7 @@ emscripten_module(
   MAIN_MODULE
   TARGET_NAME                   <variable>
   SOURCE_FILES                  <list>     (.cxx, .c)
+  INCLUDE_DIRS                  <list>
   JAVASCRIPT_FILES              <list>     (copied to outdir)
   TRHEADING_ENABLED             <ON|OFF>   (default: OFF)
   EMBIND                        <ON|OFF>   (default: OFF)
@@ -276,7 +277,7 @@ function(emscripten_module)
   # Define the arguments that the function accepts
   set(options SIDE_MODULE MAIN_MODULE VERBOSE)
   set(one_value_args TARGET_NAME ES6_MODULE EMBIND EXPORT_NAME DEBUG OPTIMIZATION THREADING_ENABLED)
-  set(multi_value_args SOURCE_FILES JAVASCRIPT_FILES SIDE_MODULES EXPORTED_FUNCTIONS LIBRARIES)
+  set(multi_value_args SOURCE_FILES JAVASCRIPT_FILES SIDE_MODULES EXPORTED_FUNCTIONS LIBRARIES INCLUDE_DIRS)
 
   # Parse the arguments using cmake_parse_arguments
   cmake_parse_arguments(ARGS "${options}" "${one_value_args}" "${multi_value_args}" ${ARGV})
@@ -285,7 +286,7 @@ function(emscripten_module)
   if (NOT ARGS_TARGET_NAME)
     message(FATAL_ERROR "TARGET_NAME must be specified.")
   endif()
-  if (NOT ARGS_SOURCE_FILES)
+  if (NOT ARGS_SOURCE_FILES AND NOT ARGS_LIBRARIES)
     message(FATAL_ERROR "SOURCE_FILES must be specified.")
   endif()
 
@@ -301,6 +302,7 @@ function(emscripten_module)
   add_executable(${ARGS_TARGET_NAME} ${ARGS_SOURCE_FILES})
 
   target_link_libraries(${ARGS_TARGET_NAME} PRIVATE ${ARGS_LIBRARIES})
+  target_include_directories(${ARGS_TARGET_NAME} PRIVATE ${ARGS_INCLUDE_DIRS})
   # Prepare variables for emscripten_settings
   set(emscripten_link_options)
   set(emscripten_optimization_flags)
@@ -340,7 +342,8 @@ function(emscripten_module)
   # An experiment
   if (ARGS_ES6_MODULE STREQUAL "ON" AND NOT ARGS_MAIN_MODULE AND NOT ARGS_SIDE_MODULE) 
     list(APPEND emscripten_link_options
-      "-sPROXY_TO_PTHREAD=1"  
+      # We can only do this if a main exists
+      #"-sPROXY_TO_PTHREAD=1"  
     )
   endif()
   
@@ -414,6 +417,7 @@ function(emscripten_module)
       "${CMAKE_CURRENT_BINARY_DIR}")
     add_dependencies(${ARGS_TARGET_NAME} ${copyTarget})
   endforeach()
+
 endfunction()
 
 ### OLD STUFF
