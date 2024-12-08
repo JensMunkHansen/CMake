@@ -1,3 +1,25 @@
+function(target_info target)
+  # Compile options
+  get_target_property(COMPILE_OPTIONS ${target} COMPILE_OPTIONS)
+  message("Compile options for target ${target}: ${COMPILE_OPTIONS}")
+  
+  # Compile definitions
+  get_target_property(COMPILE_DEFINITIONS ${target} COMPILE_DEFINITIONS)
+  message("Compile definitions for target ${target}: ${COMPILE_DEFINITIONS}")
+  
+  # Include directories
+  get_target_property(INCLUDE_DIRECTORIES ${target} INCLUDE_DIRECTORIES)
+  message("Include directories for target ${target}: ${INCLUDE_DIRECTORIES}")
+  
+  # Link libraries
+  get_target_property(LINK_LIBRARIES ${target} LINK_LIBRARIES)
+  message("Link libraries for target ${target}: ${LINK_LIBRARIES}")
+  
+  # Link options
+  get_target_property(LINK_OPTIONS ${target} LINK_OPTIONS)
+  message("Link options for target ${target}: ${LINK_OPTIONS}")
+endfunction()
+
 #[==[.rst:
 .. cmake:command:: emscripten_settings
 Set various variables for Emscripten
@@ -161,7 +183,7 @@ function(emscripten_settings)
   list(APPEND emscripten_link_options
     "-sASSERTIONS=1"
     "-sERROR_ON_UNDEFINED_SYMBOLS=1"
-    "-sNO_EXIT_RUNTIME=0"
+    "-sNO_EXIT_RUNTIME=1"
     "-sDISABLE_EXCEPTION_CATCHING=0"
   )
 
@@ -279,8 +301,10 @@ emscripten_module(
   SOURCE_FILES                  <list>     (.cxx, .c)
   INCLUDE_DIRS                  <list>
   JAVASCRIPT_FILES              <list>     (copied to outdir)
+  DISABLE_NODE
   PRE_JS                        --pre-js
   TRHEADING_ENABLED             <ON|OFF>   (default: OFF)
+  THREAD_POOL_SIZE              (default: 4)
   EMBIND                        <ON|OFF>   (default: OFF)
   OPTIMIZATION                  <variable> (default: NONE)
   DEBUG                         <variable> (default: READABLE_JS) 
@@ -290,7 +314,8 @@ emscripten_module(
   EXPORTED_FUNCTIONS            <list> (without '_' prefix)
   EXPORT_NAME                   <variable>
   OPTIMIZATION                  <NONE, LITTLE, MORE, BEST, SMALL, SMALLEST, SMALLEST_WITH_CLOSURE>
-  DEBUG                         <NONE, READABLE_JS, PROFILE, DEBUG_NATIVE>)
+  DEBUG                         <NONE, READABLE_JS, PROFILE, DEBUG_NATIVE>
+  VERBOSE                       Show stuff)
 
 #]==]
 
@@ -298,8 +323,8 @@ emscripten_module(
 
 function(emscripten_module)
   # Define the arguments that the function accepts
-  set(options SIDE_MODULE MAIN_MODULE VERBOSE)
-  set(one_value_args TARGET_NAME ES6_MODULE EMBIND EXPORT_NAME DEBUG OPTIMIZATION THREADING_ENABLED PRE_JS)
+  set(options SIDE_MODULE MAIN_MODULE VERBOSE DISABLE_NODE)
+  set(one_value_args TARGET_NAME ES6_MODULE EMBIND EXPORT_NAME DEBUG OPTIMIZATION THREADING_ENABLED PRE_JS THREAD_POOL_SIZE)
   set(multi_value_args SOURCE_FILES JAVASCRIPT_FILES SIDE_MODULES EXPORTED_FUNCTIONS LIBRARIES INCLUDE_DIRS)
 
   # Parse the arguments using cmake_parse_arguments
@@ -341,8 +366,10 @@ function(emscripten_module)
     ES6_MODULE ${ARGS_ES6_MODULE}
     EMBIND ${ARGS_EMBIND}
     EXPORT_NAME ${ARGS_EXPORT_NAME}
+    DISABLE_NODE ${ARGS_DISABLE_NODE}
     DEBUG ${ARGS_DEBUG}
     THREADING_ENABLED ${ARGS_THREADING_ENABLED}
+    THREAD_POOL_SIZE ${ARGS_THREAD_POOL_SIZE}
     OPTIMIZATION ${ARGS_OPTIMIZATION}
     EMSCRIPTEN_EXPORTED_FUNCTIONS emscripten_exported_functions
     EMSCRIPTEN_LINK_OPTIONS emscripten_link_options
@@ -452,7 +479,14 @@ function(emscripten_module)
       "${CMAKE_CURRENT_BINARY_DIR}")
     add_dependencies(${ARGS_TARGET_NAME} ${copyTarget})
   endforeach()
-
+  if (ARGS_VERBOSE)
+    target_info(${ARGS_TARGET_NAME})
+    
+    #message("emscripten_link_options: ${emscripten_link_options}")
+    #message("emscripten_debug_options: ${emscripten_debug_options}")
+    #message("emscripten_optimization_flags: ${emscripten_optimization_flags}")
+    #message("emscripten_compile_options: ${emscripten_compile_options}")
+  endif()
 endfunction()
 
 ### OLD STUFF
