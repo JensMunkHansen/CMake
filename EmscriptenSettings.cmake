@@ -26,7 +26,9 @@ threads.
 
 function(emscripten_settings)
   # Define the arguments that the function accepts
-  set(options)  # Boolean options (without ON/OFF).
+  set(options
+    DISABLE_NODE
+  )  # Boolean options (without ON/OFF).
   set(one_value_args
     THREADING_ENABLED
     THREAD_POOL_SIZE
@@ -192,9 +194,15 @@ function(emscripten_settings)
     )
 
     if (ARGS_THREADING_ENABLED STREQUAL "ON")
-      list(APPEND emscripten_link_options
-        "-sENVIRONMENT=web,node,worker" # VTK is not node
-      )
+      if (ARGS_DISABLE_NODE)
+        list(APPEND emscripten_link_options
+          "-sENVIRONMENT=web,worker" # VTK is not node
+        )
+      else()
+        list(APPEND emscripten_link_options
+          "-sENVIRONMENT=web,node,worker"
+        )
+      endif()
     else()
       list(APPEND emscripten_link_options
         "-sENVIRONMENT=web,node"
@@ -388,13 +396,11 @@ function(emscripten_module)
   endif()
   if (ARGS_THREADING_ENABLED STREQUAL "ON")
     target_link_libraries(${ARGS_TARGET_NAME} PRIVATE Threads::Threads)
+    # Already added (TODO)
     list(APPEND emscripten_compile_options "-pthread")
-    # TODO: Verify
+    # TODO: Verify why this is needed
     list(APPEND emscripten_link_options
       "-sSUPPORT_LONGJMP=1")
-
-    # TODO: Introduce emscripten_compile_flags
-    # set(emscripten_compile_options "-fPIC -matomics\ -mbulk-memory")
   endif()
   # Link and compile options
   target_compile_options(${ARGS_TARGET_NAME}
@@ -410,12 +416,14 @@ function(emscripten_module)
       ${emscripten_debug_options}
   )
   
-  # Side modules must be renamed
   if (ARGS_SIDE_MODULE)
+    # Side modules must be renamed
     set_target_properties(${ARGS_TARGET_NAME} PROPERTIES
       SUFFIX ".wasm")
+    # Definition used in source files
     target_compile_definitions(${ARGS_TARGET_NAME} PRIVATE IS_SIDE_MODULE)    
   elseif(ARGS_MAIN_MODULE)
+    # Definition used in source files
     target_compile_definitions(${ARGS_TARGET_NAME} PRIVATE IS_MAIN_MODULE)    
   endif()
 
