@@ -238,14 +238,17 @@ function(emscripten_settings)
           ${CMAKE_CURRENT_BINARY_DIR})
     endif()
   else()
+    # NOT AN ES6 module
     if (ARGS_THREADING_ENABLED STREQUAL "ON")
       list(APPEND emscripten_link_options
         "-sENVIRONMENT=node,worker"
-      )  
+      )
+      # If we have main function, we can do
+      #"-sPROXY_TO_PTHREAD=1"  # Main thread is now a worker
     else()
       list(APPEND emscripten_link_options
         "-sENVIRONMENT=node"
-      )  
+      )
     endif()
   endif()
   list(APPEND emscripten_exported_functions "printf")
