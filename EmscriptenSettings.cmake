@@ -11,6 +11,8 @@ emscripten_settings(
                                  SMALLEST, SMALLEST_WITH_CLOSURE> (default: NONE)
   DEBUG                         <NONE, READABLE_JS, PROFILE,
                                  DEBUG_NATIVE> (default: READABLE_JS)
+  INITIAL_MEMORY                (default: 1GB) May crash if too low
+  MAXIMUM_MEMORY                (default: 4GB)
   EMSCRIPTEN_EXPORTED_FUNCTIONS <variable>
   EMSCRIPTEN_DEBUG_INFO         <variable>
   EMSCRIPTEN_LINK_OPTIONS       <variable>
@@ -46,15 +48,12 @@ function(emscripten_settings)
   if (NOT ARGS_EMSCRIPTEN_LINK_OPTIONS)
     message(FATAL_ERROR "EMSCRIPTEN_LINK_OPTIONS must be specified.")
   endif()
-
   if (NOT ARGS_EMSCRIPTEN_OPTIMIZATION_FLAGS)
     message(FATAL_ERROR "EMSCRIPTEN_OPTIMIZATION_FLAGS must be specified.")
   endif()
-
   if (NOT ARGS_EMSCRIPTEN_DEBUG_INFO)
-    message(FATAL_ERROR "EMSCRIPTEN_OPTIMIZATION_FLAGS must be specified.")
+    message(FATAL_ERROR "EMSCRIPTEN_DEBUG_INFO must be specified.")
   endif()
-
   if (NOT ARGS_EMSCRIPTEN_EXPORTED_FUNCTIONS)
     message(FATAL_ERROR "EMSCRIPTEN_EXPORTED_FUNCTIONS must be specified.")
   endif()
@@ -106,7 +105,8 @@ function(emscripten_settings)
   set(emscripten_debug_options)
   set(emscripten_link_options)
   set(emscripten_exported_functions)
-  
+  set(emscripten_optimization_flags)
+
   # Set the optimization flags based on OPTIMIZATION value
   if (ARGS_OPTIMIZATION STREQUAL "NONE")
     set(emscripten_optimization_flags "-O0")
@@ -156,6 +156,12 @@ function(emscripten_settings)
     "-sERROR_ON_UNDEFINED_SYMBOLS=1"
     "-sNO_EXIT_RUNTIME=0")
 
+  # Not possible with optimization  
+  if (ARGS_OPTIMIZATION STREQUAL "NONE")
+    list(APPEND emscripten_link_options
+      "-sSAFE_HEAP=1")
+  endif()
+  
   # Link to embind
   if (ARGS_EMBIND STREQUAL "ON")
     list(APPEND emscripten_link_options
@@ -231,7 +237,6 @@ function(emscripten_settings)
       "-pthread"
       "-sUSE_PTHREADS=1"
       "-sSHARED_MEMORY=1"
-      "-sINITIAL_MEMORY=64MB"
       "-sPTHREAD_POOL_SIZE=4")
   endif()
 
@@ -328,12 +333,17 @@ function(emscripten_module)
   # Main modules can link to shared modules, only tested for ANSI-C
   if (ARGS_MAIN_MODULE)
     if (ARGS_SIDE_MODULES)
-      list(APPEND emscripten_exported_functions "printf")
       list(APPEND emscripten_link_options "-sMAIN_MODULE=2" ${ARGS_SIDE_MODULES})
-      #list(APPEND emscripten_link_options "-sENVIRONMENT=web,worker")
     endif()
   endif()
 
+  # An experiment
+  if (ARGS_ES6_MODULE STREQUAL "ON" AND NOT ARGS_MAIN_MODULE AND NOT ARGS_SIDE_MODULE) 
+    list(APPEND emscripten_link_options
+      "-sPROXY_TO_PTHREAD=1"  
+    )
+  endif()
+  
   if (ARGS_ES6_MODULE STREQUAL "OFF" AND NOT ARGS_SIDE_MODULE)
     message("RENAMED")
     # If not an ES6 module and no JavaScript files, we assume it is
