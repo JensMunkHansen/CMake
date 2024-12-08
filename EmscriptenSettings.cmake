@@ -213,6 +213,7 @@ function(emscripten_settings)
       package.json
       package-lock.json
     )
+    set(PACKAGE_FOUND OFF)
     # Consider throwing if no package.json exists
     foreach(node_file ${node_files})
       if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${node_file}")
@@ -222,17 +223,20 @@ function(emscripten_settings)
           ${CMAKE_COMMAND} -E copy_if_different
           "${CMAKE_CURRENT_SOURCE_DIR}/${node_file}"
           "${CMAKE_CURRENT_BINARY_DIR}")
+        set(PACKAGE_FOUND ON)
       endif()
     endforeach()
 
-    # Install npm
-    add_custom_command(
-      TARGET ${ARGS_TARGET_NAME}
-      POST_BUILD
-      COMMAND
-        npm install
-      WORKING_DIRECTORY
-        ${CMAKE_CURRENT_BINARY_DIR})
+    if (PACKAGE_FOUND)
+      # Install npm
+      add_custom_command(
+        TARGET ${ARGS_TARGET_NAME}
+        POST_BUILD
+        COMMAND
+          npm install
+        WORKING_DIRECTORY
+          ${CMAKE_CURRENT_BINARY_DIR})
+    endif()
   else()
     if (ARGS_THREADING_ENABLED STREQUAL "ON")
       list(APPEND emscripten_link_options
