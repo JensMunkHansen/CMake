@@ -380,6 +380,7 @@ function(emscripten_module)
     set(emscripten_compile_options "-fPIC")
   endif()
   if (ARGS_THREADING_ENABLED STREQUAL "ON")
+    target_link_libraries(${ARGS_TARGET_NAME} PRIVATE Threads::Threads)
     list(APPEND emscripten_compile_options "-pthread")
     # TODO: Verify
     list(APPEND emscripten_link_options
