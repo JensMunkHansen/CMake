@@ -25,6 +25,24 @@ function(check_files_for_main FILES HAS_MAIN)
     endforeach()
 endfunction()
 
+# Function to prefix exported functions and format them
+function(prefix_and_format_exports input_list output_variable)
+    # Prefixed functions list
+    set(prefixed_functions)
+
+    # Prefix each function with '_'
+    foreach(func IN LISTS ${input_list})
+        list(APPEND prefixed_functions "'_${func}'")
+    endforeach()
+
+    # Convert the list to a comma-separated string and wrap in square brackets
+    string(REPLACE ";" "," exported_functions_comma "${prefixed_functions}")
+    string(CONCAT exported_functions_str "[" "${exported_functions_comma}" "]")
+
+    # Set the output variable
+    set(${output_variable} "${exported_functions_str}" PARENT_SCOPE)
+endfunction()
+
 function(target_info target)
   # Compile options
   get_target_property(COMPILE_OPTIONS ${target} COMPILE_OPTIONS)
@@ -468,16 +486,10 @@ function(emscripten_module)
       "-target=wasm64"
       "-sWASM_BIGINT=1"
       "-sMEMORY64=1")
-  endif()  
-  # Exported functions
-  set(prefixed_functions)
-  foreach(func ${emscripten_exported_functions})
-    list(APPEND prefixed_functions "'_${func}'")
-  endforeach()
+  endif()
 
-  # Convert the list to a comma-separated string and wrap in square brackets
-  string(REPLACE ";" "," exported_functions_comma "${prefixed_functions}")
-  string(CONCAT exported_functions_str "[" "${exported_functions_comma}" "]")
+  # Prefix and format the exports
+  prefix_and_format_exports(emscripten_exported_functions exported_functions_str)
   
   # Here add the exports
   list(APPEND emscripten_link_options
