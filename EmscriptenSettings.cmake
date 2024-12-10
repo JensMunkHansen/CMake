@@ -319,6 +319,7 @@ emscripten_module(
   PRE_JS                        --pre-js
   TRHEADING_ENABLED             <ON|OFF>   (default: OFF)
   THREAD_POOL_SIZE              (default: 4)
+  MAX_NUMBER_OF_THREADS         (default: 4)
   EMBIND                        <ON|OFF>   (default: OFF)
   OPTIMIZATION                  <variable> (default: NONE)
   DEBUG                         <variable> (default: READABLE_JS) 
@@ -338,7 +339,7 @@ emscripten_module(
 function(emscripten_module)
   # Define the arguments that the function accepts
   set(options SIDE_MODULE MAIN_MODULE VERBOSE DISABLE_NODE)
-  set(one_value_args TARGET_NAME ES6_MODULE EMBIND EXPORT_NAME DEBUG OPTIMIZATION THREADING_ENABLED PRE_JS THREAD_POOL_SIZE)
+  set(one_value_args TARGET_NAME ES6_MODULE EMBIND EXPORT_NAME DEBUG OPTIMIZATION THREADING_ENABLED PRE_JS THREAD_POOL_SIZE MAX_NUMBER_OF_THREADS)
   set(multi_value_args SOURCE_FILES JAVASCRIPT_FILES SIDE_MODULES EXPORTED_FUNCTIONS LIBRARIES INCLUDE_DIRS)
 
   # Parse the arguments using cmake_parse_arguments
@@ -384,6 +385,7 @@ function(emscripten_module)
     DEBUG ${ARGS_DEBUG}
     THREADING_ENABLED ${ARGS_THREADING_ENABLED}
     THREAD_POOL_SIZE ${ARGS_THREAD_POOL_SIZE}
+    MAX_NUMBER_OF_THREADS ${ARGS_MAX_NUMBER_OF_THREADS}
     OPTIMIZATION ${ARGS_OPTIMIZATION}
     EMSCRIPTEN_EXPORTED_FUNCTIONS emscripten_exported_functions
     EMSCRIPTEN_LINK_OPTIONS emscripten_link_options
