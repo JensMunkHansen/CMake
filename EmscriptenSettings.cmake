@@ -1,5 +1,30 @@
 include(Hardware)
 
+set(EmscriptenSetting_SCRIPT_DIR ${CMAKE_CURRENT_LIST_DIR})
+
+function(check_files_for_main FILES HAS_MAIN)
+    # Assume the Python script is located in the same directory as this CMake file
+    set(SCRIPT_PATH "${EmscriptenSetting_SCRIPT_DIR}/check_main.py")
+    if (NOT EXISTS ${SCRIPT_PATH})
+        message(FATAL_ERROR "Python script not found: ${SCRIPT_PATH}")
+    endif()
+
+    set(${HAS_MAIN} OFF PARENT_SCOPE)  # Default to no main function
+    foreach(FILE ${FILES})
+        # Use the script to check if this file has a main function
+        execute_process(
+            COMMAND ${CMAKE_COMMAND} -E env python3 ${SCRIPT_PATH} ${FILE}
+            OUTPUT_VARIABLE HAS_MAIN_OUTPUT
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+
+        if (HAS_MAIN_OUTPUT STREQUAL "1")
+            set(${HAS_MAIN} ON PARENT_SCOPE)
+            return()  # Exit as soon as we find a main function
+        endif()
+    endforeach()
+endfunction()
+
 function(target_info target)
   # Compile options
   get_target_property(COMPILE_OPTIONS ${target} COMPILE_OPTIONS)
@@ -29,7 +54,7 @@ Set various variables for Emscripten
 emscripten_settings(
   TRHEADING_ENABLED             <ON|OFF> (default: OFF)
   THREAD_POOL_SIZE              (default: 4)
-  MAX_NUMBER_OF_THREADS         (default: 4)
+  MAX_NUMBER_OF_THREADS         (default: 4, hard limit for runtime threads)
   EMBIND                        <ON|OFF> (default: OFF)
   ES6_MODULE                    <ON|OFF> (default: ON)
   EXPORT_NAME                   <variable>
@@ -254,6 +279,7 @@ function(emscripten_settings)
       if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${node_file}")
         add_custom_command(
           TARGET ${ARGS_TARGET_NAME}
+          POST_BUILD
           COMMAND
           ${CMAKE_COMMAND} -E copy_if_different
           "${CMAKE_CURRENT_SOURCE_DIR}/${node_file}"
@@ -311,6 +337,7 @@ Create a WASM Emscripten module
 emscripten_module(
   SIDE_MODULE
   MAIN_MODULE
+  64_BIT
   TARGET_NAME                   <variable>
   SOURCE_FILES                  <list>     (.cxx, .c)
   INCLUDE_DIRS                  <list>
@@ -338,7 +365,7 @@ emscripten_module(
 
 function(emscripten_module)
   # Define the arguments that the function accepts
-  set(options SIDE_MODULE MAIN_MODULE VERBOSE DISABLE_NODE)
+  set(options SIDE_MODULE MAIN_MODULE VERBOSE DISABLE_NODE 64_BIT)
   set(one_value_args TARGET_NAME ES6_MODULE EMBIND EXPORT_NAME DEBUG OPTIMIZATION THREADING_ENABLED PRE_JS THREAD_POOL_SIZE MAX_NUMBER_OF_THREADS)
   set(multi_value_args SOURCE_FILES JAVASCRIPT_FILES SIDE_MODULES EXPORTED_FUNCTIONS LIBRARIES INCLUDE_DIRS)
 
@@ -416,14 +443,28 @@ function(emscripten_module)
       #"-sPROXY_TO_PTHREAD=1"  
     )
   endif()
+
+  check_files_for_main(${ARGS_SOURCE_FILES} TARGET_HAS_MAIN)
   
   if (ARGS_ES6_MODULE STREQUAL "OFF" AND NOT ARGS_SIDE_MODULE)
     # If not an ES6 module and no JavaScript files, we assume it is
     # a file to be executed. Linking to Catch2 requires main
+    set(TARGET_HAS_MAIN ON)
+  endif()
+
+  if (TARGET_HAS_MAIN)
     list(APPEND emscripten_exported_functions "main")
     set_target_properties(${ARGS_TARGET_NAME} PROPERTIES SUFFIX ".cjs")
   endif()
-  
+  if (ARGS_64_BIT)
+    list(APPEND emscripten_link_options
+      "-sWASM_BIGINT=1"
+      "-sMEMORY64=1")
+    list(APPEND emscripten_compile_options
+      "-mwasm64"      
+      "-sWASM_BIGINT=1"
+      "-sMEMORY64=1")
+  endif()  
   # Exported functions
   set(prefixed_functions)
   foreach(func ${emscripten_exported_functions})
