@@ -314,7 +314,6 @@ function(emscripten_settings)
   endif()
   list(APPEND emscripten_exported_functions "printf")
 
-  # TODO: Handle number of threads
   if (ARGS_THREADING_ENABLED STREQUAL "ON")
     list(APPEND emscripten_link_options
       "-pthread"
@@ -439,7 +438,7 @@ function(emscripten_module)
   # An experiment
   if (ARGS_ES6_MODULE STREQUAL "ON" AND NOT ARGS_MAIN_MODULE AND NOT ARGS_SIDE_MODULE) 
     list(APPEND emscripten_link_options
-      # We can only do this if a main exists
+      # TODO: We can only do this if a main exists
       #"-sPROXY_TO_PTHREAD=1"  
     )
   endif()
