@@ -57,11 +57,7 @@ function(emscripten_settings)
     DISABLE_NODE
     THREADING_ENABLED
     THREAD_POOL_SIZE
-<<<<<<< HEAD
     MAX_NUMBER_OF_THREADS
-=======
-    MAX_NUMBER_OF_THREADS    
->>>>>>> 3c7203e (fixed threading)
     EMBIND
     ES6_MODULE
     EXPORT_NAME
