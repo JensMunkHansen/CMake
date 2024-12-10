@@ -206,7 +206,7 @@ function(emscripten_settings)
     list(APPEND emscripten_link_options
       "-sMODULARIZE=1"
       "-sEXPORT_ES6=1"
-      "-sEXPORTED_RUNTIME_METHODS=['ENV', 'FS', 'ccall', 'cwrap', 'stringToNewUTF8', 'addFunction']"
+      "-sEXPORTED_RUNTIME_METHODS=['ENV', 'FS', 'ccall', 'cwrap', 'stringToNewUTF8', 'addFunction', 'spawnThread']"
       "-sINCLUDE_FULL_LIBRARY" # for addFunction
       "-sALLOW_TABLE_GROWTH=1"
       "-sALLOW_MEMORY_GROWTH=1"
@@ -281,8 +281,8 @@ function(emscripten_settings)
       "-pthread"
       "-sUSE_PTHREADS=1"
       "-sSHARED_MEMORY=1"
-      "-sPTHREAD_POOL_SIZE_STRICT=${ARGS_THREAD_POOL_SIZE}")
-#      "-sPTHREAD_POOL_SIZE=${ARGS_THREAD_POOL_SIZE}")
+      "-sPTHREAD_POOL_SIZE_STRICT=${ARGS_THREAD_POOL_SIZE}"
+      "-sPTHREAD_POOL_SIZE=${ARGS_THREAD_POOL_SIZE}")
   endif()
 
   # Assign the options list to the specified variable

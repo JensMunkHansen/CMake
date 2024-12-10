@@ -1,5 +1,5 @@
 # Define a reusable function for getting processor count and other hardware info
-function(sps_get_processor_count OUTPUT_VAR MAX_CONCURRENCY_VAR)
+function(sps_get_processor_count MAX_CONCURRENCY_VAR)
   if (UNIX)
     # Execute a system command to get the processor count
     execute_process(COMMAND nproc OUTPUT_VARIABLE PROCESSOR_COUNT OUTPUT_STRIP_TRAILING_WHITESPACE)
@@ -27,6 +27,5 @@ function(sps_get_processor_count OUTPUT_VAR MAX_CONCURRENCY_VAR)
   endif()
 
   # Assign outputs to the provided variables
-  set(${OUTPUT_VAR} ${PROCESSOR_COUNT} PARENT_SCOPE)
   set(${MAX_CONCURRENCY_VAR} ${PROCESSOR_COUNT} PARENT_SCOPE)
 endfunction()
