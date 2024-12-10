@@ -4,7 +4,7 @@ include(spsHardware)
 
 #[==[.rst:
 *********
-EmscriptenSettings
+spsEmscriptenSettings
 *********
 #
 #]==]

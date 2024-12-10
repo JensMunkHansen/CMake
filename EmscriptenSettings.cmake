@@ -1,10 +1,32 @@
-include(Hardware)
+get_filename_component(_EmscriptenSetting_dir "${CMAKE_CURRENT_LIST_FILE}" DIRECTORY)
 
-set(EmscriptenSetting_SCRIPT_DIR ${CMAKE_CURRENT_LIST_DIR})
+include(spsHardware)
 
-function(check_files_for_main FILES HAS_MAIN)
+#[==[.rst:
+*********
+EmscriptenSettings
+*********
+#
+#]==]
+#[==[.rst:
+
+.. cmake:command:: _sps_check_files_for_main
+
+  Conditionally output debug statements
+  |module-internal|
+
+  The :cmake:command:`_sps_check_files_for_main` function is provided to assist in linking. It
+  uses sps_check_files_for_main.py for scanning files for presence of a main functions.
+
+  .. code-block:: cmake
+
+    __sps_check_files_for_main(<files> <ON|OFF>)
+
+  The output is either ON or OFF depending on a main is found for export.
+#]==]
+function(_sps_check_files_for_main FILES HAS_MAIN)
     # Assume the Python script is located in the same directory as this CMake file
-    set(SCRIPT_PATH "${EmscriptenSetting_SCRIPT_DIR}/check_main.py")
+    set(SCRIPT_PATH "${_EmscriptenSetting_dir}/sps_check_for_main.py")
     if (NOT EXISTS ${SCRIPT_PATH})
         message(FATAL_ERROR "Python script not found: ${SCRIPT_PATH}")
     endif()
@@ -25,8 +47,21 @@ function(check_files_for_main FILES HAS_MAIN)
     endforeach()
 endfunction()
 
-# Function to prefix exported functions and format them
-function(prefix_and_format_exports input_list output_variable)
+#[==[.rst:
+
+.. cmake:command:: _sps_prefix_and_format_exports
+
+  Prefix functions for export
+  |module-internal|
+
+  The :cmake:command:`_sps_prefix_and_format_exports` function is provided for prefix functions
+  for export.
+
+  .. code-block:: cmake
+
+    _sps_prefix_and_format_exports input_list(<functions> <prefixed_functions>)
+#]==]
+function(_sps_prefix_and_format_exports input_list output_variable)
     # Prefixed functions list
     set(prefixed_functions)
 
@@ -43,7 +78,11 @@ function(prefix_and_format_exports input_list output_variable)
     set(${output_variable} "${exported_functions_str}" PARENT_SCOPE)
 endfunction()
 
-function(sps_target_info target)
+#[==[.rst:
+
+.. cmake:command:: _sps_target_info
+#]==]
+function(_sps_target_info target)
   # Compile options
   get_target_property(COMPILE_OPTIONS ${target} COMPILE_OPTIONS)
   message("Compile options for target ${target}: ${COMPILE_OPTIONS}")
@@ -66,10 +105,10 @@ function(sps_target_info target)
 endfunction()
 
 #[==[.rst:
-.. cmake:command:: emscripten_settings
+.. cmake:command:: _sps_emscripten_settings
 Set various variables for Emscripten
 .. code-block:: cmake
-emscripten_settings(
+_sps_emscripten_settings(
   TRHEADING_ENABLED             <ON|OFF> (default: OFF)
   THREAD_POOL_SIZE              (default: 4)
   MAX_NUMBER_OF_THREADS         (default: 4, hard limit for runtime threads)
@@ -86,13 +125,8 @@ emscripten_settings(
   EMSCRIPTEN_DEBUG_INFO         <variable>
   EMSCRIPTEN_LINK_OPTIONS       <variable>
   EMSCRIPTEN_OPTIMIZATION_FLAGS <variable>)
-
-We can add more input/output variables. Note, this is not what we like
-for our production code, e.g. the export _DoWork or the fixed number of
-threads.
 #]==]
-
-function(emscripten_settings)
+function(_sps_emscripten_settings)
   # Define the arguments that the function accepts
   set(options
   )  # Boolean options (without ON/OFF).
@@ -349,10 +383,10 @@ function(emscripten_settings)
 endfunction()
 
 #[==[.rst:
-.. cmake:command:: emscripten_module
+.. cmake:command:: sps_emscripten_module
 Create a WASM Emscripten module
 .. code-block:: cmake
-emscripten_module(
+sps_emscripten_module(
   SIDE_MODULE
   MAIN_MODULE
   64_BIT                        <ON|OFF> (default: OFF)
@@ -378,10 +412,7 @@ emscripten_module(
   VERBOSE                       Show stuff)
 
 #]==]
-
-# For unit tests
-
-function(emscripten_module)
+function(sps_emscripten_module)
   # Define the arguments that the function accepts
   set(options SIDE_MODULE MAIN_MODULE VERBOSE DISABLE_NODE 64_BIT)
   set(one_value_args TARGET_NAME ES6_MODULE EMBIND EXPORT_NAME DEBUG OPTIMIZATION THREADING_ENABLED PRE_JS THREAD_POOL_SIZE MAX_NUMBER_OF_THREADS)
@@ -429,7 +460,7 @@ function(emscripten_module)
   set(emscripten_exported_functions)
 
   # Call emscripten_settings with the provided arguments
-  emscripten_settings(
+  _sps_emscripten_settings(
     ES6_MODULE ${ARGS_ES6_MODULE}
     EMBIND ${ARGS_EMBIND}
     EXPORT_NAME ${ARGS_EXPORT_NAME}
@@ -459,7 +490,7 @@ function(emscripten_module)
   endif()
 
   # Check for main
-  check_files_for_main(${ARGS_SOURCE_FILES} TARGET_HAS_MAIN)
+  _sps_check_files_for_main(${ARGS_SOURCE_FILES} TARGET_HAS_MAIN)
   
   if (ARGS_ES6_MODULE STREQUAL "OFF" AND NOT ARGS_SIDE_MODULE)
     # If not an ES6 module and no JavaScript files, we assume it is
@@ -484,7 +515,7 @@ function(emscripten_module)
   endif()
 
   # Prefix and format the exports
-  prefix_and_format_exports(emscripten_exported_functions exported_functions_str)
+  _sps_prefix_and_format_exports(emscripten_exported_functions exported_functions_str)
   
   # Here add the exports
   list(APPEND emscripten_link_options
@@ -556,7 +587,7 @@ function(emscripten_module)
 
   # Display results
   if (ARGS_VERBOSE)
-    sps_target_info(${ARGS_TARGET_NAME})
+    _sps_target_info(${ARGS_TARGET_NAME})
   endif()
 endfunction()
 
