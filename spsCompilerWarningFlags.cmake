@@ -2,7 +2,7 @@
 *********
 spsCompilerWarnings
 *********
-  Compiler warnings for cross-platform builds. Matches the git hooks.
+  Compiler warnings for cross-platform builds. Appends to the interface target sps_build (if present)
 #]==]
 
 # TODO: Enforce synchronization
