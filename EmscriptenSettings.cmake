@@ -43,7 +43,7 @@ function(prefix_and_format_exports input_list output_variable)
     set(${output_variable} "${exported_functions_str}" PARENT_SCOPE)
 endfunction()
 
-function(target_info target)
+function(sps_target_info target)
   # Compile options
   get_target_property(COMPILE_OPTIONS ${target} COMPILE_OPTIONS)
   message("Compile options for target ${target}: ${COMPILE_OPTIONS}")
@@ -262,6 +262,7 @@ function(emscripten_settings)
     list(APPEND emscripten_link_options
       "-sMODULARIZE=1"
       "-sEXPORT_ES6=1"
+      # TODO: Add only spawn thread if there is room for creating new threads (MAX_THREADS - INIT_THREADS) > 0
       "-sEXPORTED_RUNTIME_METHODS=['ENV', 'FS', 'ccall', 'cwrap', 'stringToNewUTF8', 'addFunction', 'spawnThread']"
       "-sINCLUDE_FULL_LIBRARY" # for addFunction
       "-sALLOW_TABLE_GROWTH=1"
@@ -274,7 +275,7 @@ function(emscripten_settings)
     if (ARGS_THREADING_ENABLED STREQUAL "ON")
       if ("${ARGS_DISABLE_NODE}" STREQUAL "ON")      
         list(APPEND emscripten_link_options
-          "-sENVIRONMENT=web,worker" # VTK is not node
+          "-sENVIRONMENT=web,worker"
         )
       else()
         list(APPEND emscripten_link_options
@@ -292,7 +293,7 @@ function(emscripten_settings)
       package-lock.json
     )
     set(PACKAGE_FOUND OFF)
-    # Consider throwing if no package.json exists
+    # TODO: Consider throwing if no package.json exists and we have an ES6 module
     foreach(node_file ${node_files})
       if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${node_file}")
         add_custom_command(
@@ -312,7 +313,7 @@ function(emscripten_settings)
         TARGET ${ARGS_TARGET_NAME}
         POST_BUILD
         COMMAND
-          npm install
+          npm ci
         WORKING_DIRECTORY
           ${CMAKE_CURRENT_BINARY_DIR})
     endif()
@@ -405,11 +406,12 @@ function(emscripten_module)
     set(ARGS_DEBUG "NONE")
   endif()
 
+  # Platform arguments
   if (NOT ARGS_64_BIT)
     set(ARGS_64_BIT OFF)
   endif()
   
-
+  # Threading
   if (ARGS_THREADING_ENABLED STREQUAL "ON")
     find_package(Threads REQUIRED)
   endif()
@@ -419,6 +421,7 @@ function(emscripten_module)
 
   target_link_libraries(${ARGS_TARGET_NAME} PRIVATE ${ARGS_LIBRARIES})
   target_include_directories(${ARGS_TARGET_NAME} PRIVATE ${ARGS_INCLUDE_DIRS})
+
   # Prepare variables for emscripten_settings
   set(emscripten_link_options)
   set(emscripten_optimization_flags)
@@ -449,23 +452,13 @@ function(emscripten_module)
   if (ARGS_SIDE_MODULE)
     list(APPEND emscripten_link_options
       "-sSIDE_MODULE=2")
-  endif()
-
-  # Main modules can link to shared modules, only tested for ANSI-C
-  if (ARGS_MAIN_MODULE)
+  elseif (ARGS_MAIN_MODULE)
     if (ARGS_SIDE_MODULES)
       list(APPEND emscripten_link_options "-sMAIN_MODULE=2" ${ARGS_SIDE_MODULES})
     endif()
   endif()
 
-  # An experiment
-  if (ARGS_ES6_MODULE STREQUAL "ON" AND NOT ARGS_MAIN_MODULE AND NOT ARGS_SIDE_MODULE) 
-    list(APPEND emscripten_link_options
-      # TODO: We can only do this if a main exists
-      #"-sPROXY_TO_PTHREAD=1"  
-    )
-  endif()
-
+  # Check for main
   check_files_for_main(${ARGS_SOURCE_FILES} TARGET_HAS_MAIN)
   
   if (ARGS_ES6_MODULE STREQUAL "OFF" AND NOT ARGS_SIDE_MODULE)
@@ -478,6 +471,8 @@ function(emscripten_module)
     list(APPEND emscripten_exported_functions "main")
     set_target_properties(${ARGS_TARGET_NAME} PROPERTIES SUFFIX ".cjs")
   endif()
+
+  # 64-bit support (experimental)
   if (ARGS_64_BIT STREQUAL "ON")
     list(APPEND emscripten_link_options
       "-sWASM_BIGINT=1"
@@ -497,11 +492,14 @@ function(emscripten_module)
 
   # C++-exceptions
   list(APPEND emscripten_compile_options "-fexceptions")
+
   # Position-independent code
   if (ARGS_SIDE_MODULE OR ARGS_MAIN_MODULE)
     # Shared libraries with WASM
     list(APPEND emscripten_compile_options "-fPIC")
   endif()
+
+  # Threading
   if (ARGS_THREADING_ENABLED STREQUAL "ON")
     target_link_libraries(${ARGS_TARGET_NAME} PRIVATE Threads::Threads)
     list(APPEND emscripten_compile_options "-pthread")
@@ -511,6 +509,7 @@ function(emscripten_module)
     list(APPEND emscripten_link_options
       "-sSUPPORT_LONGJMP=1")
   endif()
+
   # Link and compile options
   target_compile_options(${ARGS_TARGET_NAME}
     PRIVATE
@@ -536,6 +535,7 @@ function(emscripten_module)
     target_compile_definitions(${ARGS_TARGET_NAME} PRIVATE IS_MAIN_MODULE)    
   endif()
 
+  # Initialization JavaScript file
   if (ARGS_PRE_JS)
     target_link_options(${ARGS_TARGET_NAME}
       PRIVATE
@@ -553,13 +553,10 @@ function(emscripten_module)
       "${CMAKE_CURRENT_BINARY_DIR}")
     add_dependencies(${ARGS_TARGET_NAME} ${copyTarget})
   endforeach()
+
+  # Display results
   if (ARGS_VERBOSE)
-    target_info(${ARGS_TARGET_NAME})
-    
-    #message("emscripten_link_options: ${emscripten_link_options}")
-    #message("emscripten_debug_options: ${emscripten_debug_options}")
-    #message("emscripten_optimization_flags: ${emscripten_optimization_flags}")
-    #message("emscripten_compile_options: ${emscripten_compile_options}")
+    sps_target_info(${ARGS_TARGET_NAME})
   endif()
 endfunction()
 
