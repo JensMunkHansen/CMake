@@ -433,6 +433,8 @@ function(emscripten_module)
   if (ARGS_THREADING_ENABLED STREQUAL "ON")
     target_link_libraries(${ARGS_TARGET_NAME} PRIVATE Threads::Threads)
     list(APPEND emscripten_compile_options "-pthread")
+    list(APPEND emscripten_compile_options "-matomics")
+    list(APPEND emscripten_compile_options "-mbulk-memory")
     # TODO: Verify why this is needed
     list(APPEND emscripten_link_options
       "-sSUPPORT_LONGJMP=1")
