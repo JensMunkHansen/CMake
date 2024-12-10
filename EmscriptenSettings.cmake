@@ -299,7 +299,7 @@ function(emscripten_settings)
       "-sUSE_PTHREADS=1"
       "-sSHARED_MEMORY=1"
       "-sPTHREAD_POOL_SIZE_STRICT=${ARGS_THREAD_POOL_SIZE}"
-      "-sPTHREAD_POOL_SIZE_STRICT=${ARGS_MAX_NUMBER_OF_THREADS}"
+      "-sPTHREAD_POOL_SIZE_STRICT=${ARGS_MAX_NUMBER_OF_THREADS}")
   endif()
 
   # Assign the options list to the specified variable
