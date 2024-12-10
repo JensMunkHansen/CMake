@@ -319,7 +319,7 @@ function(emscripten_settings)
       "-pthread"
       "-sUSE_PTHREADS=1"
       "-sSHARED_MEMORY=1"
-      "-sPTHREAD_POOL_SIZE_STRICT=${ARGS_THREAD_POOL_SIZE}"
+      "-sPTHREAD_POOL_SIZE=${ARGS_THREAD_POOL_SIZE}"
       "-sPTHREAD_POOL_SIZE_STRICT=${ARGS_MAX_NUMBER_OF_THREADS}")
   endif()
 
@@ -336,7 +336,7 @@ Create a WASM Emscripten module
 emscripten_module(
   SIDE_MODULE
   MAIN_MODULE
-  64_BIT
+  64_BIT                        <ON|OFF> (default: OFF)
   TARGET_NAME                   <variable>
   SOURCE_FILES                  <list>     (.cxx, .c)
   INCLUDE_DIRS                  <list>
@@ -387,10 +387,15 @@ function(emscripten_module)
     set(ARGS_DEBUG "NONE")
   endif()
 
+  if (NOT ARGS_64_BIT)
+    set(ARGS_64_BIT OFF)
+  endif()
+  
 
   if (ARGS_THREADING_ENABLED STREQUAL "ON")
     find_package(Threads REQUIRED)
   endif()
+
   # Add executable
   add_executable(${ARGS_TARGET_NAME} ${ARGS_SOURCE_FILES})
 
@@ -455,12 +460,12 @@ function(emscripten_module)
     list(APPEND emscripten_exported_functions "main")
     set_target_properties(${ARGS_TARGET_NAME} PROPERTIES SUFFIX ".cjs")
   endif()
-  if (ARGS_64_BIT)
+  if (ARGS_64_BIT STREQUAL "ON")
     list(APPEND emscripten_link_options
       "-sWASM_BIGINT=1"
       "-sMEMORY64=1")
     list(APPEND emscripten_compile_options
-      "-mwasm64"      
+      "-target=wasm64"
       "-sWASM_BIGINT=1"
       "-sMEMORY64=1")
   endif()  
@@ -479,7 +484,7 @@ function(emscripten_module)
     "-sEXPORTED_FUNCTIONS=${exported_functions_str}")
 
   # C++-exceptions
-  set(emscripten_compile_options "-fexceptions")
+  list(APPEND emscripten_compile_options "-fexceptions")
   # Position-independent code
   if (ARGS_SIDE_MODULE OR ARGS_MAIN_MODULE)
     # Shared libraries with WASM
