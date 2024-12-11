@@ -194,14 +194,6 @@ function(_sps_emscripten_settings)
     set(ARGS_MAX_NUMBER_OF_THREADS ${MAX_CONCURRENCY_VAR})
   endif()
   
-  # Default arguments for debug and optimization
-  if (NOT DEFINED ARGS_OPTIMIZATION)
-    set(ARGS_OPTIMIZATION "NONE")
-  endif()
-  if (NOT DEFINED ARGS_DEBUG)
-    set(ARGS_DEBUG "READABLE_JS")
-  endif()
-
   # Define valid options for OPTIMIZATION
   set(valid_optimization_levels NONE LITTLE MORE BEST SMALL SMALLEST SMALLEST_WITH_CLOSURE)
   
