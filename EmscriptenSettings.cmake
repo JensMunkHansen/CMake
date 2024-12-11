@@ -1,6 +1,6 @@
 get_filename_component(_EmscriptenSetting_dir "${CMAKE_CURRENT_LIST_FILE}" DIRECTORY)
 
-include(spsHardware)
+include(Hardware)
 
 #[==[.rst:
 *********
@@ -389,7 +389,6 @@ Create a WASM Emscripten module
 sps_emscripten_module(
   SIDE_MODULE
   MAIN_MODULE
-  64_BIT                        <ON|OFF> (default: OFF)
   TARGET_NAME                   <variable>
   SOURCE_FILES                  <list>     (.cxx, .c)
   INCLUDE_DIRS                  <list>
@@ -414,7 +413,7 @@ sps_emscripten_module(
 #]==]
 function(sps_emscripten_module)
   # Define the arguments that the function accepts
-  set(options SIDE_MODULE MAIN_MODULE VERBOSE DISABLE_NODE 64_BIT)
+  set(options SIDE_MODULE MAIN_MODULE VERBOSE DISABLE_NODE)
   set(one_value_args TARGET_NAME ES6_MODULE EMBIND EXPORT_NAME DEBUG OPTIMIZATION THREADING_ENABLED PRE_JS THREAD_POOL_SIZE MAX_NUMBER_OF_THREADS)
   set(multi_value_args SOURCE_FILES JAVASCRIPT_FILES SIDE_MODULES EXPORTED_FUNCTIONS LIBRARIES INCLUDE_DIRS)
 
@@ -437,11 +436,6 @@ function(sps_emscripten_module)
     set(ARGS_DEBUG "NONE")
   endif()
 
-  # Platform arguments
-  if (NOT ARGS_64_BIT)
-    set(ARGS_64_BIT OFF)
-  endif()
-  
   # Threading
   if (ARGS_THREADING_ENABLED STREQUAL "ON")
     find_package(Threads REQUIRED)
@@ -490,8 +484,6 @@ function(sps_emscripten_module)
   endif()
 
   # Check for main
-  _sps_check_files_for_main(${ARGS_SOURCE_FILES} TARGET_HAS_MAIN)
-  
   if (ARGS_ES6_MODULE STREQUAL "OFF" AND NOT ARGS_SIDE_MODULE)
     # If not an ES6 module and no JavaScript files, we assume it is
     # a file to be executed. Linking to Catch2 requires main
@@ -501,17 +493,6 @@ function(sps_emscripten_module)
   if (TARGET_HAS_MAIN)
     list(APPEND emscripten_exported_functions "main")
     set_target_properties(${ARGS_TARGET_NAME} PROPERTIES SUFFIX ".cjs")
-  endif()
-
-  # 64-bit support (experimental)
-  if (ARGS_64_BIT STREQUAL "ON")
-    list(APPEND emscripten_link_options
-      "-sWASM_BIGINT=1"
-      "-sMEMORY64=1")
-    list(APPEND emscripten_compile_options
-      "-target=wasm64"
-      "-sWASM_BIGINT=1"
-      "-sMEMORY64=1")
   endif()
 
   # Prefix and format the exports
