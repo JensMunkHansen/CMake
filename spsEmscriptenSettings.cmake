@@ -115,6 +115,7 @@ _sps_emscripten_settings(
   EMBIND                        <ON|OFF> (default: OFF)
   ES6_MODULE                    <ON|OFF> (default: ON)
   EXPORT_NAME                   <variable>
+  ENVIRONMENT                   <default: qualified guess>
   OPTIMIZATION                  <NONE, LITTLE, MORE, BEST, SMALL,
                                  SMALLEST, SMALLEST_WITH_CLOSURE> (default: NONE)
   DEBUG                         <NONE, READABLE_JS, PROFILE,
@@ -135,6 +136,7 @@ function(_sps_emscripten_settings)
     THREADING_ENABLED
     THREAD_POOL_SIZE
     MAX_NUMBER_OF_THREADS
+    ENVIRONMENT
     EMBIND
     ES6_MODULE
     EXPORT_NAME
@@ -277,18 +279,12 @@ function(_sps_emscripten_settings)
     "-sDISABLE_EXCEPTION_CATCHING=0"
   )
 
-  # Not possible with optimization - also stuff we depend on!!!
-  if (ARGS_OPTIMIZATION STREQUAL "NONE")
-#    list(APPEND emscripten_link_options
-#      "-sSAFE_HEAP=1")
-  endif()
-  
   # Link to embind
   if (ARGS_EMBIND STREQUAL "ON")
     list(APPEND emscripten_link_options
       "-lembind")
   endif()
-
+  
   # Handle ES6 modules
   if (ARGS_ES6_MODULE STREQUAL "ON")
     list(APPEND emscripten_exported_functions "free")
@@ -306,19 +302,26 @@ function(_sps_emscripten_settings)
       "-sMAXIMUM_MEMORY=${ARGS_MAXIMUM_MEMORY}"
     )
 
-    if (ARGS_THREADING_ENABLED STREQUAL "ON")
-      if ("${ARGS_DISABLE_NODE}" STREQUAL "ON")      
-        list(APPEND emscripten_link_options
-          "-sENVIRONMENT=web,worker"
-        )
+    if (NOT DEFINED ARGS_ENVIRONMENT)
+      if (ARGS_THREADING_ENABLED STREQUAL "ON")
+        if ("${ARGS_DISABLE_NODE}" STREQUAL "ON")      
+          list(APPEND emscripten_link_options
+            "-sENVIRONMENT=web,worker"
+          )
+        else()
+          list(APPEND emscripten_link_options
+            "-sENVIRONMENT=web,node,worker"
+          )
+        endif()
       else()
         list(APPEND emscripten_link_options
-          "-sENVIRONMENT=web,node,worker"
+          "-sENVIRONMENT=web,node"
         )
       endif()
     else()
+      message(FATAL_ERROR "Cheers")
       list(APPEND emscripten_link_options
-        "-sENVIRONMENT=web,node"
+        "-sENVIRONMENT=${ARGS_ENVIRONMENT}"
       )
     endif()
     # Copy package-json
@@ -353,15 +356,21 @@ function(_sps_emscripten_settings)
     endif()
   else()
     # NOT AN ES6 module
-    if (ARGS_THREADING_ENABLED STREQUAL "ON")
-      list(APPEND emscripten_link_options
-        "-sENVIRONMENT=node,worker"
-      )
-      # If we have main function, we can do
-      #"-sPROXY_TO_PTHREAD=1"  # Main thread is now a worker
+    if (NOT DEFINED ARGS_ENVIRONMENT)
+      if (ARGS_THREADING_ENABLED STREQUAL "ON")
+        list(APPEND emscripten_link_options
+          "-sENVIRONMENT=node,worker"
+        )
+        # If we have main function, we can do
+        #"-sPROXY_TO_PTHREAD=1"  # Main thread is now a worker
+      else()
+        list(APPEND emscripten_link_options
+          "-sENVIRONMENT=node"
+        )
+      endif()
     else()
       list(APPEND emscripten_link_options
-        "-sENVIRONMENT=node"
+        "-sENVIRONMENT=web,worker"
       )
     endif()
   endif()
@@ -396,6 +405,7 @@ sps_emscripten_module(
   JAVASCRIPT_FILES              <list>     (copied to outdir)
   DISABLE_NODE
   PRE_JS                        --pre-js
+  ENVIRONMENT                   (default: AUTO)
   TRHEADING_ENABLED             <ON|OFF>   (default: OFF)
   THREAD_POOL_SIZE              (default: 4)
   MAX_NUMBER_OF_THREADS         (default: 4)
@@ -415,7 +425,7 @@ sps_emscripten_module(
 function(sps_emscripten_module)
   # Define the arguments that the function accepts
   set(options SIDE_MODULE MAIN_MODULE VERBOSE DISABLE_NODE 64_BIT)
-  set(one_value_args TARGET_NAME ES6_MODULE EMBIND EXPORT_NAME DEBUG OPTIMIZATION THREADING_ENABLED PRE_JS THREAD_POOL_SIZE MAX_NUMBER_OF_THREADS)
+  set(one_value_args TARGET_NAME ES6_MODULE EMBIND EXPORT_NAME DEBUG OPTIMIZATION THREADING_ENABLED PRE_JS THREAD_POOL_SIZE MAX_NUMBER_OF_THREADS ENVIRONMENT)
   set(multi_value_args SOURCE_FILES JAVASCRIPT_FILES SIDE_MODULES EXPORTED_FUNCTIONS LIBRARIES INCLUDE_DIRS)
 
   # Parse the arguments using cmake_parse_arguments
@@ -459,6 +469,9 @@ function(sps_emscripten_module)
   set(emscripten_debug_options)
   set(emscripten_exported_functions)
 
+  if (NOT DEFINED ARGS_ENVIRONMENT)
+#    message(FATAL_ERROR "DD")
+  endif()
   # Call emscripten_settings with the provided arguments
   _sps_emscripten_settings(
     ES6_MODULE ${ARGS_ES6_MODULE}
@@ -466,6 +479,7 @@ function(sps_emscripten_module)
     EXPORT_NAME ${ARGS_EXPORT_NAME}
     DISABLE_NODE ${ARGS_DISABLE_NODE}
     DEBUG ${ARGS_DEBUG}
+    ENVIRONMENT ${ARGS_ENVIRONMENT}
     THREADING_ENABLED ${ARGS_THREADING_ENABLED}
     THREAD_POOL_SIZE ${ARGS_THREAD_POOL_SIZE}
     MAX_NUMBER_OF_THREADS ${ARGS_MAX_NUMBER_OF_THREADS}
@@ -500,7 +514,7 @@ function(sps_emscripten_module)
 
   if (TARGET_HAS_MAIN)
     list(APPEND emscripten_exported_functions "main")
-    set_target_properties(${ARGS_TARGET_NAME} PROPERTIES SUFFIX ".cjs")
+    #set_target_properties(${ARGS_TARGET_NAME} PROPERTIES SUFFIX ".cjs")
   endif()
 
   # 64-bit support (experimental)
