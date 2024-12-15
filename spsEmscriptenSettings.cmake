@@ -273,7 +273,7 @@ function(_sps_emscripten_settings)
   # Default linker options
   list(APPEND emscripten_link_options
     "-sASSERTIONS=1"
-    "-sERROR_ON_UNDEFINED_SYMBOLS=1"
+    "-sERROR_ON_UNDEFINED_SYMBOLS=0" # WAS 1
     "-sNO_EXIT_RUNTIME=1"
     "-sDISABLE_EXCEPTION_CATCHING=0"
   )
@@ -481,6 +481,7 @@ function(sps_emscripten_module)
   add_executable(${ARGS_TARGET_NAME} ${ARGS_SOURCE_FILES})
 
   target_link_libraries(${ARGS_TARGET_NAME} PRIVATE ${ARGS_LIBRARIES})
+  #target_link_libraries(${ARGS_TARGET_NAME} PUBLIC ${ARGS_LIBRARIES})
   target_include_directories(${ARGS_TARGET_NAME} PRIVATE ${ARGS_INCLUDE_DIRS})
 
   # Prepare variables for emscripten_settings
@@ -524,8 +525,9 @@ function(sps_emscripten_module)
   endif()
 
   # Check for main
-  _sps_check_files_for_main(${ARGS_SOURCE_FILES} TARGET_HAS_MAIN)
-  
+  if (ARGS_SOURCE_FILES)
+    _sps_check_files_for_main(${ARGS_SOURCE_FILES} TARGET_HAS_MAIN)
+  endif()
   if (ARGS_ES6_MODULE STREQUAL "OFF" AND NOT ARGS_SIDE_MODULE)
     # If not an ES6 module and no JavaScript files, we assume it is
     # a file to be executed. Linking to Catch2 requires main
@@ -552,9 +554,16 @@ function(sps_emscripten_module)
   _sps_prefix_and_format_exports(emscripten_exported_functions exported_functions_str)
   
   # Here add the exports
-  list(APPEND emscripten_link_options
-    "-sEXPORTED_FUNCTIONS=${exported_functions_str}")
+#  list(APPEND emscripten_link_options
+#    "-sEXPORTED_FUNCTIONS=${exported_functions_str}")
 
+  # TEST
+  # file(READ "${CMAKE_CURRENT_SOURCE_DIR}/exported_functions.json" EXPORTED_FUNCTIONS_CONTENT)
+  # message(${EXPORTED_FUNCTIONS_CONTENT})
+  # list(APPEND emscripten_link_options
+  #   "-sEXPORTED_FUNCTIONS=${EXPORTED_FUNCTIONS_CONTENT}"
+  #   "-sLINKABLE=1")
+  
   # C++-exceptions
   list(APPEND emscripten_compile_options "-fexceptions")
 
