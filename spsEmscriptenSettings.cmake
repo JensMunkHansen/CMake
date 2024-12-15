@@ -319,7 +319,6 @@ function(_sps_emscripten_settings)
         )
       endif()
     else()
-      message(FATAL_ERROR "Cheers")
       list(APPEND emscripten_link_options
         "-sENVIRONMENT=${ARGS_ENVIRONMENT}"
       )
@@ -350,7 +349,7 @@ function(_sps_emscripten_settings)
         TARGET ${ARGS_TARGET_NAME}
         POST_BUILD
         COMMAND
-          npm ci
+          npm install
         WORKING_DIRECTORY
           ${CMAKE_CURRENT_BINARY_DIR})
     endif()
