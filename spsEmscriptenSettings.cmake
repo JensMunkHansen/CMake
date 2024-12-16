@@ -379,8 +379,9 @@ function(_sps_emscripten_settings)
       "-pthread"
       "-sUSE_PTHREADS=1"
       "-sPTHREAD_POOL_SIZE=${ARGS_THREAD_POOL_SIZE}"
-      "-sPTHREAD_POOL_SIZE_STRICT=${ARGS_MAX_NUMBER_OF_THREADS}")
-    # Bug in Emscripten, we cannot use SHARED_MEMORY on .c files
+      "-sPTHREAD_POOL_SIZE_STRICT=${ARGS_MAX_NUMBER_OF_THREADS}"
+      # Bug in Emscripten, we cannot use SHARED_MEMORY on .c files if em++
+      "-sSHARED_MEMORY=1")
   endif()
 
   # Assign the options list to the specified variable
@@ -468,6 +469,12 @@ function(sps_emscripten_module)
   # Threading
   if (ARGS_THREADING_ENABLED STREQUAL "ON")
     find_package(Threads REQUIRED)
+  endif()
+
+  list(GET ${ARGS_SOURCE_FILES} 0 first_file)
+  get_filename_component(extension ${first_file} EXT)
+  if ("${extension}" STREQUAL ".c")
+    set(CMAKE_C_COMPILER emcc)
   endif()
 
   # Add executable
@@ -559,13 +566,6 @@ function(sps_emscripten_module)
 
   # Threading
   if (ARGS_THREADING_ENABLED STREQUAL "ON")
-    list(GET ${ARGS_SOURCE_FILES} 0 first_file)
-    get_filename_component(extension ${first_file} EXT)
-    if (NOT "${extension}" STREQUAL ".c")
-      list(APPEND emscripten_link_options
-        "-sSHARED_MEMORY=1")
-    endif()
-    
     target_link_libraries(${ARGS_TARGET_NAME} PRIVATE Threads::Threads)
     list(APPEND emscripten_compile_options "-pthread")
     list(APPEND emscripten_compile_options "-matomics")
