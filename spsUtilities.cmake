@@ -14,6 +14,21 @@ function(cmake_dump_variables)
   endforeach()
 endfunction()
 
+function(spsFindVTKModulePath path)
+  set(_vtk_cmake_dir)
+  set(_vtk_cmake_module_paths
+    "${VTK_DIR}/vtkModule.cmake"
+    "${VTK_DIR}/lib/cmake/vtk-${VTK_VERSION_MAJOR}.${VTK_VERSION_MINOR}/vtkModule.cmake"
+    "${VTK_DIR}/lib/cmake/vtk/vtkModule.cmake")
+  foreach (_vtk_cmake_module_path ${_vtk_cmake_module_paths})
+    if (EXISTS ${_vtk_cmake_module_path})
+      get_filename_component(_dir "${_vtk_cmake_module_path}" DIRECTORY)
+      set(_vtk_cmake_dir ${_dir})
+    endif()
+  endforeach()
+  set(${path} ${_vtk_cmake_dir} PARENT_SCOPE)
+endfunction()
+
 # Function to get absolute paths of sources and headers for a target
 function(get_target_files_and_includes target)
     # Get source files
