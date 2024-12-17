@@ -275,7 +275,7 @@ function(_sps_emscripten_settings)
     "-sASSERTIONS=1"
     "-sERROR_ON_UNDEFINED_SYMBOLS=0" # WAS 1
     "-sNO_EXIT_RUNTIME=1"
-    "-sDISABLE_EXCEPTION_CATCHING=0"
+    "-sDISABLE_EXCEPTION_CATCHING=1"
   )
 
   # Link to embind
@@ -573,7 +573,7 @@ function(sps_emscripten_module)
   #   "-sLINKABLE=1")
   
   # C++-exceptions
-  list(APPEND emscripten_compile_options "-fexceptions")
+#  list(APPEND emscripten_compile_options "-fexceptions")
 
   # Position-independent code
   if (ARGS_SIDE_MODULE OR ARGS_MAIN_MODULE)
