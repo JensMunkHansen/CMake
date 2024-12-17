@@ -382,6 +382,14 @@ function(_sps_emscripten_settings)
       "-sPTHREAD_POOL_SIZE_STRICT=${ARGS_MAX_NUMBER_OF_THREADS}"
       # Bug in Emscripten, we cannot use SHARED_MEMORY on .c files if em++
       "-sSHARED_MEMORY=1")
+    list(APPEND emscripten_link_options
+      "-sASYNCIFY_STACK_SIZE=81920" #~297 nesting levels
+      "-sASYNCIFY=1"
+      "-sWASM=1"
+    )
+
+    # Use --preload-file or --embed-file if Needed: If you need to load assets asynchronously, Emscripten can manage preloading with --preload-file
+    
   endif()
 
   # Assign the options list to the specified variable
