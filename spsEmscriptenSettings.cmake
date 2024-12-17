@@ -287,6 +287,9 @@ function(_sps_emscripten_settings)
   
   # Handle ES6 modules
   if (ARGS_ES6_MODULE STREQUAL "ON")
+    if (NOT DEFINED ARGS_EXPORT_NAME)
+      set(ARGS_EXPORT_NAME Module)
+    endif()
     list(APPEND emscripten_exported_functions "free")
     list(APPEND emscripten_exported_functions "malloc")
     list(APPEND emscripten_link_options
