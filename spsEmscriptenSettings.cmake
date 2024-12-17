@@ -444,6 +444,7 @@ function(sps_emscripten_module)
     EMBIND
     EXPORT_NAME
     DEBUG
+    FILE_SYSTEM
     OPTIMIZATION
     THREADING_ENABLED
     PRE_JS
@@ -478,6 +479,9 @@ function(sps_emscripten_module)
   # Platform arguments
   if (NOT ARGS_64_BIT)
     set(ARGS_64_BIT OFF)
+  endif()
+  if (NOT ARGS_FILE_SYSTEM)
+    set(ARGS_FILE_SYSTEM OFF)
   endif()
   
   # Threading
@@ -564,6 +568,11 @@ function(sps_emscripten_module)
       "-sMEMORY64=1")
   endif()
 
+  if (ARGS_FILE_SYSTEM STREQUAL "ON")
+    list(APPEND emscripten_link_options
+      "-sFORCE_FILESYSTEM=1"
+    )
+  endif()
   # Prefix and format the exports
   _sps_prefix_and_format_exports(emscripten_exported_functions exported_functions_str)
   
