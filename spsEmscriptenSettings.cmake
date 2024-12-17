@@ -554,8 +554,8 @@ function(sps_emscripten_module)
   _sps_prefix_and_format_exports(emscripten_exported_functions exported_functions_str)
   
   # Here add the exports
-#  list(APPEND emscripten_link_options
-#    "-sEXPORTED_FUNCTIONS=${exported_functions_str}")
+  list(APPEND emscripten_link_options
+    "-sEXPORTED_FUNCTIONS=${exported_functions_str}")
 
   # TEST
   # file(READ "${CMAKE_CURRENT_SOURCE_DIR}/exported_functions.json" EXPORTED_FUNCTIONS_CONTENT)
