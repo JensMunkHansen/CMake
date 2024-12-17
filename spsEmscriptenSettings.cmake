@@ -276,6 +276,7 @@ function(_sps_emscripten_settings)
     "-sERROR_ON_UNDEFINED_SYMBOLS=0" # WAS 1
     "-sNO_EXIT_RUNTIME=1"
     "-sDISABLE_EXCEPTION_CATCHING=1"
+    "-sALLOW_BLOCKING_ON_MAIN_THREAD=1"    
   )
 
   # Link to embind
@@ -382,12 +383,14 @@ function(_sps_emscripten_settings)
       "-sPTHREAD_POOL_SIZE_STRICT=${ARGS_MAX_NUMBER_OF_THREADS}"
       # Bug in Emscripten, we cannot use SHARED_MEMORY on .c files if em++
       "-sSHARED_MEMORY=1")
-    list(APPEND emscripten_link_options
-      "-sASYNCIFY_STACK_SIZE=81920" #~297 nesting levels
-      "-sASYNCIFY=1"
-      "-sWASM=1"
-    )
-
+    if (0)
+      # Temporarily disabled
+      list(APPEND emscripten_link_options
+        "-sASYNCIFY_STACK_SIZE=81920" #~297 nesting levels
+        "-sASYNCIFY=1"
+        "-sWASM=1"
+      )
+    endif()
     # Use --preload-file or --embed-file if Needed: If you need to load assets asynchronously, Emscripten can manage preloading with --preload-file
     
   endif()
