@@ -285,7 +285,7 @@ function(_sps_emscripten_settings)
   # Default linker options
   list(APPEND emscripten_link_options
     "-sASSERTIONS=1"
-    "-sERROR_ON_UNDEFINED_SYMBOLS=0" # WAS 1
+    "-sERROR_ON_UNDEFINED_SYMBOLS=1" # WAS 1
     "-sDISABLE_EXCEPTION_CATCHING=0" # We use exceptions in C++
     # "-sALLOW_BLOCKING_ON_MAIN_THREAD=1"
   )
@@ -374,15 +374,17 @@ function(_sps_emscripten_settings)
       set(ARGS_EXIT_RUNTIME OFF)
     endif()
 
+    list(APPEND emscripten_link_options
+      "-sALLOW_MEMORY_GROWTH=1"
+      )
     if (ARGS_EXIT_RUNTIME STREQUAL "ON")
       list(APPEND emscripten_link_options
         "-sEXIT_RUNTIME=1")
     else()
       list(APPEND emscripten_link_options
-        "-sNO_EXIT_RUNTIME=1"
-        "-sEXIT_RUNTIME=0")
+        "-sNO_EXIT_RUNTIME=1")
     endif()
-    
+
     # NOT AN ES6 module
     if (NOT DEFINED ARGS_ENVIRONMENT)
       if (ARGS_THREADING_ENABLED STREQUAL "ON")
@@ -562,10 +564,10 @@ function(sps_emscripten_module)
   )
   if (ARGS_ES6_MODULE STREQUAL ON)
     # Runtime methods needed for ES6
-    set(emscripten_exported_runtime_methods "ENV;FS;stringToNewUTF8;addFunction")
+    set(emscripten_exported_runtime_methods "ENV;FS;addFunction")
   endif()
   # Is it okay always to export this???
-  list(APPEND emscripten_exported_runtime_methods "ccall;cwrap")
+  list(APPEND emscripten_exported_runtime_methods "ccall;cwrap;stringToNewUTF8;stringToUTF8")
 
   
   if (ARGS_THREADING_ENABLED STREQUAL "ON")
@@ -624,6 +626,7 @@ function(sps_emscripten_module)
   if (ARGS_ASYNCIFY STREQUAL "ON")
     list(APPEND emscripten_link_options
       "-sASYNCIFY=1"
+      #"-sASYNCIFY_DEBUG=1"
     )
   endif()
 
