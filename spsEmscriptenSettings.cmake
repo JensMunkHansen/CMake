@@ -600,13 +600,12 @@ function(sps_emscripten_module)
       "-sASYNCIFY=1"
     )
   endif()
-  
+  if (ARGS_THREADING_ENABLED STREQUAL "ON")
+    list(APPEND emscripten_exported_runtime_methods "spawnThread")
+  endif()
   # Prefix and format the exports
   _sps_prefix_and_format_exports(emscripten_exported_functions exported_functions_str)
   _sps_format_exports(emscripten_exported_runtime_methods exported_runtime_methods_str)
-  message("HELLO ${emscripten_exported_runtime_methods}")
-  message("HELLO ${emscripten_exported_runtime_methods_str}")
-  #message(FATAL_ERROR "HELLO")
   # Here add the exports
   list(APPEND emscripten_link_options
     "-sEXPORTED_RUNTIME_METHODS=${exported_runtime_methods_str}")
