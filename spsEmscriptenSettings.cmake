@@ -516,8 +516,8 @@ function(sps_emscripten_module)
   # Add executable
   add_executable(${ARGS_TARGET_NAME} ${ARGS_SOURCE_FILES})
 
+  # Link libraries
   target_link_libraries(${ARGS_TARGET_NAME} PRIVATE ${ARGS_LIBRARIES})
-  #target_link_libraries(${ARGS_TARGET_NAME} PUBLIC ${ARGS_LIBRARIES})
   target_include_directories(${ARGS_TARGET_NAME} PRIVATE ${ARGS_INCLUDE_DIRS})
 
   # Prepare variables for emscripten_settings
@@ -525,10 +525,8 @@ function(sps_emscripten_module)
   set(emscripten_optimization_flags)
   set(emscripten_debug_options)
   set(emscripten_exported_functions)
-  set(emscripten_exported_runtime_methods "")
-  if (NOT DEFINED ARGS_ENVIRONMENT)
-#    message(FATAL_ERROR "DD")
-  endif()
+  set(emscripten_exported_runtime_methods)
+
   # Call emscripten_settings with the provided arguments
   _sps_emscripten_settings(
     ES6_MODULE ${ARGS_ES6_MODULE}
@@ -547,7 +545,11 @@ function(sps_emscripten_module)
     EMSCRIPTEN_DEBUG_INFO emscripten_debug_options
   )
   if (ARGS_ES6_MODULE STREQUAL ON)
+    # Runtime methods needed for ES6
     set(emscripten_exported_runtime_methods "ENV;FS;ccall;cwrap;stringToNewUTF8;addFunction")
+  endif()
+  if (ARGS_THREADING_ENABLED STREQUAL "ON")
+    list(APPEND emscripten_exported_runtime_methods "spawnThread")
   endif()
 
   if (ARGS_EXPORTED_FUNCTIONS)
@@ -560,6 +562,8 @@ function(sps_emscripten_module)
   elseif (ARGS_MAIN_MODULE)
     if (ARGS_SIDE_MODULES)
       list(APPEND emscripten_link_options "-sMAIN_MODULE=2" ${ARGS_SIDE_MODULES})
+    else()
+      message(FATAL_ERROR "No side modules (.wasm) specified")
     endif()
   endif()
 
@@ -600,25 +604,17 @@ function(sps_emscripten_module)
       "-sASYNCIFY=1"
     )
   endif()
-  if (ARGS_THREADING_ENABLED STREQUAL "ON")
-    list(APPEND emscripten_exported_runtime_methods "spawnThread")
-  endif()
+
   # Prefix and format the exports
   _sps_prefix_and_format_exports(emscripten_exported_functions exported_functions_str)
   _sps_format_exports(emscripten_exported_runtime_methods exported_runtime_methods_str)
+
   # Here add the exports
   list(APPEND emscripten_link_options
     "-sEXPORTED_RUNTIME_METHODS=${exported_runtime_methods_str}")
   list(APPEND emscripten_link_options
     "-sEXPORTED_FUNCTIONS=${exported_functions_str}")
 
-  # TEST
-  # file(READ "${CMAKE_CURRENT_SOURCE_DIR}/exported_functions.json" EXPORTED_FUNCTIONS_CONTENT)
-  # message(${EXPORTED_FUNCTIONS_CONTENT})
-  # list(APPEND emscripten_link_options
-  #   "-sEXPORTED_FUNCTIONS=${EXPORTED_FUNCTIONS_CONTENT}"
-  #   "-sLINKABLE=1")
-  
   # C++-exceptions (allow them)
   list(APPEND emscripten_compile_options "-fexceptions")
 
