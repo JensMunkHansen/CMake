@@ -295,6 +295,37 @@ function(_sps_emscripten_settings)
     list(APPEND emscripten_link_options
       "-lembind")
   endif()
+
+  # Copy package-json
+  set(node_files
+    package.json
+    package-lock.json
+  )
+  set(PACKAGE_FOUND OFF)
+  # TODO: Consider throwing if no package.json exists and we have an ES6 module
+  foreach(node_file ${node_files})
+    if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${node_file}")
+      add_custom_command(
+        TARGET ${ARGS_TARGET_NAME}
+        POST_BUILD
+        COMMAND
+        ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/${node_file}"
+        "${CMAKE_CURRENT_BINARY_DIR}")
+      set(PACKAGE_FOUND ON)
+    endif()
+  endforeach()
+
+  if (PACKAGE_FOUND)
+    # Install npm
+    add_custom_command(
+      TARGET ${ARGS_TARGET_NAME}
+      POST_BUILD
+      COMMAND
+        npm install
+      WORKING_DIRECTORY
+        ${CMAKE_CURRENT_BINARY_DIR})
+  endif()
   
   # Handle ES6 modules
   if (ARGS_ES6_MODULE STREQUAL "ON")
@@ -339,36 +370,10 @@ function(_sps_emscripten_settings)
         "-sENVIRONMENT=${ARGS_ENVIRONMENT}"
       )
     endif()
-    # Copy package-json
-    set(node_files
-      package.json
-      package-lock.json
-    )
-    set(PACKAGE_FOUND OFF)
-    # TODO: Consider throwing if no package.json exists and we have an ES6 module
-    foreach(node_file ${node_files})
-      if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${node_file}")
-        add_custom_command(
-          TARGET ${ARGS_TARGET_NAME}
-          POST_BUILD
-          COMMAND
-          ${CMAKE_COMMAND} -E copy_if_different
-          "${CMAKE_CURRENT_SOURCE_DIR}/${node_file}"
-          "${CMAKE_CURRENT_BINARY_DIR}")
-        set(PACKAGE_FOUND ON)
-      endif()
-    endforeach()
-
-    if (PACKAGE_FOUND)
-      # Install npm
-      add_custom_command(
-        TARGET ${ARGS_TARGET_NAME}
-        POST_BUILD
-        COMMAND
-          npm install
-        WORKING_DIRECTORY
-          ${CMAKE_CURRENT_BINARY_DIR})
+    if (NOT PACKAGE_FOUND)
+      message("Warning: No package.json found")
     endif()
+    
   else()
     if (NOT ARGS_EXIT_RUNTIME)
       set(ARGS_EXIT_RUNTIME OFF)
