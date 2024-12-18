@@ -286,7 +286,6 @@ function(_sps_emscripten_settings)
   list(APPEND emscripten_link_options
     "-sASSERTIONS=1"
     "-sERROR_ON_UNDEFINED_SYMBOLS=0" # WAS 1
-    "-sNO_EXIT_RUNTIME=1"
     "-sDISABLE_EXCEPTION_CATCHING=0" # We use exceptions in C++
     # "-sALLOW_BLOCKING_ON_MAIN_THREAD=1"
   )
@@ -299,6 +298,9 @@ function(_sps_emscripten_settings)
   
   # Handle ES6 modules
   if (ARGS_ES6_MODULE STREQUAL "ON")
+    # We always do this for ES6 modules
+    list(APPEND emscripten_link_options
+      "-sNO_EXIT_RUNTIME=1")
     if (NOT DEFINED ARGS_EXPORT_NAME)
       set(ARGS_EXPORT_NAME Module)
     endif()
@@ -368,6 +370,19 @@ function(_sps_emscripten_settings)
           ${CMAKE_CURRENT_BINARY_DIR})
     endif()
   else()
+    if (NOT ARGS_EXIT_RUNTIME)
+      set(ARGS_EXIT_RUNTIME OFF)
+    endif()
+
+    if (ARGS_EXIT_RUNTIME STREQUAL "ON")
+      list(APPEND emscripten_link_options
+        "-sEXIT_RUNTIME=1")
+    else()
+      list(APPEND emscripten_link_options
+        "-sNO_EXIT_RUNTIME=1"
+        "-sEXIT_RUNTIME=0")
+    endif()
+    
     # NOT AN ES6 module
     if (NOT DEFINED ARGS_ENVIRONMENT)
       if (ARGS_THREADING_ENABLED STREQUAL "ON")
@@ -455,6 +470,7 @@ function(sps_emscripten_module)
     ES6_MODULE
     ASYNCIFY
     EMBIND
+    EXIT_RUNTIME
     EXPORT_NAME
     DEBUG
     FILE_SYSTEM
@@ -546,8 +562,12 @@ function(sps_emscripten_module)
   )
   if (ARGS_ES6_MODULE STREQUAL ON)
     # Runtime methods needed for ES6
-    set(emscripten_exported_runtime_methods "ENV;FS;ccall;cwrap;stringToNewUTF8;addFunction")
+    set(emscripten_exported_runtime_methods "ENV;FS;stringToNewUTF8;addFunction")
   endif()
+  # Is it okay always to export this???
+  list(APPEND emscripten_exported_runtime_methods "ccall;cwrap")
+
+  
   if (ARGS_THREADING_ENABLED STREQUAL "ON")
     list(APPEND emscripten_exported_runtime_methods "spawnThread")
   endif()
@@ -574,12 +594,13 @@ function(sps_emscripten_module)
   if (ARGS_ES6_MODULE STREQUAL "OFF" AND NOT ARGS_SIDE_MODULE)
     # If not an ES6 module and no JavaScript files, we assume it is
     # a file to be executed. Linking to Catch2 requires main
-    set(TARGET_HAS_MAIN ON)
+    #set(TARGET_HAS_MAIN ON)
   endif()
 
   if (TARGET_HAS_MAIN)
     list(APPEND emscripten_exported_functions "main")
     set_target_properties(${ARGS_TARGET_NAME} PROPERTIES SUFFIX ".cjs")
+    list(APPEND emscripten_exported_runtime_methods "callMain")
   endif()
 
   # 64-bit support (experimental)
@@ -597,6 +618,7 @@ function(sps_emscripten_module)
     list(APPEND emscripten_link_options
       "-sFORCE_FILESYSTEM=1"
     )
+    list(APPEND emscripten_exported_runtime_methods "FS")
   endif()
 
   if (ARGS_ASYNCIFY STREQUAL "ON")
@@ -616,7 +638,16 @@ function(sps_emscripten_module)
     "-sEXPORTED_FUNCTIONS=${exported_functions_str}")
 
   # C++-exceptions (allow them)
-  list(APPEND emscripten_compile_options "-fexceptions")
+  if (ARGS_SOURCE_FILES)
+    list(GET ${ARGS_SOURCE_FILES} 0 first_file)
+    get_filename_component(extension ${first_file} EXT)
+    if (NOT "${extension}" STREQUAL ".c")
+      list(APPEND emscripten_compile_options "-fexceptions")
+    endif()
+  else()
+    list(APPEND emscripten_compile_options "-fexceptions")
+  endif()
+  
 
   # Position-independent code
   if (ARGS_SIDE_MODULE OR ARGS_MAIN_MODULE)
