@@ -489,10 +489,12 @@ function(sps_emscripten_module)
     find_package(Threads REQUIRED)
   endif()
 
-  list(GET ${ARGS_SOURCE_FILES} 0 first_file)
-  get_filename_component(extension ${first_file} EXT)
-  if ("${extension}" STREQUAL ".c")
-    set(CMAKE_C_COMPILER emcc)
+  if (ARGS_SOURCE_FILES)
+    list(GET ${ARGS_SOURCE_FILES} 0 first_file)
+    get_filename_component(extension ${first_file} EXT)
+    if ("${extension}" STREQUAL ".c")
+      set(CMAKE_C_COMPILER emcc)
+    endif()
   endif()
 
   # Add executable
