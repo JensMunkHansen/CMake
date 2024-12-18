@@ -284,7 +284,6 @@ function(_sps_emscripten_settings)
 
   # Default linker options
   list(APPEND emscripten_link_options
-    "-sASSERTIONS=1"
     "-sERROR_ON_UNDEFINED_SYMBOLS=1" # WAS 1
     "-sDISABLE_EXCEPTION_CATCHING=0" # We use exceptions in C++
     # "-sALLOW_BLOCKING_ON_MAIN_THREAD=1"
