@@ -484,6 +484,7 @@ function(sps_emscripten_module)
     THREADING_ENABLED
     PRE_JS
     THREAD_POOL_SIZE
+    EXTRA_LINK_ARGS    
     MAX_NUMBER_OF_THREADS
     ENVIRONMENT)
   set(multi_value_args SOURCE_FILES JAVASCRIPT_FILES SIDE_MODULES EXPORTED_FUNCTIONS LIBRARIES INCLUDE_DIRS)
@@ -673,6 +674,10 @@ function(sps_emscripten_module)
       "-sSUPPORT_LONGJMP=1")
   endif()
 
+  if (ARGS_EXTRA_LINK_ARGS)
+    list(APPEND emscripten_link_options
+      "${ARGS_EXTRA_LINK_ARGS}")
+  endif()
   # Link and compile options
   target_compile_options(${ARGS_TARGET_NAME}
     PRIVATE
