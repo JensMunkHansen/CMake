@@ -78,6 +78,17 @@ function(_sps_prefix_and_format_exports input_list output_variable)
     set(${output_variable} "${exported_functions_str}" PARENT_SCOPE)
 endfunction()
 
+function(_sps_format_exports input_list output_variable)
+  # Convert the list to a comma-separated string and wrap in square brackets
+  set(prefixed_functions)
+  foreach(func IN LISTS ${input_list})
+    list(APPEND prefixed_functions "'${func}'")
+  endforeach()
+  string(REPLACE ";" "," exported_functions_comma "${prefixed_functions}")
+  string(CONCAT exported_functions_str "[" "${exported_functions_comma}" "]")
+  set(${output_variable} "${exported_functions_str}" PARENT_SCOPE)
+endfunction()
+
 #[==[.rst:
 
 .. cmake:command:: _sps_target_info
@@ -225,6 +236,7 @@ function(_sps_emscripten_settings)
   set(emscripten_debug_options)
   set(emscripten_link_options)
   set(emscripten_exported_functions)
+  set(emscripten_exported_runtime_methods)
   set(emscripten_optimization_flags)
 
   # Set the optimization flags based on OPTIMIZATION value
@@ -276,7 +288,7 @@ function(_sps_emscripten_settings)
     "-sERROR_ON_UNDEFINED_SYMBOLS=0" # WAS 1
     "-sNO_EXIT_RUNTIME=1"
     "-sDISABLE_EXCEPTION_CATCHING=0" # We use exceptions in C++
-    "-sALLOW_BLOCKING_ON_MAIN_THREAD=1"
+    # "-sALLOW_BLOCKING_ON_MAIN_THREAD=1"
   )
 
   # Link to embind
@@ -296,7 +308,6 @@ function(_sps_emscripten_settings)
       "-sMODULARIZE=1"
       "-sEXPORT_ES6=1"
       # TODO: Add only spawn thread if there is room for creating new threads (MAX_THREADS - INIT_THREADS) > 0
-      "-sEXPORTED_RUNTIME_METHODS=['ENV', 'FS', 'ccall', 'cwrap', 'stringToNewUTF8', 'addFunction', 'spawnThread']"
       "-sINCLUDE_FULL_LIBRARY" # for addFunction
       "-sALLOW_TABLE_GROWTH=1"
       "-sALLOW_MEMORY_GROWTH=1"
@@ -376,6 +387,7 @@ function(_sps_emscripten_settings)
       )
     endif()
   endif()
+
   list(APPEND emscripten_exported_functions "printf")
 
   if (ARGS_THREADING_ENABLED STREQUAL "ON")
@@ -441,6 +453,7 @@ function(sps_emscripten_module)
   set(one_value_args
     TARGET_NAME
     ES6_MODULE
+    ASYNCIFY
     EMBIND
     EXPORT_NAME
     DEBUG
@@ -483,6 +496,9 @@ function(sps_emscripten_module)
   if (NOT ARGS_FILE_SYSTEM)
     set(ARGS_FILE_SYSTEM OFF)
   endif()
+  if (NOT ARGS_ASYNCIFY)
+    set(ARGS_ASYNCIFY OFF)
+  endif()
   
   # Threading
   if (ARGS_THREADING_ENABLED STREQUAL "ON")
@@ -509,7 +525,7 @@ function(sps_emscripten_module)
   set(emscripten_optimization_flags)
   set(emscripten_debug_options)
   set(emscripten_exported_functions)
-
+  set(emscripten_exported_runtime_methods "")
   if (NOT DEFINED ARGS_ENVIRONMENT)
 #    message(FATAL_ERROR "DD")
   endif()
@@ -530,6 +546,9 @@ function(sps_emscripten_module)
     EMSCRIPTEN_OPTIMIZATION_FLAGS emscripten_optimization_flags
     EMSCRIPTEN_DEBUG_INFO emscripten_debug_options
   )
+  if (ARGS_ES6_MODULE STREQUAL ON)
+    set(emscripten_exported_runtime_methods "ENV;FS;ccall;cwrap;stringToNewUTF8;addFunction")
+  endif()
 
   if (ARGS_EXPORTED_FUNCTIONS)
     list(APPEND emscripten_exported_functions ${ARGS_EXPORTED_FUNCTIONS})
@@ -575,10 +594,22 @@ function(sps_emscripten_module)
       "-sFORCE_FILESYSTEM=1"
     )
   endif()
+
+  if (ARGS_ASYNCIFY STREQUAL "ON")
+    list(APPEND emscripten_link_options
+      "-sASYNCIFY=1"
+    )
+  endif()
+  
   # Prefix and format the exports
   _sps_prefix_and_format_exports(emscripten_exported_functions exported_functions_str)
-  
+  _sps_format_exports(emscripten_exported_runtime_methods exported_runtime_methods_str)
+  message("HELLO ${emscripten_exported_runtime_methods}")
+  message("HELLO ${emscripten_exported_runtime_methods_str}")
+  #message(FATAL_ERROR "HELLO")
   # Here add the exports
+  list(APPEND emscripten_link_options
+    "-sEXPORTED_RUNTIME_METHODS=${exported_runtime_methods_str}")
   list(APPEND emscripten_link_options
     "-sEXPORTED_FUNCTIONS=${exported_functions_str}")
 
