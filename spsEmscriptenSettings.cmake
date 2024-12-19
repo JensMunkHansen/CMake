@@ -60,6 +60,8 @@ function(sps_target_compile_flags target)
         message(FATAL_ERROR "The 'sps_target_compile_flags' function requires a target.")
     endif()
 
+    # TODO: -Wno-pthreads-mem-growth
+    
     # Process the rest of the arguments as key-value pairs
     set(options) # Define valid keys
     set(one_value_args THREADING_ENABLED OPTIMIZATION DEBUG) # Mark keys as single-value arguments
@@ -436,7 +438,7 @@ function(_sps_emscripten_settings)
       "-sEXPORT_ES6=1"
       "-sINCLUDE_FULL_LIBRARY" # for addFunction
       "-sALLOW_TABLE_GROWTH=1"
-      "-sALLOW_MEMORY_GROWTH=1"
+      "-sALLOW_MEMORY_GROWTH=0"
       "-sEXPORT_NAME=${ARGS_EXPORT_NAME}"
       "-sINITIAL_MEMORY=${ARGS_INITIAL_MEMORY}"
       "-sMAXIMUM_MEMORY=${ARGS_MAXIMUM_MEMORY}"
