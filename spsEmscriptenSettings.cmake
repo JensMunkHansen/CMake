@@ -2,12 +2,93 @@ get_filename_component(_EmscriptenSetting_dir "${CMAKE_CURRENT_LIST_FILE}" DIREC
 
 include(spsHardware)
 
+find_package(Threads REQUIRED)
+
 #[==[.rst:
 *********
 spsEmscriptenSettings
 *********
 #
 #]==]
+
+# Function to set Emscripten optimization flags
+function(sps_set_emscripten_optimization_flags optimization_level optimization_flags link_options)
+    if (${optimization_level} STREQUAL "NONE")
+        set(${optimization_flags} "-O0" PARENT_SCOPE)
+    elseif (${optimization_level} STREQUAL "LITTLE")
+        set(${optimization_flags} "-O1" PARENT_SCOPE)
+    elseif (${optimization_level} STREQUAL "MORE")
+        set(${optimization_flags} "-O2" PARENT_SCOPE)
+    elseif (${optimization_level} STREQUAL "BEST")
+        set(${optimization_flags} "-O3" PARENT_SCOPE)
+    elseif (${optimization_level} STREQUAL "SMALL")
+        set(${optimization_flags} "-Os" PARENT_SCOPE)
+    elseif (${optimization_level} STREQUAL "SMALLEST")
+        set(${optimization_flags} "-Oz" PARENT_SCOPE)
+    elseif (${optimization_level} STREQUAL "SMALLEST_WITH_CLOSURE")
+        set(${optimization_flags} "-Oz" PARENT_SCOPE)
+        list(APPEND ${link_options} "--closure 1")
+        set(${link_options} "${${link_options}}" PARENT_SCOPE)
+    endif()
+endfunction()
+
+
+#[==[.rst:
+
+.. cmake:command:: sps_target_compile_flags
+
+  Conditionally output debug statements
+  |module-internal|
+
+  The :cmake:command:`sps_target_compile_flags` function is provided to assist in compiling WASM
+
+  .. code-block:: cmake
+    sps_target_compile_flags(TARGET
+      TRHEADING_ENABLED             <ON|OFF> (default: OFF)
+      OPTIMIZATION                  <NONE, LITTLE, MORE, BEST, SMALL,
+                                     SMALLEST, SMALLEST_WITH_CLOSURE> (default: NONE)
+      DEBUG                         <NONE, READABLE_JS, PROFILE,
+                                     DEBUG_NATIVE> (default: READABLE_JS)
+    )
+#]==]
+
+# Ensure at least one argument (the target) is passed
+function(sps_target_compile_flags target)
+    if (NOT target)
+        message(FATAL_ERROR "The 'sps_target_compile_flags' function requires a target.")
+    endif()
+
+    # Process the rest of the arguments as key-value pairs
+    set(options) # Define valid keys
+    set(one_value_args THREADING_ENABLED OPTIMIZATION DEBUG) # Mark keys as single-value arguments
+    cmake_parse_arguments(ARGS "" "${options}" "${one_value_args}" ${ARGN})
+
+    if(ARGS_UNPARSED_ARGUMENTS)
+      message(FATAL_ERROR "Unknown arguments: ${ARGS_UNPARSED_ARGUMENTS}")
+    endif()
+
+    if (EMSCRIPTEN)
+      # Apply the THREADING option, if specified
+      if (ARGS_THREADING_ENABLED)
+        if (ARGS_THREADING_ENABLED STREQUAL "ON")
+      	  target_link_libraries(${target} PRIVATE Threads::Threads)
+      	  target_compile_options(${target} PRIVATE 
+      	    -matomics 
+      	    -mbulk-memory)  
+        endif()
+      endif()
+      if (ARGS_OPTIMIZATION)
+	if (ARGS_OPTIMIZATION STREQUAL "ON")
+	  set(emscripten_optimization_flags)
+	  set(emscripten_link_options)
+	  sps_set_emscripten_optimization_flags(${ARGS_OPTIMIZATION} emscripten_optimization_flags emscripten_link_options)
+      	  target_compile_options(${target} PRIVATE 
+      	    ${emscripten_optimization_flags})
+	endif()
+      endif()
+    endif()
+endfunction()
+
 #[==[.rst:
 
 .. cmake:command:: _sps_check_files_for_main
@@ -239,27 +320,31 @@ function(_sps_emscripten_settings)
   set(emscripten_exported_runtime_methods)
   set(emscripten_optimization_flags)
 
-  # Set the optimization flags based on OPTIMIZATION value
-  if (ARGS_OPTIMIZATION STREQUAL "NONE")
-    set(emscripten_optimization_flags "-O0")
-  elseif (ARGS_OPTIMIZATION STREQUAL "LITTLE")
-    set(emscripten_optimization_flags "-O1")
-  elseif (ARGS_OPTIMIZATION STREQUAL "MORE")
-    set(emscripten_optimization_flags "-O2")
-  elseif(ARGS_OPTIMIZATION STREQUAL "BEST")
-    list(APPEND emscripten_optimization_flags
-      "-O3")
-  elseif(ARGS_OPTIMIZATION STREQUAL "SMALL")
-    list(APPEND emscripten_optimization_flags
-      "-Os")
-  elseif(ARGS_OPTIMIZATION STREQUAL "SMALLEST")
-    list(APPEND emscripten_optimization_flags
-      "-Oz")
-  elseif(ARGS_OPTIMIZATION STREQUAL "SMALLEST_WITH_CLOSURE")
-    list(APPEND emscripten_optimization_flags
-      "-Oz")
-    list(APPEND emscripten_link_options
-      "--closure 1")
+  if (0)
+    # Set the optimization flags based on OPTIMIZATION value
+    if (ARGS_OPTIMIZATION STREQUAL "NONE")
+      set(emscripten_optimization_flags "-O0")
+    elseif (ARGS_OPTIMIZATION STREQUAL "LITTLE")
+      set(emscripten_optimization_flags "-O1")
+    elseif (ARGS_OPTIMIZATION STREQUAL "MORE")
+      set(emscripten_optimization_flags "-O2")
+    elseif(ARGS_OPTIMIZATION STREQUAL "BEST")
+      list(APPEND emscripten_optimization_flags
+        "-O3")
+    elseif(ARGS_OPTIMIZATION STREQUAL "SMALL")
+      list(APPEND emscripten_optimization_flags
+        "-Os")
+    elseif(ARGS_OPTIMIZATION STREQUAL "SMALLEST")
+      list(APPEND emscripten_optimization_flags
+        "-Oz")
+    elseif(ARGS_OPTIMIZATION STREQUAL "SMALLEST_WITH_CLOSURE")
+      list(APPEND emscripten_optimization_flags
+        "-Oz")
+      list(APPEND emscripten_link_options
+        "--closure 1")
+    endif()
+  else()
+    sps_set_emscripten_optimization_flags(${ARGS_OPTIMIZATION} emscripten_optimization_flags emscripten_link_options)
   endif()
 
   # Set the debug flags based on DEBUG value
