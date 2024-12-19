@@ -356,6 +356,8 @@ function(_sps_emscripten_settings)
     list(APPEND emscripten_debug_options
       "-g0")
   elseif(ARGS_DEBUG STREQUAL "READABLE_JS")
+    list(APPEND emscripten_link_options
+      "-sASSERTIONS=1") # Deadlocks without it????
     list(APPEND emscripten_debug_options
       "-g1")
   elseif(ARGS_DEBUG STREQUAL "PROFILE")
@@ -373,9 +375,9 @@ function(_sps_emscripten_settings)
 
   # Default linker options
   list(APPEND emscripten_link_options
-    "-sERROR_ON_UNDEFINED_SYMBOLS=1" # WAS 1
+    "-sERROR_ON_UNDEFINED_SYMBOLS=0" # 0 for bindings project
     "-sDISABLE_EXCEPTION_CATCHING=0" # We use exceptions in C++
-    # "-sALLOW_BLOCKING_ON_MAIN_THREAD=1"
+    "-sALLOW_BLOCKING_ON_MAIN_THREAD=1" # 1 for bindings project
   )
 
   # Link to embind
@@ -428,7 +430,6 @@ function(_sps_emscripten_settings)
     list(APPEND emscripten_link_options
       "-sMODULARIZE=1"
       "-sEXPORT_ES6=1"
-      # TODO: Add only spawn thread if there is room for creating new threads (MAX_THREADS - INIT_THREADS) > 0
       "-sINCLUDE_FULL_LIBRARY" # for addFunction
       "-sALLOW_TABLE_GROWTH=1"
       "-sALLOW_MEMORY_GROWTH=1"
@@ -506,7 +507,6 @@ function(_sps_emscripten_settings)
       "-sUSE_PTHREADS=1"
       "-sPTHREAD_POOL_SIZE=${ARGS_THREAD_POOL_SIZE}"
       "-sPTHREAD_POOL_SIZE_STRICT=${ARGS_MAX_NUMBER_OF_THREADS}"
-      "-sDEFAULT_PTHREAD_STACK_SIZE=524288"
       # Bug in Emscripten, we cannot use SHARED_MEMORY on .c files if em++
       "-sSHARED_MEMORY=1")
     if (0)
@@ -662,11 +662,11 @@ function(sps_emscripten_module)
     set(emscripten_exported_runtime_methods "ENV;FS;addFunction")
   endif()
   # Is it okay always to export this???
-  list(APPEND emscripten_exported_runtime_methods "ccall;cwrap;stringToNewUTF8;stringToUTF8")
+  list(APPEND emscripten_exported_runtime_methods "ccall;cwrap;stringToNewUTF8")
 
   
   if (ARGS_THREADING_ENABLED STREQUAL "ON")
-    # list(APPEND emscripten_exported_runtime_methods "spawnThread")
+    list(APPEND emscripten_exported_runtime_methods "spawnThread")
   endif()
 
   if (ARGS_EXPORTED_FUNCTIONS)
