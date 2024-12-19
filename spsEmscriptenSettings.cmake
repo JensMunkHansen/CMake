@@ -493,7 +493,7 @@ function(sps_emscripten_module)
   cmake_parse_arguments(ARGS "${options}" "${one_value_args}" "${multi_value_args}" ${ARGV})
 
   if(ARGS_UNPARSED_ARGUMENTS)
-    message(FATAL_ERROR "Unknown arguments: ${PARSE_ARG_UNPARSED_ARGUMENTS}")
+    message(FATAL_ERROR "Unknown arguments: ${ARGS_UNPARSED_ARGUMENTS}")
   endif()
   
   # Validate required arguments
@@ -728,3 +728,14 @@ function(sps_emscripten_module)
   endif()
 endfunction()
 
+function(sps_wasm_compile_flags)
+  set(options)
+  set(one_value_args
+    TARGET_NAME
+    THREADING_ENABLED)
+  set(multi_value_args)
+
+  # Parse the arguments using cmake_parse_arguments
+  cmake_parse_arguments(ARGS "${options}" "${one_value_args}" "${multi_value_args}" ${ARGV})
+  
+endfunction()
