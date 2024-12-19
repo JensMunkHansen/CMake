@@ -71,16 +71,15 @@ function(sps_target_compile_flags target)
       # Apply the THREADING option, if specified
       if (ARGS_THREADING_ENABLED)
         if (ARGS_THREADING_ENABLED STREQUAL "ON")
-      	  target_link_libraries(${target} PRIVATE Threads::Threads)
-      	  target_compile_options(${target} PRIVATE
+      	  #target_link_libraries(${target} PRIVATE Threads::Threads)
+      	  target_compile_options(${target} PUBLIC
 	    -pthread
       	    -matomics 
-      	    -mbulk-memory)  
+      	    -mbulk-memory)
         endif()
       endif()
       if (ARGS_OPTIMIZATION)
 	if (ARGS_OPTIMIZATION STREQUAL "ON")
-	  message(FATAL_ERROR "FATAL")
 	  set(emscripten_optimization_flags)
 	  set(emscripten_link_options)
 	  sps_set_emscripten_optimization_flags(${ARGS_OPTIMIZATION} emscripten_optimization_flags emscripten_link_options)
@@ -504,6 +503,7 @@ function(_sps_emscripten_settings)
       "-sUSE_PTHREADS=1"
       "-sPTHREAD_POOL_SIZE=${ARGS_THREAD_POOL_SIZE}"
       "-sPTHREAD_POOL_SIZE_STRICT=${ARGS_MAX_NUMBER_OF_THREADS}"
+      "-sDEFAULT_PTHREAD_STACK_SIZE=524288"
       # Bug in Emscripten, we cannot use SHARED_MEMORY on .c files if em++
       "-sSHARED_MEMORY=1")
     if (0)
@@ -815,14 +815,36 @@ function(sps_emscripten_module)
   endif()
 endfunction()
 
-function(sps_wasm_compile_flags)
-  set(options)
-  set(one_value_args
-    TARGET_NAME
-    THREADING_ENABLED)
-  set(multi_value_args)
+function(print_target_details target)
+    message(STATUS "Target: ${target}")
 
-  # Parse the arguments using cmake_parse_arguments
-  cmake_parse_arguments(ARGS "${options}" "${one_value_args}" "${multi_value_args}" ${ARGV})
-  
+    # Get linked libraries
+    get_target_property(LINKED_LIBRARIES ${target} LINK_LIBRARIES)
+    if (LINKED_LIBRARIES)
+        message(STATUS "Linked Libraries: ${LINKED_LIBRARIES}")
+        foreach(lib ${LINKED_LIBRARIES})
+            # Print details of each linked library
+            print_target_details(${lib})
+        endforeach()
+    else()
+        message(STATUS "No linked libraries for ${target}")
+    endif()
+
+    # Get compile flags
+    get_target_property(COMPILE_FLAGS ${target} COMPILE_FLAGS)
+    get_target_property(COMPILE_OPTIONS ${target} COMPILE_OPTIONS)
+    if (COMPILE_FLAGS)
+        message(STATUS "Compile Flags: ${COMPILE_FLAGS}")
+    else()
+        message(STATUS "No compile flags for ${target}")
+    endif()
+
+    if (COMPILE_OPTIONS)
+        message(STATUS "Compile Options: ${COMPILE_OPTIONS}")
+    else()
+        message(STATUS "No compile options for ${target}")
+    endif()
 endfunction()
+
+# Example usage
+
