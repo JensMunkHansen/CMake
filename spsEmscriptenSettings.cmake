@@ -221,6 +221,9 @@ _sps_emscripten_settings(
   EMSCRIPTEN_OPTIMIZATION_FLAGS <variable>)
 #]==]
 function(_sps_emscripten_settings)
+
+  #-sALLOW_MEMORY_GROWTH=0 -sTOTAL_MEMORY=64MB
+  
   # Define the arguments that the function accepts
   set(options)  # Boolean options (without ON/OFF).
   set(one_value_args
@@ -756,6 +759,7 @@ function(sps_emscripten_module)
     list(APPEND emscripten_compile_options "-pthread")
     list(APPEND emscripten_compile_options "-matomics")
     list(APPEND emscripten_compile_options "-mbulk-memory")
+    list(APPEND emscripten_compile_options "-msimd128")
     # TODO: Verify why this is needed
     list(APPEND emscripten_link_options
       "-sSUPPORT_LONGJMP=1")
