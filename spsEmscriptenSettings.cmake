@@ -77,6 +77,7 @@ function(sps_target_compile_flags target)
         if (ARGS_THREADING_ENABLED STREQUAL "ON")
       	  #target_link_libraries(${target} PRIVATE Threads::Threads)
       	  target_compile_options(${target} PUBLIC
+            -Wno-pthreads-mem-growth
 	    -pthread
       	    -matomics 
       	    -mbulk-memory)
