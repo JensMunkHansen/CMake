@@ -21,7 +21,7 @@ function(sps_set_emscripten_optimization_flags optimization_level optimization_f
     set(${optimization_flags} "-O2" PARENT_SCOPE)
   elseif (${optimization_level} STREQUAL "BEST")
     list(APPEND ${optimization_flags} "-O3")
-    list(APPEND ${optimization_flags} "-msimd128") # NEW
+    #list(APPEND ${optimization_flags} "-msimd128") # NEW
     set(${optimization_flags} "${${optimization_flags}}" PARENT_SCOPE)
   elseif (${optimization_level} STREQUAL "SMALL")
     set(${optimization_flags} "-Os" PARENT_SCOPE)
@@ -331,37 +331,14 @@ function(_sps_emscripten_settings)
   set(emscripten_exported_runtime_methods)
   set(emscripten_optimization_flags)
 
-  if (0)
-    # Set the optimization flags based on OPTIMIZATION value
-    if (ARGS_OPTIMIZATION STREQUAL "NONE")
-      set(emscripten_optimization_flags "-O0")
-    elseif (ARGS_OPTIMIZATION STREQUAL "LITTLE")
-      set(emscripten_optimization_flags "-O1")
-    elseif (ARGS_OPTIMIZATION STREQUAL "MORE")
-      set(emscripten_optimization_flags "-O2")
-    elseif(ARGS_OPTIMIZATION STREQUAL "BEST")
-      list(APPEND emscripten_optimization_flags
-        "-O3")
-    elseif(ARGS_OPTIMIZATION STREQUAL "SMALL")
-      list(APPEND emscripten_optimization_flags
-        "-Os")
-    elseif(ARGS_OPTIMIZATION STREQUAL "SMALLEST")
-      list(APPEND emscripten_optimization_flags
-        "-Oz")
-    elseif(ARGS_OPTIMIZATION STREQUAL "SMALLEST_WITH_CLOSURE")
-      list(APPEND emscripten_optimization_flags
-        "-Oz")
-      list(APPEND emscripten_link_options
-        "--closure 1")
-    endif()
-  else()
-    sps_set_emscripten_optimization_flags(${ARGS_OPTIMIZATION} emscripten_optimization_flags emscripten_link_options)
-  endif()
+  sps_set_emscripten_optimization_flags(${ARGS_OPTIMIZATION} emscripten_optimization_flags emscripten_link_options)
 
   # Set the debug flags based on DEBUG value
   if(ARGS_DEBUG STREQUAL "NONE")
     list(APPEND emscripten_debug_options
       "-g0")
+    list(APPEND emscripten_link_options
+      "-sASSERTIONS=1") # Deadlocks without it????
   elseif(ARGS_DEBUG STREQUAL "READABLE_JS")
     list(APPEND emscripten_link_options
       "-sASSERTIONS=1") # Deadlocks without it????
