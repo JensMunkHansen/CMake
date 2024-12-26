@@ -21,7 +21,8 @@ function(sps_set_emscripten_optimization_flags optimization_level optimization_f
     set(${optimization_flags} "-O2" PARENT_SCOPE)
   elseif (${optimization_level} STREQUAL "BEST")
     list(APPEND ${optimization_flags} "-O3")
-    #list(APPEND ${optimization_flags} "-msimd128") # NEW
+    list(APPEND ${optimization_flags} "-msimd128") # NEW
+    list(APPEND ${optimization_flags} "-ffast-math") # NEW
     set(${optimization_flags} "${${optimization_flags}}" PARENT_SCOPE)
   elseif (${optimization_level} STREQUAL "SMALL")
     set(${optimization_flags} "-Os" PARENT_SCOPE)
