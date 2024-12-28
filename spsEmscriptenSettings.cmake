@@ -22,7 +22,8 @@ function(sps_set_emscripten_optimization_flags optimization_level optimization_f
   elseif (${optimization_level} STREQUAL "BEST")
     list(APPEND ${optimization_flags} "-O3")
     list(APPEND ${optimization_flags} "-msimd128") # NEW
-    list(APPEND ${optimization_flags} "-ffast-math") # NEW
+    #list(APPEND ${optimization_flags} "-ffast-math") # NEW
+    list(APPEND ${optimization_flags} -Wno-pthreads-mem-growth)
     set(${optimization_flags} "${${optimization_flags}}" PARENT_SCOPE)
   elseif (${optimization_level} STREQUAL "SMALL")
     set(${optimization_flags} "-Os" PARENT_SCOPE)
@@ -85,15 +86,12 @@ function(sps_target_compile_flags target)
         endif()
       endif()
       if (ARGS_OPTIMIZATION)
-	if (ARGS_OPTIMIZATION STREQUAL "ON")
-	  set(emscripten_optimization_flags)
-	  set(emscripten_link_options)
-	  sps_set_emscripten_optimization_flags(${ARGS_OPTIMIZATION} emscripten_optimization_flags emscripten_link_options)
-      	  target_compile_options(${target} PRIVATE 
-      	    ${emscripten_optimization_flags})
-          message(${emscripten_optimization_flags})
-          message(FATAL_ERROR "EXIT")
-	endif()
+        # No positive effect
+	set(emscripten_optimization_flags)
+	set(emscripten_link_options)
+	sps_set_emscripten_optimization_flags(${ARGS_OPTIMIZATION} emscripten_optimization_flags emscripten_link_options)
+      	target_compile_options(${target} PRIVATE 
+      	  ${emscripten_optimization_flags})
       endif()
     endif()
 endfunction()
