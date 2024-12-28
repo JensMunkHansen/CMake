@@ -680,7 +680,7 @@ function(sps_emscripten_module)
   if (ARGS_ES6_MODULE STREQUAL "OFF" AND NOT ARGS_SIDE_MODULE)
     # If not an ES6 module and no JavaScript files, we assume it is
     # a file to be executed. Linking to Catch2 requires main
-    #set(TARGET_HAS_MAIN ON)
+    set(TARGET_HAS_MAIN ON)
   endif()
 
   if (TARGET_HAS_MAIN)
