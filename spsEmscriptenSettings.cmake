@@ -22,7 +22,8 @@ function(sps_set_emscripten_optimization_flags optimization_level optimization_f
   elseif (${optimization_level} STREQUAL "BEST")
     list(APPEND ${optimization_flags} "-O3")
     list(APPEND ${optimization_flags} "-msimd128") # NEW
-    #list(APPEND ${optimization_flags} "-ffast-math") # NEW
+#    list(APPEND ${optimization_flags} "-falign-data=16") # Only GCC
+    list(APPEND ${optimization_flags} "-ffast-math") # NEW
     list(APPEND ${optimization_flags} -Wno-pthreads-mem-growth)
     set(${optimization_flags} "${${optimization_flags}}" PARENT_SCOPE)
   elseif (${optimization_level} STREQUAL "SMALL")
