@@ -23,7 +23,7 @@ function(sps_set_emscripten_optimization_flags optimization_level optimization_f
     list(APPEND ${optimization_flags} "-O3")
     list(APPEND ${optimization_flags} "-msimd128") # NEW
 #    list(APPEND ${optimization_flags} "-falign-data=16") # Only GCC
-    list(APPEND ${optimization_flags} "-ffast-math") # NEW
+#    list(APPEND ${optimization_flags} "-ffast-math") # NEW
     list(APPEND ${optimization_flags} -Wno-pthreads-mem-growth)
     set(${optimization_flags} "${${optimization_flags}}" PARENT_SCOPE)
   elseif (${optimization_level} STREQUAL "SMALL")
@@ -337,8 +337,8 @@ function(_sps_emscripten_settings)
   if(ARGS_DEBUG STREQUAL "NONE")
     list(APPEND emscripten_debug_options
       "-g0")
-    list(APPEND emscripten_link_options
-      "-sASSERTIONS=1") # Deadlocks without it????
+#    list(APPEND emscripten_link_options
+#      "-sASSERTIONS=1") # Deadlocks without it????
   elseif(ARGS_DEBUG STREQUAL "READABLE_JS")
     list(APPEND emscripten_link_options
       "-sASSERTIONS=1") # Deadlocks without it????
@@ -416,12 +416,15 @@ function(_sps_emscripten_settings)
       "-sEXPORT_ES6=1"
       "-sINCLUDE_FULL_LIBRARY" # for addFunction
       "-sALLOW_TABLE_GROWTH=1"
-      "-sALLOW_MEMORY_GROWTH=0"
       "-sEXPORT_NAME=${ARGS_EXPORT_NAME}"
       "-sINITIAL_MEMORY=${ARGS_INITIAL_MEMORY}"
-      "-sMAXIMUM_MEMORY=${ARGS_MAXIMUM_MEMORY}"
     )
-
+    if (0)
+      list(APPEND emscripten_link_options
+        "-sALLOW_MEMORY_GROWTH=0"
+        "-sMAXIMUM_MEMORY=${ARGS_MAXIMUM_MEMORY}"
+      )
+    endif()
     if (NOT DEFINED ARGS_ENVIRONMENT)
       if (ARGS_THREADING_ENABLED STREQUAL "ON")
         if ("${ARGS_DISABLE_NODE}" STREQUAL "ON")      
@@ -488,11 +491,16 @@ function(_sps_emscripten_settings)
   if (ARGS_THREADING_ENABLED STREQUAL "ON")
     list(APPEND emscripten_link_options
       "-pthread"
+      "-flto"
+      "--enable-bulk-memory"
       "-sUSE_PTHREADS=1"
+      #"-sSTACK_SIZE=524288"
+      "-sSTACK_SIZE=262144"
       "-sPTHREAD_POOL_SIZE=${ARGS_THREAD_POOL_SIZE}"
       "-sPTHREAD_POOL_SIZE_STRICT=${ARGS_MAX_NUMBER_OF_THREADS}"
       # Bug in Emscripten, we cannot use SHARED_MEMORY on .c files if em++
-      "-sSHARED_MEMORY=1")
+      "-sSHARED_MEMORY=1"
+      "-sWASM=1")
     if (0)
       # Temporarily disabled
       list(APPEND emscripten_link_options
