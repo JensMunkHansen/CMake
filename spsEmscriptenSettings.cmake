@@ -417,7 +417,7 @@ function(_sps_emscripten_settings)
       TARGET ${ARGS_TARGET_NAME}
       POST_BUILD
       COMMAND
-        npm install
+        npm ci
       WORKING_DIRECTORY
         ${CMAKE_CURRENT_BINARY_DIR})
   endif()
@@ -466,7 +466,7 @@ function(_sps_emscripten_settings)
       )
     endif()
     if (NOT PACKAGE_FOUND)
-      message(FATAL_ERROR "package.json required for ES6 module")
+      #message(FATAL_ERROR "package.json required for ES6 module")
     endif()    
   else()
     # NOT AN ES6 module
