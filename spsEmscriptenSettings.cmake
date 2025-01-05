@@ -21,9 +21,10 @@ function(sps_set_emscripten_optimization_flags optimization_level optimization_f
     set(${optimization_flags} "-O2" PARENT_SCOPE)
   elseif (${optimization_level} STREQUAL "BEST")
     list(APPEND ${optimization_flags} "-O3")
-    list(APPEND ${optimization_flags} "-msimd128") # NEW
-#    list(APPEND ${optimization_flags} "-falign-data=16") # Only GCC
-#    list(APPEND ${optimization_flags} "-ffast-math") # NEW
+    list(APPEND ${optimization_flags} "-msimd128")
+    # Notes:
+    #  - only gcc (not clang) support "-falign-data=16", so we cannot use it yet
+    #  - "-ffast-math", I have always induced a dead-lock when using this, also small examples (compiler issue)
     list(APPEND ${optimization_flags} -Wno-pthreads-mem-growth)
     set(${optimization_flags} "${${optimization_flags}}" PARENT_SCOPE)
   elseif (${optimization_level} STREQUAL "SMALL")
@@ -63,8 +64,6 @@ function(sps_target_compile_flags target)
         message(FATAL_ERROR "The 'sps_target_compile_flags' function requires a target.")
     endif()
 
-    # TODO: -Wno-pthreads-mem-growth
-    
     # Process the rest of the arguments as key-value pairs
     set(options) # Define valid keys
     set(one_value_args THREADING_ENABLED OPTIMIZATION DEBUG) # Mark keys as single-value arguments
@@ -80,20 +79,23 @@ function(sps_target_compile_flags target)
         if (ARGS_THREADING_ENABLED STREQUAL "ON")
       	  #target_link_libraries(${target} PRIVATE Threads::Threads)
       	  target_compile_options(${target} PUBLIC
-            -Wno-pthreads-mem-growth
-	    -pthread
-      	    -matomics 
-      	    -mbulk-memory)
+            -Wno-pthreads-mem-growth # Do not allow worker threads to grow memory
+	    -pthread                 # Needed if accessed by pthread
+      	    -matomics                # Needed through compilation unit
+      	    -mbulk-memory            # Threads and shared memory must go hand-in-hand
+          )
         endif()
       endif()
       if (ARGS_OPTIMIZATION)
-        # No positive effect
+        # Optimization at compile level, very little effect
 	set(emscripten_optimization_flags)
 	set(emscripten_link_options)
 	sps_set_emscripten_optimization_flags(${ARGS_OPTIMIZATION} emscripten_optimization_flags emscripten_link_options)
       	target_compile_options(${target} PRIVATE 
       	  ${emscripten_optimization_flags})
       endif()
+    else()
+      message(FATAL_ERROR "This needs an Emscripten build environment")
     endif()
 endfunction()
 
@@ -101,7 +103,7 @@ endfunction()
 
 .. cmake:command:: _sps_check_files_for_main
 
-  Conditionally output debug statements
+  Convenience function for searching for a main function.
   |module-internal|
 
   The :cmake:command:`_sps_check_files_for_main` function is provided to assist in linking. It
@@ -140,7 +142,7 @@ endfunction()
 
 .. cmake:command:: _sps_prefix_and_format_exports
 
-  Prefix functions for export
+  Prefix and list functions for export
   |module-internal|
 
   The :cmake:command:`_sps_prefix_and_format_exports` function is provided for prefix functions
@@ -167,8 +169,21 @@ function(_sps_prefix_and_format_exports input_list output_variable)
     set(${output_variable} "${exported_functions_str}" PARENT_SCOPE)
 endfunction()
 
+#[==[.rst:
+
+.. cmake:command:: _sps_format_exports (without prefix)
+
+  Format list of functions for export
+  |module-internal|
+
+  The :cmake:command:`_sps_format_exports` function is provided for prefix runtime functions
+  for export.
+
+  .. code-block:: cmake
+
+    _sps_format_exports(<functions> <list_of_functions>)
+#]==]
 function(_sps_format_exports input_list output_variable)
-  # Convert the list to a comma-separated string and wrap in square brackets
   set(prefixed_functions)
   foreach(func IN LISTS ${input_list})
     list(APPEND prefixed_functions "'${func}'")
@@ -181,6 +196,16 @@ endfunction()
 #[==[.rst:
 
 .. cmake:command:: _sps_target_info
+
+  Print target info to verify flags
+  |module-internal|
+
+  The :cmake:command:`_sps_target_info` function is provided for verbose info
+  for export.
+
+  .. code-block:: cmake
+
+    _sps_target_info(<target>)
 #]==]
 function(_sps_target_info target)
   # Compile options
@@ -229,7 +254,7 @@ _sps_emscripten_settings(
 #]==]
 function(_sps_emscripten_settings)
 
-  #-sALLOW_MEMORY_GROWTH=0 -sTOTAL_MEMORY=64MB
+  # TODO: Consider not allowing -sALLOW_MEMORY_GROWTH=0 -sTOTAL_MEMORY=64MB
   
   # Define the arguments that the function accepts
   set(options)  # Boolean options (without ON/OFF).
@@ -286,6 +311,7 @@ function(_sps_emscripten_settings)
     set(ARGS_MAXIMUM_MEMORY "4GB")
   endif()
   if (NOT DEFINED ARGS_THREAD_POOL_SIZE)
+    # Note for this we need a VTK with improved thread support
     set(ARGS_THREAD_POOL_SIZE 4)
   endif()
   if (NOT DEFINED ARGS_MAX_NUMBER_OF_THREADS)
@@ -337,8 +363,9 @@ function(_sps_emscripten_settings)
   if(ARGS_DEBUG STREQUAL "NONE")
     list(APPEND emscripten_debug_options
       "-g0")
-#    list(APPEND emscripten_link_options
-#      "-sASSERTIONS=1") # Deadlocks without it????
+    #  Note, if 3rd-party have assertions (they shouldn't have), we can add this
+    #    list(APPEND emscripten_link_options
+    #      "-sASSERTIONS=1") # Deadlocks without it????
   elseif(ARGS_DEBUG STREQUAL "READABLE_JS")
     list(APPEND emscripten_link_options
       "-sASSERTIONS=1") # Deadlocks without it????
@@ -351,8 +378,10 @@ function(_sps_emscripten_settings)
     list(APPEND emscripten_debug_options
       "-g3")
     list(APPEND emscripten_link_options
-      "-sASSERTIONS=1")
+      "-sASSERTIONS=2")
   elseif(ARGS_DEBUG STREQUAL "SOURCE_MAPS")
+    # TODO: Investigate base-address for remote debugging. Requires knowledge of debug symbol server
+    #       Right-now this is sufficient for local debugging
     list(APPEND emscripten_debug_options
       "-gsource-map")
   endif()
@@ -361,7 +390,7 @@ function(_sps_emscripten_settings)
   list(APPEND emscripten_link_options
     "-sERROR_ON_UNDEFINED_SYMBOLS=0" # 0 for bindings project
     "-sDISABLE_EXCEPTION_CATCHING=0" # We use exceptions in C++
-    "-sALLOW_BLOCKING_ON_MAIN_THREAD=1" # 1 for bindings project
+    "-sALLOW_BLOCKING_ON_MAIN_THREAD=1" # Experiment with threads requires this (bug in Emscripten)
   )
 
   # Link to embind
@@ -376,7 +405,6 @@ function(_sps_emscripten_settings)
     package-lock.json
   )
   set(PACKAGE_FOUND OFF)
-  # TODO: Consider throwing if no package.json exists and we have an ES6 module
   foreach(node_file ${node_files})
     if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${node_file}")
       add_custom_command(
@@ -419,7 +447,7 @@ function(_sps_emscripten_settings)
       "-sEXPORT_NAME=${ARGS_EXPORT_NAME}"
       "-sINITIAL_MEMORY=${ARGS_INITIAL_MEMORY}"
     )
-    if (0)
+    if (1)
       list(APPEND emscripten_link_options
         "-sALLOW_MEMORY_GROWTH=0"
         "-sMAXIMUM_MEMORY=${ARGS_MAXIMUM_MEMORY}"
@@ -447,17 +475,19 @@ function(_sps_emscripten_settings)
       )
     endif()
     if (NOT PACKAGE_FOUND)
-      message("Warning: No package.json found")
-    endif()
-    
+      message(FATAL_ERROR "package.json required for ES6 module")
+    endif()    
   else()
+    # NOT AN ES6 module
+
+    # Handle this in a better way
+    list(APPEND emscripten_link_options
+      "-sALLOW_MEMORY_GROWTH=1"
+    )
+    # TODO: Can we make this a general option
     if (NOT ARGS_EXIT_RUNTIME)
       set(ARGS_EXIT_RUNTIME OFF)
     endif()
-
-    list(APPEND emscripten_link_options
-      "-sALLOW_MEMORY_GROWTH=1"
-      )
     if (ARGS_EXIT_RUNTIME STREQUAL "ON")
       list(APPEND emscripten_link_options
         "-sEXIT_RUNTIME=1")
@@ -465,9 +495,12 @@ function(_sps_emscripten_settings)
       list(APPEND emscripten_link_options
         "-sNO_EXIT_RUNTIME=1")
     endif()
-
-    # NOT AN ES6 module
-    if (NOT DEFINED ARGS_ENVIRONMENT)
+    if (DEFINED ARGS_ENVIRONMENT)
+      list(APPEND emscripten_link_options
+        "-sENVIRONMENT=${ARGS_ENVIRONMENT}"
+      )
+    else()
+      # Automatic setting for environment
       if (ARGS_THREADING_ENABLED STREQUAL "ON")
         list(APPEND emscripten_link_options
           "-sENVIRONMENT=node,worker"
@@ -479,13 +512,10 @@ function(_sps_emscripten_settings)
           "-sENVIRONMENT=node"
         )
       endif()
-    else()
-      list(APPEND emscripten_link_options
-        "-sENVIRONMENT=web,worker"
-      )
     endif()
   endif()
 
+  # We always export printf
   list(APPEND emscripten_exported_functions "printf")
 
   if (ARGS_THREADING_ENABLED STREQUAL "ON")
@@ -501,16 +531,6 @@ function(_sps_emscripten_settings)
       # Bug in Emscripten, we cannot use SHARED_MEMORY on .c files if em++
       "-sSHARED_MEMORY=1"
       "-sWASM=1")
-    if (0)
-      # Temporarily disabled
-      list(APPEND emscripten_link_options
-        "-sASYNCIFY_STACK_SIZE=81920" #~297 nesting levels
-        "-sASYNCIFY=1"
-        "-sWASM=1"
-      )
-    endif()
-    # Use --preload-file or --embed-file if Needed: If you need to load assets asynchronously, Emscripten can manage preloading with --preload-file
-    
   endif()
 
   # Assign the options list to the specified variable
@@ -653,6 +673,7 @@ function(sps_emscripten_module)
     EMSCRIPTEN_OPTIMIZATION_FLAGS emscripten_optimization_flags
     EMSCRIPTEN_DEBUG_INFO emscripten_debug_options
   )
+  # TODO: Consider adding all exports here!!!
   if (ARGS_ES6_MODULE STREQUAL ON)
     # Runtime methods needed for ES6
     set(emscripten_exported_runtime_methods "ENV;FS;addFunction")
@@ -716,9 +737,13 @@ function(sps_emscripten_module)
 
   if (ARGS_ASYNCIFY STREQUAL "ON")
     list(APPEND emscripten_link_options
-      "-sASYNCIFY=1"
-      #"-sASYNCIFY_DEBUG=1"
+        "-sASYNCIFY_STACK_SIZE=81920" #~297 nesting levels
+        "-sASYNCIFY=1"
     )
+    # Debug stack to track bugs in Emscripten  
+    #list(APPEND emscripten_link_options
+    #  "-sASYNCIFY_DEBUG=1"
+    #)
   endif()
 
   # Prefix and format the exports
@@ -733,6 +758,7 @@ function(sps_emscripten_module)
 
   # C++-exceptions (allow them)
   if (ARGS_SOURCE_FILES)
+    # C does not support exceptions
     list(GET ${ARGS_SOURCE_FILES} 0 first_file)
     get_filename_component(extension ${first_file} EXT)
     if (NOT "${extension}" STREQUAL ".c")
@@ -741,9 +767,8 @@ function(sps_emscripten_module)
   else()
     list(APPEND emscripten_compile_options "-fexceptions")
   endif()
-  
 
-  # Position-independent code
+  # Position-independent code (required for shared objects)
   if (ARGS_SIDE_MODULE OR ARGS_MAIN_MODULE)
     # Shared libraries with WASM
     list(APPEND emscripten_compile_options "-fPIC")
@@ -756,11 +781,12 @@ function(sps_emscripten_module)
     list(APPEND emscripten_compile_options "-matomics")
     list(APPEND emscripten_compile_options "-mbulk-memory")
     list(APPEND emscripten_compile_options "-msimd128")
-    # TODO: Verify why this is needed
+    # TODO: Verify when this is needed
     list(APPEND emscripten_link_options
       "-sSUPPORT_LONGJMP=1")
   endif()
 
+  # Support extra link args (if provided)
   if (ARGS_EXTRA_LINK_ARGS)
     list(APPEND emscripten_link_options
       "${ARGS_EXTRA_LINK_ARGS}")
@@ -783,10 +809,10 @@ function(sps_emscripten_module)
     # Side modules must be renamed
     set_target_properties(${ARGS_TARGET_NAME} PROPERTIES
       SUFFIX ".wasm")
-    # Definition used in source files
+    # Compile definition we use in source files
     target_compile_definitions(${ARGS_TARGET_NAME} PRIVATE IS_SIDE_MODULE)    
   elseif(ARGS_MAIN_MODULE)
-    # Definition used in source files
+    # Compile definition we use in source files
     target_compile_definitions(${ARGS_TARGET_NAME} PRIVATE IS_MAIN_MODULE)    
   endif()
 
@@ -809,7 +835,7 @@ function(sps_emscripten_module)
     add_dependencies(${ARGS_TARGET_NAME} ${copyTarget})
   endforeach()
 
-  # Display results
+  # Display verbose information about target
   if (ARGS_VERBOSE)
     _sps_target_info(${ARGS_TARGET_NAME})
   endif()
@@ -845,6 +871,3 @@ function(print_target_details target)
         message(STATUS "No compile options for ${target}")
     endif()
 endfunction()
-
-# Example usage
-
