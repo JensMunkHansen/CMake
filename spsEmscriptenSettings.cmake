@@ -506,6 +506,7 @@ function(_sps_emscripten_settings)
     endif()
   endif()
 
+  # TODO: Move to module
   if (ARGS_THREADING_ENABLED STREQUAL "ON")
     list(APPEND emscripten_link_options
       "-pthread"
@@ -557,6 +558,7 @@ sps_emscripten_module(
   DEBUG                         <NONE, READABLE_JS, PROFILE, DEBUG_NATIVE>
   VERBOSE                       Show stuff)
 
+# Responsible for platform, exported functions, filesystem, threads, stack-size, memory layout etc.
 #]==]
 function(sps_emscripten_module)
   # Define the arguments that the function accepts
