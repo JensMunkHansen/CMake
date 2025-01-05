@@ -247,7 +247,6 @@ _sps_emscripten_settings(
                                  DEBUG_NATIVE> (default: READABLE_JS)
   INITIAL_MEMORY                (default: 1GB) May crash if too low
   MAXIMUM_MEMORY                (default: 4GB)
-  EMSCRIPTEN_EXPORTED_FUNCTIONS <variable>
   EMSCRIPTEN_DEBUG_INFO         <variable>
   EMSCRIPTEN_LINK_OPTIONS       <variable>
   EMSCRIPTEN_OPTIMIZATION_FLAGS <variable>)
@@ -274,7 +273,6 @@ function(_sps_emscripten_settings)
     EMSCRIPTEN_LINK_OPTIONS
     EMSCRIPTEN_OPTIMIZATION_FLAGS
     EMSCRIPTEN_DEBUG_INFO
-    EMSCRIPTEN_EXPORTED_FUNCTIONS
   )
 
   # Parse the arguments using cmake_parse_arguments
@@ -289,9 +287,6 @@ function(_sps_emscripten_settings)
   endif()
   if (NOT ARGS_EMSCRIPTEN_DEBUG_INFO)
     message(FATAL_ERROR "EMSCRIPTEN_DEBUG_INFO must be specified.")
-  endif()
-  if (NOT ARGS_EMSCRIPTEN_EXPORTED_FUNCTIONS)
-    message(FATAL_ERROR "EMSCRIPTEN_EXPORTED_FUNCTIONS must be specified.")
   endif()
   
   # Default values  
@@ -353,8 +348,6 @@ function(_sps_emscripten_settings)
   # Populate lists
   set(emscripten_debug_options)
   set(emscripten_link_options)
-  set(emscripten_exported_functions)
-  set(emscripten_exported_runtime_methods)
   set(emscripten_optimization_flags)
 
   sps_set_emscripten_optimization_flags(${ARGS_OPTIMIZATION} emscripten_optimization_flags emscripten_link_options)
@@ -437,8 +430,6 @@ function(_sps_emscripten_settings)
     if (NOT DEFINED ARGS_EXPORT_NAME)
       set(ARGS_EXPORT_NAME Module)
     endif()
-    list(APPEND emscripten_exported_functions "free")
-    list(APPEND emscripten_exported_functions "malloc")
     list(APPEND emscripten_link_options
       "-sMODULARIZE=1"
       "-sEXPORT_ES6=1"
@@ -514,9 +505,6 @@ function(_sps_emscripten_settings)
       endif()
     endif()
   endif()
-
-  # We always export printf
-  list(APPEND emscripten_exported_functions "printf")
 
   if (ARGS_THREADING_ENABLED STREQUAL "ON")
     list(APPEND emscripten_link_options
@@ -668,13 +656,17 @@ function(sps_emscripten_module)
     THREAD_POOL_SIZE ${ARGS_THREAD_POOL_SIZE}
     MAX_NUMBER_OF_THREADS ${ARGS_MAX_NUMBER_OF_THREADS}
     OPTIMIZATION ${ARGS_OPTIMIZATION}
-    EMSCRIPTEN_EXPORTED_FUNCTIONS emscripten_exported_functions
     EMSCRIPTEN_LINK_OPTIONS emscripten_link_options
     EMSCRIPTEN_OPTIMIZATION_FLAGS emscripten_optimization_flags
     EMSCRIPTEN_DEBUG_INFO emscripten_debug_options
   )
-  # TODO: Consider adding all exports here!!!
+
+  # We always export printf
+  #list(APPEND emscripten_exported_functions "printf")
+
   if (ARGS_ES6_MODULE STREQUAL ON)
+    list(APPEND emscripten_exported_functions "free")
+    list(APPEND emscripten_exported_functions "malloc")
     # Runtime methods needed for ES6
     set(emscripten_exported_runtime_methods "ENV;FS;addFunction")
   endif()
