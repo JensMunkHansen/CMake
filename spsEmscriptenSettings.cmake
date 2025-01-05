@@ -514,8 +514,8 @@ function(_sps_emscripten_settings)
       "-flto"
       "--enable-bulk-memory"
       "-sUSE_PTHREADS=1"
-      #"-sSTACK_SIZE=524288"
-      "-sSTACK_SIZE=262144"
+      "-sSTACK_SIZE=524288"
+      #"-sSTACK_SIZE=262144"
       "-sPTHREAD_POOL_SIZE=${ARGS_THREAD_POOL_SIZE}"
       "-sPTHREAD_POOL_SIZE_STRICT=${ARGS_MAX_NUMBER_OF_THREADS}"
       # Bug in Emscripten, we cannot use SHARED_MEMORY on .c files if em++
