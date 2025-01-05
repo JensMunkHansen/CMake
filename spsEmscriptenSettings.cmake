@@ -661,9 +661,6 @@ function(sps_emscripten_module)
     EMSCRIPTEN_DEBUG_INFO emscripten_debug_options
   )
 
-  # We always export printf
-  #list(APPEND emscripten_exported_functions "printf")
-
   if (ARGS_ES6_MODULE STREQUAL ON)
     list(APPEND emscripten_exported_functions "free")
     list(APPEND emscripten_exported_functions "malloc")
