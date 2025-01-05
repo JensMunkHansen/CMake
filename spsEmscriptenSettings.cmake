@@ -302,9 +302,6 @@ function(_sps_emscripten_settings)
   if (NOT DEFINED ARGS_INITIAL_MEMORY)
     set(ARGS_INITIAL_MEMORY "1GB")
   endif()
-  if (NOT DEFINED ARGS_MAXIMUM_MEMORY)
-    set(ARGS_MAXIMUM_MEMORY "4GB")
-  endif()
   if (NOT DEFINED ARGS_THREAD_POOL_SIZE)
     # Note for this we need a VTK with improved thread support
     set(ARGS_THREAD_POOL_SIZE 4)
@@ -435,13 +432,17 @@ function(_sps_emscripten_settings)
       "-sEXPORT_ES6=1"
       "-sINCLUDE_FULL_LIBRARY" # for addFunction
       "-sALLOW_TABLE_GROWTH=1"
+      "-sWASM_BIGINT=1"
       "-sEXPORT_NAME=${ARGS_EXPORT_NAME}"
       "-sINITIAL_MEMORY=${ARGS_INITIAL_MEMORY}"
     )
-    if (1)
+    if (DEFINED ARGS_MAXIMUM_MEMORY)
+      list(APPEND emscripten_link_options
+        "-sMAXIMUM_MEMORY=${ARGS_MAXIMUM_MEMORY}"
+        "-sALLOW_MEMORY_GROWTH=1")
+    else()
       list(APPEND emscripten_link_options
         "-sALLOW_MEMORY_GROWTH=0"
-        "-sMAXIMUM_MEMORY=${ARGS_MAXIMUM_MEMORY}"
       )
     endif()
     if (NOT DEFINED ARGS_ENVIRONMENT)
