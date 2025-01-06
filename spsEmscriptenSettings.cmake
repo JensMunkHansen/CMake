@@ -4,6 +4,56 @@ include(spsHardware)
 
 find_package(Threads REQUIRED)
 
+
+function(sps_set_emscripten_defaults PROJECT_NAME)
+
+  # Helper function to unset cached variables
+  macro(clear_cached_variable VAR_NAME)
+    if (DEFINED CACHE{${VAR_NAME}})
+      unset(${VAR_NAME} CACHE)
+    endif()
+  endmacro()
+
+  # Clear cached variables for this project
+  clear_cached_variable("${PROJECT_NAME}_OPTIMIZATION")
+  clear_cached_variable("${PROJECT_NAME}_COMPILE_OPTIMIZATION")
+  clear_cached_variable("${PROJECT_NAME}_DEBUG")  
+  # Check and set the default optimization value based on the build type
+  if (NOT DEFINED ${PROJECT_NAME}_OPTIMIZATION)
+    if (CMAKE_BUILD_TYPE STREQUAL "Release")
+      set(${PROJECT_NAME}_OPTIMIZATION BEST CACHE STRING "Link optimization level for ${PROJECT_NAME} (default: BEST for Release)")
+    elseif (CMAKE_BUILD_TYPE STREQUAL "Debug")
+      set(${PROJECT_NAME}_OPTIMIZATION NONE CACHE STRING "Link optimization level for ${PROJECT_NAME} (default: NONE for Debug)")
+    else()
+      set(${PROJECT_NAME}_OPTIMIZATION NONE CACHE STRING "Link optimization level for ${PROJECT_NAME} (default: NONE for unknown build type)")
+    endif()
+  endif()
+  set_property(CACHE ${PROJECT_NAME}_OPTIMIZATION PROPERTY STRINGS "NONE" "SMALLEST" "BEST" "SMALLEST_WITH_CLOSURE")
+
+  if (NOT DEFINED ${PROJECT_NAME}_COMPILE_OPTIMIZATION)
+    if (CMAKE_BUILD_TYPE STREQUAL "Release")
+      set(${PROJECT_NAME}_COMPILE_OPTIMIZATION BEST CACHE STRING "Compile optimization level for ${PROJECT_NAME} (default: BEST for Release)")
+    elseif (CMAKE_BUILD_TYPE STREQUAL "Debug")
+      set(${PROJECT_NAME}_COMPILE_OPTIMIZATION NONE CACHE STRING "Compile optimization level for ${PROJECT_NAME} (default: NONE for Debug)")
+    else()
+      set(${PROJECT_NAME}_COMPILE_OPTIMIZATION NONE CACHE STRING "Compile optimization level for ${PROJECT_NAME} (default: NONE for unknown build type)")
+    endif()
+  endif()
+  set_property(CACHE ${PROJECT_NAME}_COMPILE_OPTIMIZATION PROPERTY STRINGS "NONE" "SMALLEST" "BEST" "SMALLEST_WITH_CLOSURE")
+
+  if (NOT DEFINED ${PROJECT_NAME}_DEBUG)
+    if (CMAKE_BUILD_TYPE STREQUAL "Release")
+      set(${PROJECT_NAME}_DEBUG READABLE_JS CACHE STRING "Debug level for ${PROJECT_NAME} (default: READABLE_JS for Release)")
+    elseif (CMAKE_BUILD_TYPE STREQUAL "Debug")
+      set(${PROJECT_NAME}_DEBUG DEBUG_NATIVE CACHE STRING "Debug level for ${PROJECT_NAME} (default: DEBUG_NATIVE for Debug)")
+    else()
+      set(${PROJECT_NAME}_DEBUG NONE CACHE STRING "Debug level for ${PROJECT_NAME} (default: NONE for unknown build type)")
+    endif()
+  endif()
+  set_property(CACHE ${PROJECT_NAME}_DEBUG PROPERTY STRINGS "NONE" "READABLE_JS" "PROFILE" "DEBUG_NATIVE" "SOURCE_MAPS")
+endfunction()
+
+
 #[==[.rst:
 *********
 spsEmscriptenSettings
