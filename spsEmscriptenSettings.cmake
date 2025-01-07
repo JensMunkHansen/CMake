@@ -464,7 +464,7 @@ function(_sps_emscripten_settings)
       TARGET ${ARGS_TARGET_NAME}
       POST_BUILD
       COMMAND
-        npm ci
+        npm install
       WORKING_DIRECTORY
         ${CMAKE_CURRENT_BINARY_DIR})
   endif()
@@ -718,7 +718,8 @@ function(sps_emscripten_module)
     list(APPEND emscripten_exported_functions "free")
     list(APPEND emscripten_exported_functions "malloc")
     # Runtime methods needed for ES6
-    set(emscripten_exported_runtime_methods "ENV;FS;addFunction")
+    set(emscripten_exported_runtime_methods "ENV;FS;addFunction;removeFunction;wasmTable;_emscripten_force_exit")
+
   endif()
   # Is it okay always to export this???
   list(APPEND emscripten_exported_runtime_methods "ccall;cwrap;stringToNewUTF8")
