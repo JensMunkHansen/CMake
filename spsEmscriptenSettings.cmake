@@ -445,6 +445,7 @@ function(_sps_emscripten_settings)
     package-lock.json
   )
   set(PACKAGE_FOUND OFF)
+  set(PACKAGE_LOCK_FOUND OFF)
   foreach(node_file ${node_files})
     if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${node_file}")
       add_custom_command(
@@ -454,11 +455,18 @@ function(_sps_emscripten_settings)
         ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_CURRENT_SOURCE_DIR}/${node_file}"
         "${CMAKE_CURRENT_BINARY_DIR}")
-      set(PACKAGE_FOUND ON)
     endif()
   endforeach()
-
-  if (PACKAGE_FOUND)
+  if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/package-lock.json")
+    # Install npm
+    add_custom_command(
+      TARGET ${ARGS_TARGET_NAME}
+      POST_BUILD
+      COMMAND
+        npm ci
+      WORKING_DIRECTORY
+      ${CMAKE_CURRENT_BINARY_DIR})
+  elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/package.json")
     # Install npm
     add_custom_command(
       TARGET ${ARGS_TARGET_NAME}
@@ -466,7 +474,7 @@ function(_sps_emscripten_settings)
       COMMAND
         npm install
       WORKING_DIRECTORY
-        ${CMAKE_CURRENT_BINARY_DIR})
+      ${CMAKE_CURRENT_BINARY_DIR})
   endif()
   
   # Handle ES6 modules
