@@ -428,7 +428,7 @@ function(_sps_emscripten_settings)
 
   # Default linker options
   list(APPEND emscripten_link_options
-    "-sERROR_ON_UNDEFINED_SYMBOLS=0" # 0 for bindings project
+    "-sERROR_ON_UNDEFINED_SYMBOLS=1" # 0 for bindings project
     "-sDISABLE_EXCEPTION_CATCHING=0" # We use exceptions in C++
     "-sALLOW_BLOCKING_ON_MAIN_THREAD=1" # Experiment with threads requires this (bug in Emscripten)
   )
@@ -490,7 +490,6 @@ function(_sps_emscripten_settings)
       "-sEXPORT_ES6=1"
       "-sINCLUDE_FULL_LIBRARY" # for addFunction
       "-sALLOW_TABLE_GROWTH=1"
-      "-sWASM_BIGINT=1"
       "-sEXPORT_NAME=${ARGS_EXPORT_NAME}"
       "-sINITIAL_MEMORY=${ARGS_INITIAL_MEMORY}"
     )
@@ -622,8 +621,9 @@ sps_emscripten_module(
 #]==]
 function(sps_emscripten_module)
   # Define the arguments that the function accepts
-  set(options SIDE_MODULE MAIN_MODULE VERBOSE DISABLE_NODE 64_BIT ASYNCIFY_DEBUG)
+  set(options SIDE_MODULE MAIN_MODULE VERBOSE DISABLE_NODE ASYNCIFY_DEBUG)
   set(one_value_args
+    64_BIT 
     TARGET_NAME
     ES6_MODULE
     ASYNCIFY
@@ -641,7 +641,7 @@ function(sps_emscripten_module)
     EXTRA_LINK_ARGS    
     MAX_NUMBER_OF_THREADS
     ENVIRONMENT)
-  set(multi_value_args SOURCE_FILES JAVASCRIPT_FILES SIDE_MODULES EXPORTED_FUNCTIONS LIBRARIES INCLUDE_DIRS)
+  set(multi_value_args SOURCE_FILES JAVASCRIPT_FILES SIDE_MODULES EXPORTED_FUNCTIONS ASYNCIFY_IMPORTS LIBRARIES INCLUDE_DIRS)
 
   # Parse the arguments using cmake_parse_arguments
   cmake_parse_arguments(ARGS "${options}" "${one_value_args}" "${multi_value_args}" ${ARGV})
@@ -664,9 +664,6 @@ function(sps_emscripten_module)
   endif()
   if (NOT ARGS_DEBUG)
     set(ARGS_DEBUG "NONE")
-  endif()
-  if (NOT ARGS_ASYNCIFY_DEBUG)
-    set(ARGS_ASYNCIFY_DEBUG OFF)
   endif()
   # Platform arguments
   if (NOT ARGS_64_BIT)
@@ -705,6 +702,7 @@ function(sps_emscripten_module)
   set(emscripten_debug_options)
   set(emscripten_exported_functions)
   set(emscripten_exported_runtime_methods)
+  set(emscripten_async_imports)
 
   # Call emscripten_settings with the provided arguments
   _sps_emscripten_settings(
@@ -742,6 +740,9 @@ function(sps_emscripten_module)
 
   if (ARGS_EXPORTED_FUNCTIONS)
     list(APPEND emscripten_exported_functions ${ARGS_EXPORTED_FUNCTIONS})
+  endif()
+  if (ARGS_ASYNCIFY_IMPORTS)
+    list(APPEND emscripten_async_imports ${ARGS_ASYNCIFY_IMPORTS})
   endif()
   
   if (ARGS_SIDE_MODULE)
@@ -793,8 +794,12 @@ function(sps_emscripten_module)
     list(APPEND emscripten_link_options
         "-sASYNCIFY_STACK_SIZE=81920" #~297 nesting levels
         "-sASYNCIFY=1"
+        "-sUSE_SDL=0"
+        "-sUSE_SDL=0"
+        "-sUSE_SDL_TTF=0"
+        "-sUSE_SDL_IMAGE=0"
     )
-    if (ARGS_ASYNCIFY_DEBUG STREQUAL "ON")  
+    if (ARGS_ASYNCIFY_DEBUG)
       # Debug stack to track bugs in Emscripten  
       list(APPEND emscripten_link_options
         "-sASYNCIFY_DEBUG=1"
@@ -803,6 +808,7 @@ function(sps_emscripten_module)
   endif()
 
   # Prefix and format the exports
+  _sps_prefix_and_format_exports(emscripten_async_imports async_imports_str)
   _sps_prefix_and_format_exports(emscripten_exported_functions exported_functions_str)
   _sps_format_exports(emscripten_exported_runtime_methods exported_runtime_methods_str)
 
@@ -811,7 +817,8 @@ function(sps_emscripten_module)
     "-sEXPORTED_RUNTIME_METHODS=${exported_runtime_methods_str}")
   list(APPEND emscripten_link_options
     "-sEXPORTED_FUNCTIONS=${exported_functions_str}")
-
+  list(APPEND emscripten_link_options
+    "-sASYNCIFY_IMPORTS=${async_imports_str}")
   # C++-exceptions (allow them)
   if (ARGS_SOURCE_FILES)
     # C does not support exceptions
