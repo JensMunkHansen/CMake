@@ -594,6 +594,7 @@ Create a WASM Emscripten module
 sps_emscripten_module(
   SIDE_MODULE
   MAIN_MODULE
+  ASYNCIFY_DEBUG
   64_BIT                        <ON|OFF> (default: OFF)
   TARGET_NAME                   <variable>
   SOURCE_FILES                  <list>     (.cxx, .c)
@@ -621,7 +622,7 @@ sps_emscripten_module(
 #]==]
 function(sps_emscripten_module)
   # Define the arguments that the function accepts
-  set(options SIDE_MODULE MAIN_MODULE VERBOSE DISABLE_NODE 64_BIT)
+  set(options SIDE_MODULE MAIN_MODULE VERBOSE DISABLE_NODE 64_BIT ASYNCIFY_DEBUG)
   set(one_value_args
     TARGET_NAME
     ES6_MODULE
@@ -664,7 +665,9 @@ function(sps_emscripten_module)
   if (NOT ARGS_DEBUG)
     set(ARGS_DEBUG "NONE")
   endif()
-
+  if (NOT ARGS_ASYNCIFY_DEBUG)
+    set(ARGS_ASYNCIFY_DEBUG OFF)
+  endif()
   # Platform arguments
   if (NOT ARGS_64_BIT)
     set(ARGS_64_BIT OFF)
@@ -791,10 +794,12 @@ function(sps_emscripten_module)
         "-sASYNCIFY_STACK_SIZE=81920" #~297 nesting levels
         "-sASYNCIFY=1"
     )
-    # Debug stack to track bugs in Emscripten  
-    #list(APPEND emscripten_link_options
-    #  "-sASYNCIFY_DEBUG=1"
-    #)
+    if (ARGS_ASYNCIFY_DEBUG STREQUAL "ON")  
+      # Debug stack to track bugs in Emscripten  
+      list(APPEND emscripten_link_options
+        "-sASYNCIFY_DEBUG=1"
+      )
+    endif()
   endif()
 
   # Prefix and format the exports
