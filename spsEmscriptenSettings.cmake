@@ -726,7 +726,7 @@ function(sps_emscripten_module)
     list(APPEND emscripten_exported_functions "free")
     list(APPEND emscripten_exported_functions "malloc")
     # Runtime methods needed for ES6
-    set(emscripten_exported_runtime_methods "ENV;FS;addFunction;removeFunction;wasmTable;_emscripten_force_exit")
+    set(emscripten_exported_runtime_methods "ENV;FS;addFunction;removeFunction;wasmTable")
 
   endif()
   # Is it okay always to export this???
