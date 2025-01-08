@@ -428,8 +428,6 @@ function(_sps_emscripten_settings)
     #       Right-now this is sufficient for local debugging
     list(APPEND emscripten_debug_options
       "-gsource-map")
-    list(APPEND emscripten_debug_options
-      "--source-map-base http://127.0.0.1:3001/")
   endif()
 
   # Default linker options
