@@ -4,20 +4,24 @@ include(spsHardware)
 
 find_package(Threads REQUIRED)
 
+# TODO: Generated .js files with this content
+# //# sourceMappingURL=http://127.0.0.1:3001/your_file.wasm.map
 
 function(sps_set_emscripten_defaults PROJECT_NAME)
 
-  # Helper function to unset cached variables
-  macro(clear_cached_variable VAR_NAME)
-    if (DEFINED CACHE{${VAR_NAME}})
-      unset(${VAR_NAME} CACHE)
-    endif()
-  endmacro()
-
-  # Clear cached variables for this project
-  clear_cached_variable("${PROJECT_NAME}_OPTIMIZATION")
-  clear_cached_variable("${PROJECT_NAME}_COMPILE_OPTIMIZATION")
-  clear_cached_variable("${PROJECT_NAME}_DEBUG")  
+  if (0)
+    # Helper function to unset cached variables
+    macro(clear_cached_variable VAR_NAME)
+      if (DEFINED CACHE{${VAR_NAME}})
+        unset(${VAR_NAME} CACHE)
+      endif()
+    endmacro()
+    
+    # Clear cached variables for this project
+    clear_cached_variable("${PROJECT_NAME}_OPTIMIZATION")
+    clear_cached_variable("${PROJECT_NAME}_COMPILE_OPTIMIZATION")
+    clear_cached_variable("${PROJECT_NAME}_DEBUG")
+  endif()
   # Check and set the default optimization value based on the build type
   if (NOT DEFINED ${PROJECT_NAME}_OPTIMIZATION)
     if (CMAKE_BUILD_TYPE STREQUAL "Release")
@@ -404,8 +408,8 @@ function(_sps_emscripten_settings)
     list(APPEND emscripten_debug_options
       "-g0")
     #  Note, if 3rd-party have assertions (they shouldn't have), we can add this
-    #    list(APPEND emscripten_link_options
-    #      "-sASSERTIONS=1") # Deadlocks without it????
+#    list(APPEND emscripten_link_options
+#      "-sASSERTIONS=1") # Deadlocks without it????
   elseif(ARGS_DEBUG STREQUAL "READABLE_JS")
     list(APPEND emscripten_link_options
       "-sASSERTIONS=1") # Deadlocks without it????
@@ -424,6 +428,8 @@ function(_sps_emscripten_settings)
     #       Right-now this is sufficient for local debugging
     list(APPEND emscripten_debug_options
       "-gsource-map")
+    list(APPEND emscripten_debug_options
+      "--source-map-base http://127.0.0.1:3001/")
   endif()
 
   # Default linker options
@@ -571,8 +577,9 @@ function(_sps_emscripten_settings)
       "-flto"
       "--enable-bulk-memory"
       "-sUSE_PTHREADS=1"
-      "-sSTACK_SIZE=524288"
+      #"-sSTACK_SIZE=524288"
       #"-sSTACK_SIZE=262144"
+      "-sSTACK_SIZE=1048576"
       "-sPTHREAD_POOL_SIZE=${ARGS_THREAD_POOL_SIZE}"
       "-sPTHREAD_POOL_SIZE_STRICT=${ARGS_MAX_NUMBER_OF_THREADS}"
       # Bug in Emscripten, we cannot use SHARED_MEMORY on .c files if em++
@@ -792,12 +799,8 @@ function(sps_emscripten_module)
 
   if (ARGS_ASYNCIFY STREQUAL "ON")
     list(APPEND emscripten_link_options
-        "-sASYNCIFY_STACK_SIZE=81920" #~297 nesting levels
+        "-sASYNCIFY_STACK_SIZE=8192" #~297 nesting levels
         "-sASYNCIFY=1"
-        "-sUSE_SDL=0"
-        "-sUSE_SDL=0"
-        "-sUSE_SDL_TTF=0"
-        "-sUSE_SDL_IMAGE=0"
     )
     if (ARGS_ASYNCIFY_DEBUG)
       # Debug stack to track bugs in Emscripten  
@@ -845,8 +848,8 @@ function(sps_emscripten_module)
     list(APPEND emscripten_compile_options "-mbulk-memory")
     list(APPEND emscripten_compile_options "-msimd128")
     # TODO: Verify when this is needed
-    list(APPEND emscripten_link_options
-      "-sSUPPORT_LONGJMP=1")
+    #list(APPEND emscripten_link_options
+    #  "-sSUPPORT_LONGJMP=1")
   endif()
 
   # Support extra link args (if provided)
