@@ -382,6 +382,12 @@ function(_sps_emscripten_settings)
     message(FATAL_ERROR "Invalid value for DEBUG. Must be one of NONE, READABLE_JS, PROFILE, DEBUG_NATIVE or SOURCE_MAPS")
   endif()
 
+  if(CMAKE_CONFIGURATION_TYPES)
+    set(OUTPUT_DIR "$<CONFIG>")
+  else()
+    set(OUTPUT_DIR "")
+  endif()
+  
   # Populate lists
   set(emscripten_debug_options)
   set(emscripten_link_options)
@@ -444,7 +450,7 @@ function(_sps_emscripten_settings)
         COMMAND
         ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_CURRENT_SOURCE_DIR}/${node_file}"
-        "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>")
+        "${CMAKE_CURRENT_BINARY_DIR}/${OUTPUT_DIR}")
       set(PACKAGE_FOUND ON)
     endif()
   endforeach()
@@ -456,7 +462,7 @@ function(_sps_emscripten_settings)
       COMMAND
         npm ci
       WORKING_DIRECTORY
-      ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>)
+      ${CMAKE_CURRENT_BINARY_DIR}/${OUTPUT_DIR})
   elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/package.json")
     # Install npm
     add_custom_command(
@@ -465,8 +471,7 @@ function(_sps_emscripten_settings)
       COMMAND
         npm install
       WORKING_DIRECTORY
-      ${CMAKE_CURRENT_BINARY_DIR})
-        ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>)
+      ${CMAKE_CURRENT_BINARY_DIR}/${OUTPUT_DIR})
   endif()
   
   # Handle ES6 modules
@@ -882,7 +887,7 @@ function(sps_emscripten_module)
       COMMAND
       ${CMAKE_COMMAND} -E copy_if_different
       "${CMAKE_CURRENT_SOURCE_DIR}/${javascript_file}"
-      "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>")
+      "${CMAKE_CURRENT_BINARY_DIR}/${OUTPUT_DIR}")
     add_dependencies(${ARGS_TARGET_NAME} ${copyTarget})
   endforeach()
 
