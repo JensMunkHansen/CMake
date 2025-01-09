@@ -1,25 +1,12 @@
 get_filename_component(_EmscriptenSetting_dir "${CMAKE_CURRENT_LIST_FILE}" DIRECTORY)
 
 include(spsHardware)
+include(spsMultiConfiguration)
 
 find_package(Threads REQUIRED)
 
 # TODO: Generated .js files with this content
 # //# sourceMappingURL=http://127.0.0.1:3001/your_file.wasm.map
-
-function(generate_copy_script target_name js_files output_file)
-  # Write the header to the script
-  file(WRITE "${output_file}" "# Auto-generated script for copying JavaScript files\n\n")
-  # Write commands to copy each JavaScript file
-  foreach(js_file ${js_files})
-    file(APPEND "${output_file}" "message(STATUS \"Copying ${js_file} to ${CMAKE_CURRENT_BINARY_DIR}/\${CONFIGURATION}/${js_file}\")\n")
-    file(APPEND "${output_file}"
-         "execute_process(COMMAND \${CMAKE_COMMAND} -E copy_if_different \"${CMAKE_CURRENT_SOURCE_DIR}/${js_file}\" \"${CMAKE_CURRENT_BINARY_DIR}/\${CONFIGURATION}/${js_file}\")\n")
-  endforeach()
-
-  message(STATUS "Generated script: ${output_file}")
-endfunction()
-
 
 function(sps_set_emscripten_defaults PROJECT_NAME)
   # Check and set the default optimization value based on the build type
@@ -454,46 +441,53 @@ function(_sps_emscripten_settings)
     list(APPEND emscripten_link_options
       "-lembind")
   endif()
-
-  # Copy package-json
-  set(node_files
-    package.json
-    package-lock.json
-  )
-  set(PACKAGE_FOUND OFF)
-  set(PACKAGE_LOCK_FOUND OFF)
-  foreach(node_file ${node_files})
-    if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${node_file}")
+  if (0)
+    # Copy package-json
+    set(node_files
+      package.json
+      package-lock.json
+    )
+    set(PACKAGE_FOUND OFF)
+    set(PACKAGE_LOCK_FOUND OFF)
+    foreach(node_file ${node_files})
+      if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${node_file}")
+        add_custom_command(
+          TARGET ${ARGS_TARGET_NAME}
+          POST_BUILD
+          COMMAND
+          ${CMAKE_COMMAND} -E copy_if_different
+          "${CMAKE_CURRENT_SOURCE_DIR}/${node_file}"
+          "${CMAKE_CURRENT_BINARY_DIR}/${OUTPUT_DIR}")
+        set(PACKAGE_FOUND ON)
+      endif()
+    endforeach()
+    if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/package-lock.json")
+      # Install npm
       add_custom_command(
         TARGET ${ARGS_TARGET_NAME}
         POST_BUILD
         COMMAND
-        ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_CURRENT_SOURCE_DIR}/${node_file}"
-        "${CMAKE_CURRENT_BINARY_DIR}/${OUTPUT_DIR}")
-      set(PACKAGE_FOUND ON)
+          npm ci
+        WORKING_DIRECTORY
+        ${CMAKE_CURRENT_BINARY_DIR}/${OUTPUT_DIR})
+    elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/package.json")
+      # Install npm
+      add_custom_command(
+        TARGET ${ARGS_TARGET_NAME}
+        POST_BUILD
+        COMMAND
+          npm install
+        WORKING_DIRECTORY
+        ${CMAKE_CURRENT_BINARY_DIR}/${OUTPUT_DIR})
     endif()
-  endforeach()
-  if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/package-lock.json")
-    # Install npm
-    add_custom_command(
-      TARGET ${ARGS_TARGET_NAME}
-      POST_BUILD
-      COMMAND
-        npm ci
-      WORKING_DIRECTORY
-      ${CMAKE_CURRENT_BINARY_DIR}/${OUTPUT_DIR})
-  elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/package.json")
-    # Install npm
-    add_custom_command(
-      TARGET ${ARGS_TARGET_NAME}
-      POST_BUILD
-      COMMAND
-        npm install
-      WORKING_DIRECTORY
-      ${CMAKE_CURRENT_BINARY_DIR}/${OUTPUT_DIR})
+  else()
+    set(COPY_INITIALIZE_NODE_SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/InitializeNodeScript.cmake")
+    sps_generate_initialize_node_script(${ARGS_TARGET_NAME} ${COPY_INITIALIZE_NODE_SCRIPT} "${GENERATED_SCRIPT}")
+    add_custom_target(InitializeNode ALL
+      COMMAND ${CMAKE_COMMAND} -DCONFIGURATION=$<CONFIG> -P "${COPY_INITIALIZE_NODE_SCRIPT}"
+      COMMENT "Intiailizing Node")
+    add_dependencies(InitializeNode ${ARGS_TARGET_NAME})
   endif()
-  
   # Handle ES6 modules
   if (ARGS_ES6_MODULE STREQUAL "ON")
     # We always do this for ES6 modules
@@ -899,28 +893,14 @@ function(sps_emscripten_module)
       "--pre-js" "${ARGS_PRE_JS}")
   endif()
 
-  if(CMAKE_CONFIGURATION_TYPES)
-    # Generate the .cmake script
-    set(GENERATED_SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/CopyJavaScriptFiles.cmake")
-    generate_copy_script(${ARGS_TARGET_NAME} "${ARGS_JAVASCRIPT_FILES}" "${GENERATED_SCRIPT}")
-    add_custom_target(CopyJavaScriptFiles ALL
-      COMMAND ${CMAKE_COMMAND} -DCONFIGURATION=$<CONFIG> -P "${GENERATED_SCRIPT}"
-      COMMENT "Copying JavaScript files to the appropriate output directory"
-    )
-    add_dependencies(${ARGS_TARGET_NAME} CopyJavaScriptFiles)
-  else()
-    # Copy any JavaScript files
-    foreach(javascript_file ${ARGS_JAVASCRIPT_FILES})
-      set(copyTarget ${ARGS_TARGET_NAME}_copy_${javascript_file})
-      add_custom_target(
-        ${copyTarget}
-        COMMAND
-        ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_CURRENT_SOURCE_DIR}/${javascript_file}"
-        "${CMAKE_CURRENT_BINARY_DIR}/${javascript_file}")
-      add_dependencies(${ARGS_TARGET_NAME} ${copyTarget})
-    endforeach()
-  endif()
+  set(COPY_JAVASCRIPT_FILES_SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/CopyJavaScriptFiles.cmake")
+  sps_generate_copy_script(${ARGS_TARGET_NAME} "${ARGS_JAVASCRIPT_FILES}" "${COPY_JAVASCRIPT_FILES_SCRIPT}")
+  add_custom_target(CopyJavaScriptFiles ALL
+    COMMAND ${CMAKE_COMMAND} -DCONFIGURATION=$<CONFIG> -P "${COPY_JAVASCRIPT_FILES_SCRIPT}"
+    COMMENT "Copying JavaScript files to the appropriate output directory"
+  )
+  add_dependencies(${ARGS_TARGET_NAME} CopyJavaScriptFiles)
+
   # Display verbose information about target
   if (ARGS_VERBOSE)
     _sps_target_info(${ARGS_TARGET_NAME})
