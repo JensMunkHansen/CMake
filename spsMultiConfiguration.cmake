@@ -32,7 +32,7 @@ function(sps_generate_copy_script target_name input_files output_file)
   foreach(input_file ${input_files})
     file(APPEND "${output_file}" "message(STATUS \"Copying ${input_file} to ${CMAKE_CURRENT_BINARY_DIR}/\${CONFIGURATION}/${input_file}\")\n")
     file(APPEND "${output_file}"
-         "execute_process(COMMAND \${CMAKE_COMMAND} -E copy_if_different \"${CMAKE_CURRENT_SOURCE_DIR}/${input_file}\" \"${CMAKE_CURRENT_BINARY_DIR}/${CONFIG}/${input_file}\")\n")
+         "execute_process(COMMAND\n \${CMAKE_COMMAND} -E copy_if_different \"${CMAKE_CURRENT_SOURCE_DIR}/${input_file}\" \"${CMAKE_CURRENT_BINARY_DIR}/${CONFIG}/${input_file}\")\n")
   endforeach()
   message(STATUS "Generated script: ${output_file}")
 endfunction()

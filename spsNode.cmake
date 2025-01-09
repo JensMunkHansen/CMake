@@ -12,15 +12,21 @@ function(_sps_generate_initialize_node_script target_name output_file)
   # Copy package-lock.json or package.json and initialize
   if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/package-lock.json")
     file(APPEND "${output_file}" "message(STATUS \"Copying package-lock.json to ${CMAKE_CURRENT_BINARY_DIR}/\${CONFIGURATION}/package-lock.json\")\n")
-    file(APPEND "${output_file}" "execute_process(COMMAND \${CMAKE_COMMAND} -E copy_if_different \"${CMAKE_CURRENT_SOURCE_DIR}/package-lock.json\" \"${CMAKE_CURRENT_BINARY_DIR}/${CONFIG}/package-lock.json\")\n")
-    file(APPEND "${output_file}" "
-      execute_process(\n
+    file(APPEND "${output_file}"
+      "execute_process(\n
+        COMMAND \${CMAKE_COMMAND} -E copy_if_different \"${CMAKE_CURRENT_SOURCE_DIR}/package-lock.json\" \"${CMAKE_CURRENT_BINARY_DIR}/${CONFIG}/package-lock.json\"\n
+     )\n")
+    file(APPEND "${output_file}"
+      "execute_process(\n
         COMMAND npm ci\n
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${CONFIG}\n
       )\n")
   elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/package.json")
     file(APPEND "${output_file}" "message(STATUS \"Copying package.json to ${CMAKE_CURRENT_BINARY_DIR}/\${CONFIGURATION}/package.json\")\n")
-    file(APPEND "${output_file}" "execute_process(COMMAND \${CMAKE_COMMAND} -E copy_if_different \"${CMAKE_CURRENT_SOURCE_DIR}/package.json\" \"${CMAKE_CURRENT_BINARY_DIR}/${CONFIG}/package.json\")\n")
+    file(APPEND "${output_file}"
+      "execute_process(\n
+        COMMAND \${CMAKE_COMMAND} -E copy_if_different \"${CMAKE_CURRENT_SOURCE_DIR}/package.json\" \"${CMAKE_CURRENT_BINARY_DIR}/${CONFIG}/package.json\"\n
+      )\n")
     file(APPEND "${output_file}" 
       "execute_process(\n
         COMMAND npm install\n
