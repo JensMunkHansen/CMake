@@ -20,7 +20,7 @@ spsMultiConfiguration
       INPUT_FILES                   <files>
       OUTPUT_FILE                   <script for copying>)
 #]==]
-function(sps_generate_copy_script target_name input_files output_file)
+function(_sps_generate_copy_script target_name input_files output_file)
   # Write the header to the script
   file(WRITE "${output_file}" "# Auto-generated script for copying JavaScript files\n\n")
   if (CMAKE_CONFIGURATION_TYPES)
@@ -52,7 +52,7 @@ endfunction()
 #]==]
 function(sps_copy_files target_name postfix input_files)
   set(COPY_FILES_SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/${target_name}_copy_${postfix}.cmake")
-  sps_generate_copy_script(${target_name} "${input_files}" "${COPY_FILES_SCRIPT}")
+  _sps_generate_copy_script(${target_name} "${input_files}" "${COPY_FILES_SCRIPT}")
   add_custom_target(${target_name}_${postfix} ALL
     COMMAND ${CMAKE_COMMAND} -DCONFIGURATION=$<CONFIG> -P "${COPY_FILES_SCRIPT}"
     COMMENT "Copying ${postfix} files to the appropriate output directory"
