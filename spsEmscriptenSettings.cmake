@@ -2,6 +2,7 @@ get_filename_component(_EmscriptenSetting_dir "${CMAKE_CURRENT_LIST_FILE}" DIREC
 
 include(spsHardware)
 include(spsMultiConfiguration)
+include(spsNode)
 
 find_package(Threads REQUIRED)
 
@@ -443,12 +444,7 @@ function(_sps_emscripten_settings)
   endif()
 
   # Handle node
-  set(COPY_INITIALIZE_NODE_SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/InitializeNodeScript.cmake")
-  sps_generate_initialize_node_script(${ARGS_TARGET_NAME} ${COPY_INITIALIZE_NODE_SCRIPT} "${GENERATED_SCRIPT}")
-  add_custom_target(InitializeNode ALL
-    COMMAND ${CMAKE_COMMAND} -DCONFIGURATION=$<CONFIG> -P "${COPY_INITIALIZE_NODE_SCRIPT}"
-    COMMENT "Intiailizing Node")
-  add_dependencies(InitializeNode ${ARGS_TARGET_NAME})
+  sps_initialize_node(${ARGS_TARGET_NAME})
 
   # Handle ES6 modules
   if (ARGS_ES6_MODULE STREQUAL "ON")
@@ -852,14 +848,9 @@ function(sps_emscripten_module)
       "--pre-js" "${ARGS_PRE_JS}")
   endif()
 
-  set(COPY_JAVASCRIPT_FILES_SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/CopyJavaScriptFiles.cmake")
-  sps_generate_copy_script(${ARGS_TARGET_NAME} "${ARGS_JAVASCRIPT_FILES}" "${COPY_JAVASCRIPT_FILES_SCRIPT}")
-  add_custom_target(CopyJavaScriptFiles ALL
-    COMMAND ${CMAKE_COMMAND} -DCONFIGURATION=$<CONFIG> -P "${COPY_JAVASCRIPT_FILES_SCRIPT}"
-    COMMENT "Copying JavaScript files to the appropriate output directory"
-  )
-  add_dependencies(${ARGS_TARGET_NAME} CopyJavaScriptFiles)
-
+  # Copy JavaScript files
+  sps_copy_files(${ARGS_TARGET_NAME} "JavaScript" "${ARGS_JAVASCRIPT_FILES}")
+  
   # Display verbose information about target
   if (ARGS_VERBOSE)
     _sps_target_info(${ARGS_TARGET_NAME})
