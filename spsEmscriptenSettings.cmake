@@ -7,6 +7,20 @@ find_package(Threads REQUIRED)
 # TODO: Generated .js files with this content
 # //# sourceMappingURL=http://127.0.0.1:3001/your_file.wasm.map
 
+function(generate_copy_script target_name js_files output_file)
+  # Write the header to the script
+  file(WRITE "${output_file}" "# Auto-generated script for copying JavaScript files\n\n")
+  # Write commands to copy each JavaScript file
+  foreach(js_file ${js_files})
+    file(APPEND "${output_file}" "message(STATUS \"Copying ${js_file} to ${CMAKE_CURRENT_BINARY_DIR}/\${CONFIGURATION}/${js_file}\")\n")
+    file(APPEND "${output_file}"
+         "execute_process(COMMAND \${CMAKE_COMMAND} -E copy_if_different \"${CMAKE_CURRENT_SOURCE_DIR}/${js_file}\" \"${CMAKE_CURRENT_BINARY_DIR}/\${CONFIGURATION}/${js_file}\")\n")
+  endforeach()
+
+  message(STATUS "Generated script: ${output_file}")
+endfunction()
+
+
 function(sps_set_emscripten_defaults PROJECT_NAME)
   # Check and set the default optimization value based on the build type
   if (NOT DEFINED ${PROJECT_NAME}_OPTIMIZATION)
@@ -383,7 +397,13 @@ function(_sps_emscripten_settings)
   endif()
 
   if(CMAKE_CONFIGURATION_TYPES)
-    set(OUTPUT_DIR "$<CONFIG>")
+    set(OUTPUT_DIR_RELEASE "${CMAKE_CURRENT_BINARY_DIR}/Release")
+    set(OUTPUT_DIR_DEBUG "${CMAKE_CURRENT_BINARY__DIR}/Debug")
+    set(OUTPUT_DIR_RELWITHDEBINFO "${CMAKE_CURRENT_BINARY_DIR}/RelWithDebInfo")
+    set(OUTPUT_DIR_MINSIZEREL "${CMAKE_CURRENT_BINARY_DIR}/MinSizeRel")
+    
+    set(OUTPUT_DIR_RELEASE "Release")
+    set(OUTPUT_DIR_DEBUG "Debug")
   else()
     set(OUTPUT_DIR "")
   endif()
@@ -879,18 +899,28 @@ function(sps_emscripten_module)
       "--pre-js" "${ARGS_PRE_JS}")
   endif()
 
-  # Copy any JavaScript files
-  foreach(javascript_file ${ARGS_JAVASCRIPT_FILES})
-    set(copyTarget ${ARGS_TARGET_NAME}_copy_${javascript_file})
-    add_custom_target(
-      ${copyTarget}
-      COMMAND
-      ${CMAKE_COMMAND} -E copy_if_different
-      "${CMAKE_CURRENT_SOURCE_DIR}/${javascript_file}"
-      "${CMAKE_CURRENT_BINARY_DIR}/${OUTPUT_DIR}")
-    add_dependencies(${ARGS_TARGET_NAME} ${copyTarget})
-  endforeach()
-
+  if(CMAKE_CONFIGURATION_TYPES)
+    # Generate the .cmake script
+    set(GENERATED_SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/CopyJavaScriptFiles.cmake")
+    generate_copy_script(${ARGS_TARGET_NAME} "${ARGS_JAVASCRIPT_FILES}" "${GENERATED_SCRIPT}")
+    add_custom_target(CopyJavaScriptFiles ALL
+      COMMAND ${CMAKE_COMMAND} -DCONFIGURATION=$<CONFIG> -P "${GENERATED_SCRIPT}"
+      COMMENT "Copying JavaScript files to the appropriate output directory"
+    )
+    add_dependencies(${ARGS_TARGET_NAME} CopyJavaScriptFiles)
+  else()
+    # Copy any JavaScript files
+    foreach(javascript_file ${ARGS_JAVASCRIPT_FILES})
+      set(copyTarget ${ARGS_TARGET_NAME}_copy_${javascript_file})
+      add_custom_target(
+        ${copyTarget}
+        COMMAND
+        ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/${javascript_file}"
+        "${CMAKE_CURRENT_BINARY_DIR}/${javascript_file}")
+      add_dependencies(${ARGS_TARGET_NAME} ${copyTarget})
+    endforeach()
+  endif()
   # Display verbose information about target
   if (ARGS_VERBOSE)
     _sps_target_info(${ARGS_TARGET_NAME})
