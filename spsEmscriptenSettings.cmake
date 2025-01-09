@@ -441,53 +441,15 @@ function(_sps_emscripten_settings)
     list(APPEND emscripten_link_options
       "-lembind")
   endif()
-  if (0)
-    # Copy package-json
-    set(node_files
-      package.json
-      package-lock.json
-    )
-    set(PACKAGE_FOUND OFF)
-    set(PACKAGE_LOCK_FOUND OFF)
-    foreach(node_file ${node_files})
-      if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${node_file}")
-        add_custom_command(
-          TARGET ${ARGS_TARGET_NAME}
-          POST_BUILD
-          COMMAND
-          ${CMAKE_COMMAND} -E copy_if_different
-          "${CMAKE_CURRENT_SOURCE_DIR}/${node_file}"
-          "${CMAKE_CURRENT_BINARY_DIR}/${OUTPUT_DIR}")
-        set(PACKAGE_FOUND ON)
-      endif()
-    endforeach()
-    if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/package-lock.json")
-      # Install npm
-      add_custom_command(
-        TARGET ${ARGS_TARGET_NAME}
-        POST_BUILD
-        COMMAND
-          npm ci
-        WORKING_DIRECTORY
-        ${CMAKE_CURRENT_BINARY_DIR}/${OUTPUT_DIR})
-    elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/package.json")
-      # Install npm
-      add_custom_command(
-        TARGET ${ARGS_TARGET_NAME}
-        POST_BUILD
-        COMMAND
-          npm install
-        WORKING_DIRECTORY
-        ${CMAKE_CURRENT_BINARY_DIR}/${OUTPUT_DIR})
-    endif()
-  else()
-    set(COPY_INITIALIZE_NODE_SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/InitializeNodeScript.cmake")
-    sps_generate_initialize_node_script(${ARGS_TARGET_NAME} ${COPY_INITIALIZE_NODE_SCRIPT} "${GENERATED_SCRIPT}")
-    add_custom_target(InitializeNode ALL
-      COMMAND ${CMAKE_COMMAND} -DCONFIGURATION=$<CONFIG> -P "${COPY_INITIALIZE_NODE_SCRIPT}"
-      COMMENT "Intiailizing Node")
-    add_dependencies(InitializeNode ${ARGS_TARGET_NAME})
-  endif()
+
+  # Handle node
+  set(COPY_INITIALIZE_NODE_SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/InitializeNodeScript.cmake")
+  sps_generate_initialize_node_script(${ARGS_TARGET_NAME} ${COPY_INITIALIZE_NODE_SCRIPT} "${GENERATED_SCRIPT}")
+  add_custom_target(InitializeNode ALL
+    COMMAND ${CMAKE_COMMAND} -DCONFIGURATION=$<CONFIG> -P "${COPY_INITIALIZE_NODE_SCRIPT}"
+    COMMENT "Intiailizing Node")
+  add_dependencies(InitializeNode ${ARGS_TARGET_NAME})
+
   # Handle ES6 modules
   if (ARGS_ES6_MODULE STREQUAL "ON")
     # We always do this for ES6 modules
@@ -534,9 +496,6 @@ function(_sps_emscripten_settings)
         "-sENVIRONMENT=${ARGS_ENVIRONMENT}"
       )
     endif()
-    if (NOT PACKAGE_FOUND)
-      #message(FATAL_ERROR "package.json required for ES6 module")
-    endif()    
   else()
     # NOT AN ES6 module
 
