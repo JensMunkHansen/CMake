@@ -8,20 +8,6 @@ find_package(Threads REQUIRED)
 # //# sourceMappingURL=http://127.0.0.1:3001/your_file.wasm.map
 
 function(sps_set_emscripten_defaults PROJECT_NAME)
-
-  if (0)
-    # Helper function to unset cached variables
-    macro(clear_cached_variable VAR_NAME)
-      if (DEFINED CACHE{${VAR_NAME}})
-        unset(${VAR_NAME} CACHE)
-      endif()
-    endmacro()
-    
-    # Clear cached variables for this project
-    clear_cached_variable("${PROJECT_NAME}_OPTIMIZATION")
-    clear_cached_variable("${PROJECT_NAME}_COMPILE_OPTIMIZATION")
-    clear_cached_variable("${PROJECT_NAME}_DEBUG")
-  endif()
   # Check and set the default optimization value based on the build type
   if (NOT DEFINED ${PROJECT_NAME}_OPTIMIZATION)
     if (CMAKE_BUILD_TYPE STREQUAL "Release")
@@ -458,7 +444,8 @@ function(_sps_emscripten_settings)
         COMMAND
         ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_CURRENT_SOURCE_DIR}/${node_file}"
-        "${CMAKE_CURRENT_BINARY_DIR}")
+        "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>")
+      set(PACKAGE_FOUND ON)
     endif()
   endforeach()
   if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/package-lock.json")
@@ -469,7 +456,7 @@ function(_sps_emscripten_settings)
       COMMAND
         npm ci
       WORKING_DIRECTORY
-      ${CMAKE_CURRENT_BINARY_DIR})
+      ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>)
   elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/package.json")
     # Install npm
     add_custom_command(
@@ -479,6 +466,7 @@ function(_sps_emscripten_settings)
         npm install
       WORKING_DIRECTORY
       ${CMAKE_CURRENT_BINARY_DIR})
+        ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>)
   endif()
   
   # Handle ES6 modules
@@ -576,8 +564,8 @@ function(_sps_emscripten_settings)
       "--enable-bulk-memory"
       "-sUSE_PTHREADS=1"
       #"-sSTACK_SIZE=524288"
-      #"-sSTACK_SIZE=262144"
-      "-sSTACK_SIZE=1048576"
+      "-sSTACK_SIZE=262144"
+      #"-sSTACK_SIZE=1048576"
       "-sPTHREAD_POOL_SIZE=${ARGS_THREAD_POOL_SIZE}"
       "-sPTHREAD_POOL_SIZE_STRICT=${ARGS_MAX_NUMBER_OF_THREADS}"
       # Bug in Emscripten, we cannot use SHARED_MEMORY on .c files if em++
@@ -732,11 +720,10 @@ function(sps_emscripten_module)
     list(APPEND emscripten_exported_functions "free")
     list(APPEND emscripten_exported_functions "malloc")
     # Runtime methods needed for ES6
-    set(emscripten_exported_runtime_methods "ENV;FS;addFunction;removeFunction;wasmTable")
-
+    set(emscripten_exported_runtime_methods "ENV;FS;addFunction;removeFunction")
   endif()
   # Is it okay always to export this???
-  list(APPEND emscripten_exported_runtime_methods "ccall;cwrap;stringToNewUTF8")
+  list(APPEND emscripten_exported_runtime_methods "ccall;cwrap;stringToNewUTF8;UTF8ToString")
 
   
   if (ARGS_THREADING_ENABLED STREQUAL "ON")
@@ -886,7 +873,7 @@ function(sps_emscripten_module)
       PRIVATE
       "--pre-js" "${ARGS_PRE_JS}")
   endif()
-  
+
   # Copy any JavaScript files
   foreach(javascript_file ${ARGS_JAVASCRIPT_FILES})
     set(copyTarget ${ARGS_TARGET_NAME}_copy_${javascript_file})
@@ -895,7 +882,7 @@ function(sps_emscripten_module)
       COMMAND
       ${CMAKE_COMMAND} -E copy_if_different
       "${CMAKE_CURRENT_SOURCE_DIR}/${javascript_file}"
-      "${CMAKE_CURRENT_BINARY_DIR}")
+      "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>")
     add_dependencies(${ARGS_TARGET_NAME} ${copyTarget})
   endforeach()
 
