@@ -287,8 +287,6 @@ _sps_emscripten_settings(
                                  SMALLEST, SMALLEST_WITH_CLOSURE> (default: NONE)
   DEBUG                         <NONE, READABLE_JS, PROFILE,
                                  DEBUG_NATIVE> (default: READABLE_JS)
-  INITIAL_MEMORY                (default: 1GB) May crash if too low
-  MAXIMUM_MEMORY                (default: 4GB)
   EMSCRIPTEN_DEBUG_INFO         <variable>
   EMSCRIPTEN_LINK_OPTIONS       <variable>
   EMSCRIPTEN_OPTIMIZATION_FLAGS <variable>)
@@ -384,18 +382,6 @@ function(_sps_emscripten_settings)
     message(FATAL_ERROR "Invalid value for DEBUG. Must be one of NONE, READABLE_JS, PROFILE, DEBUG_NATIVE or SOURCE_MAPS")
   endif()
 
-  if(CMAKE_CONFIGURATION_TYPES)
-    set(OUTPUT_DIR_RELEASE "${CMAKE_CURRENT_BINARY_DIR}/Release")
-    set(OUTPUT_DIR_DEBUG "${CMAKE_CURRENT_BINARY__DIR}/Debug")
-    set(OUTPUT_DIR_RELWITHDEBINFO "${CMAKE_CURRENT_BINARY_DIR}/RelWithDebInfo")
-    set(OUTPUT_DIR_MINSIZEREL "${CMAKE_CURRENT_BINARY_DIR}/MinSizeRel")
-    
-    set(OUTPUT_DIR_RELEASE "Release")
-    set(OUTPUT_DIR_DEBUG "Debug")
-  else()
-    set(OUTPUT_DIR "")
-  endif()
-  
   # Populate lists
   set(emscripten_debug_options)
   set(emscripten_link_options)
@@ -407,9 +393,6 @@ function(_sps_emscripten_settings)
   if(ARGS_DEBUG STREQUAL "NONE")
     list(APPEND emscripten_debug_options
       "-g0")
-    #  Note, if 3rd-party have assertions (they shouldn't have), we can add this
-#    list(APPEND emscripten_link_options
-#      "-sASSERTIONS=1") # Deadlocks without it????
   elseif(ARGS_DEBUG STREQUAL "READABLE_JS")
     list(APPEND emscripten_link_options
       "-sASSERTIONS=1") # Deadlocks without it????
@@ -424,8 +407,6 @@ function(_sps_emscripten_settings)
     list(APPEND emscripten_link_options
       "-sASSERTIONS=2")
   elseif(ARGS_DEBUG STREQUAL "SOURCE_MAPS")
-    # TODO: Investigate base-address for remote debugging. Requires knowledge of debug symbol server
-    #       Right-now this is sufficient for local debugging
     list(APPEND emscripten_debug_options
       "-gsource-map")
   endif()
@@ -460,17 +441,7 @@ function(_sps_emscripten_settings)
       "-sINCLUDE_FULL_LIBRARY" # for addFunction
       "-sALLOW_TABLE_GROWTH=1"
       "-sEXPORT_NAME=${ARGS_EXPORT_NAME}"
-      "-sINITIAL_MEMORY=${ARGS_INITIAL_MEMORY}"
     )
-    if (DEFINED ARGS_MAXIMUM_MEMORY)
-      list(APPEND emscripten_link_options
-        "-sMAXIMUM_MEMORY=${ARGS_MAXIMUM_MEMORY}"
-        "-sALLOW_MEMORY_GROWTH=1")
-    else()
-      list(APPEND emscripten_link_options
-        "-sALLOW_MEMORY_GROWTH=0"
-      )
-    endif()
     if (NOT DEFINED ARGS_ENVIRONMENT)
       if (ARGS_THREADING_ENABLED STREQUAL "ON")
         if ("${ARGS_DISABLE_NODE}" STREQUAL "ON")      
@@ -569,6 +540,8 @@ sps_emscripten_module(
   DISABLE_NODE
   PRE_JS                        --pre-js
   ENVIRONMENT                   (default: AUTO)
+  INITIAL_MEMORY                (default: 1GB) May crash if too low
+  MAXIMUM_MEMORY                (default: 4GB)  
   TRHEADING_ENABLED             <ON|OFF>   (default: OFF)
   THREAD_POOL_SIZE              (default: 4)
   MAX_NUMBER_OF_THREADS         (default: 4)
@@ -679,8 +652,6 @@ function(sps_emscripten_module)
     DISABLE_NODE ${ARGS_DISABLE_NODE}
     DEBUG ${ARGS_DEBUG}
     ENVIRONMENT ${ARGS_ENVIRONMENT}
-    INITIAL_MEMORY ${ARGS_INITIAL_MEMORY}
-    MAXIMUM_MEMORY ${ARGS_MAXIMUM_MEMORY}
     THREADING_ENABLED ${ARGS_THREADING_ENABLED}
     THREAD_POOL_SIZE ${ARGS_THREAD_POOL_SIZE}
     MAX_NUMBER_OF_THREADS ${ARGS_MAX_NUMBER_OF_THREADS}
@@ -738,6 +709,22 @@ function(sps_emscripten_module)
     list(APPEND emscripten_exported_runtime_methods "callMain")
   endif()
 
+  # Memory
+  if (ARGS_INITIAL_MEMORY)
+    list(APPEND emscripten_link_options
+      "-sINITIAL_MEMORY=${ARGS_INITIAL_MEMORY}"
+    )
+  endif()
+  if (DEFINED ARGS_MAXIMUM_MEMORY)
+    list(APPEND emscripten_link_options
+      "-sMAXIMUM_MEMORY=${ARGS_MAXIMUM_MEMORY}"
+      "-sALLOW_MEMORY_GROWTH=1")
+  else()
+    list(APPEND emscripten_link_options
+      "-sALLOW_MEMORY_GROWTH=0"
+    )
+  endif()
+  
   # 64-bit support (experimental)
   if (ARGS_64_BIT STREQUAL "ON")
     list(APPEND emscripten_link_options
