@@ -1,5 +1,24 @@
-# Utility function for dumping variables
-function(cmake_dump_variables)
+#[==[.rst:
+*********
+spsUtilities
+*********
+#
+#]==]
+
+#[==[.rst:
+
+.. cmake:command:: _sps_cmake_dump_variables
+
+  |module-internal|
+
+  The :cmake:command:`_sps_cmake_dump_variables` function is provided for dumping
+  CMake variables that match a regex pattern
+
+  .. code-block:: cmake
+    _sps_cmake_dump_variables(
+      REGEX                         <pattern>)
+#]==]
+function(_sps_cmake_dump_variables)
   get_cmake_property(_variableNames VARIABLES)
   list (SORT _variableNames)
   foreach (_variableName ${_variableNames})
@@ -14,6 +33,18 @@ function(cmake_dump_variables)
   endforeach()
 endfunction()
 
+#[==[.rst:
+
+.. cmake:command:: spsFindVTKModulePath
+
+  |module-internal|
+
+  The :cmake:command:`spsFindVTKModulePaths is for locating the MODULE_PATH for VTK.
+
+  .. code-block:: cmake
+    spsFindVTKModulePaths(
+      output_path                       <variable>)
+#]==]
 function(spsFindVTKModulePath path)
   set(_vtk_cmake_dir)
   set(_vtk_cmake_module_paths
