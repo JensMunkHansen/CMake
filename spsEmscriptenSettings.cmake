@@ -410,6 +410,9 @@ function(_sps_emscripten_settings)
     list(APPEND emscripten_debug_options
       "-gsource-map"
     )
+#    list(APPEND emscripten_debug_options
+#      "--emit-symbol-map"
+#      )
   endif()
 
   # TODO: Handle source-maps

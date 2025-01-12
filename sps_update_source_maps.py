@@ -2,6 +2,19 @@ import os
 import json
 import re
 
+
+# Working dir should be output dir
+
+os.path.join(os.environ.get('EMSDK'), 'upstream')
+
+# What to replace
+os.path.join(os.path.relpath('/', os.getcwd()), 'emsdk')
+# With this
+os.path.relpath(os.path.join(os.environ.get('EMSDK'), 'upstream'), os.getcwd())
+
+# TEST THIS
+# export EMSCRIPTEN_ROOT="/home/jmh/github/emsdk/upstream/"
+
 def process_source_map(file_path, output_path):
     # Check if EMSDK environment variable exists
     emsdk_path = os.environ.get('EMSDK')
@@ -15,7 +28,7 @@ def process_source_map(file_path, output_path):
     relative_path = os.path.relpath(target_path, start_path)
     
     # Construct the replacement prefix
-    replacement_prefix = os.path.join(emsdk_path, "upstream")
+    replacement_prefix = os.path.relpath(os.path.join(emsdk_path, "upstream"), os.getcwd())
 
     # Load the source map file
     with open(file_path, 'r') as f:
@@ -47,3 +60,24 @@ output_file = "updated_map.wasm.map"
 process_source_map(source_map_file, output_file)
 
 
+
+# check_main.py
+import sys
+
+def has_main_function(files):
+    for file in files:
+        try:
+            with open(file, 'r') as f:
+                content = f.read()
+                if 'int main(' in content or 'void main(' in content:
+                    return True
+        except FileNotFoundError:
+            pass
+    return False
+
+if __name__ == "__main__":
+    mapFile = sys.argv[1:]
+    if has_main_function(files):
+        print("1")  # Indicates 'main' function exists
+    else:
+        print("0")  # Indicates no 'main' function
