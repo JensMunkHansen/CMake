@@ -25,9 +25,6 @@ def process_source_map(file_path, output_path):
     with open(file_path, 'r') as f:
         source_map = json.load(f)
 
-    # Regular expression to match the ../../../../../../emsdk/emscripten/ pattern
-    #pattern = r"(\.\./)+emsdk/emscripten/"
-
     # Replace matching paths in the "sources" array
     updated_sources = []
     for src in source_map.get('sources', []):

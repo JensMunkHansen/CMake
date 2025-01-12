@@ -774,6 +774,11 @@ function(sps_emscripten_module)
     "-sEXPORTED_FUNCTIONS=${exported_functions_str}")
   list(APPEND emscripten_link_options
     "-sASYNCIFY_IMPORTS=${async_imports_str}")
+
+  list(APPEND emscripten_link_options
+    "--source-map")
+
+  
   # C++-exceptions (allow them)
   if (ARGS_SOURCE_FILES)
     # C does not support exceptions

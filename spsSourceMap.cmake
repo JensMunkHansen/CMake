@@ -27,5 +27,13 @@ function(sps_update_source_map target)
     COMMAND ${CMAKE_COMMAND} -DCONFIGURATION=$<CONFIG> -P "${UPDATE_SOURCE_MAP_SCRIPT}"
     COMMENT "Updating source map")
   add_dependencies(${target}UpdateSourceMap ${target})
+
+  # Optionally, make sure `UpdateSourceMap` runs whenever `target` is built
+  add_custom_command(
+    TARGET ${target}
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -DCONFIGURATION=$<CONFIG> -P "${UPDATE_SOURCE_MAP_SCRIPT}"
+    COMMENT "Running UpdateSourceMap after building ${target}"
+  )
 endfunction()
 
