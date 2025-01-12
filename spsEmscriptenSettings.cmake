@@ -3,6 +3,7 @@ get_filename_component(_EmscriptenSetting_dir "${CMAKE_CURRENT_LIST_FILE}" DIREC
 include(spsHardware)
 include(spsMultiConfiguration)
 include(spsNode)
+include(spsSourceMap)
 
 find_package(Threads REQUIRED)
 
@@ -842,6 +843,11 @@ function(sps_emscripten_module)
 
   # Copy JavaScript files
   sps_copy_files(${ARGS_TARGET_NAME} "JavaScript" "${ARGS_JAVASCRIPT_FILES}")
+
+  # Update maps
+  if(${ARGS_DEBUG} STREQUAL "SOURCE_MAPS")
+    sps_update_source_map(${ARGS_TARGET_NAME})
+  endif()
   
   # Display verbose information about target
   if (ARGS_VERBOSE)
