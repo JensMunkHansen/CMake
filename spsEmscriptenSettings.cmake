@@ -371,7 +371,7 @@ function(_sps_emscripten_settings)
   # Validate OPTIMIZATION argument
   list(FIND valid_optimization_levels "${ARGS_OPTIMIZATION}" opt_index)
   if (opt_index EQUAL -1)
-    message(FATAL_ERROR "Invalid value for OPTIMIZATION. Must be one of NONE, LITTLE, or MORE.")
+    message(FATAL_ERROR "Invalid value for OPTIMIZATION (${ARGS_OPTIMIZATION}). Must be one of NONE, LITTLE, or MORE.")
   endif()
 
   # Define valid options for DEBUG
@@ -380,7 +380,7 @@ function(_sps_emscripten_settings)
   # Validate DEBUG argument
   list(FIND valid_debug_levels "${ARGS_DEBUG}" opt_index)
   if (opt_index EQUAL -1)
-    message(FATAL_ERROR "Invalid value for DEBUG. Must be one of NONE, READABLE_JS, PROFILE, DEBUG_NATIVE or SOURCE_MAPS")
+    message(FATAL_ERROR "Invalid value for DEBUG (${ARGS_DEBUG}). Must be one of NONE, READABLE_JS, PROFILE, DEBUG_NATIVE or SOURCE_MAPS")
   endif()
 
   # Populate lists
@@ -404,7 +404,7 @@ function(_sps_emscripten_settings)
       "-g2")
   elseif(ARGS_DEBUG STREQUAL "DEBUG_NATIVE")
     list(APPEND emscripten_debug_options
-      "-g3")
+      "-g3") # -01 -g skips binaryen
     list(APPEND emscripten_link_options
       "-sASSERTIONS=2")
   elseif(ARGS_DEBUG STREQUAL "SOURCE_MAPS")
@@ -725,6 +725,10 @@ function(sps_emscripten_module)
     list(APPEND emscripten_link_options
       "-sMAXIMUM_MEMORY=${ARGS_MAXIMUM_MEMORY}"
       "-sALLOW_MEMORY_GROWTH=1")
+  elseif(${ARGS_DEBUG} STREQUAL "SOURCE_MAPS" OR ${ARGS_DEBUG} STREQUAL "DEBUG_NATIVE")
+    list(APPEND emscripten_link_options
+      "-sALLOW_MEMORY_GROWTH=1"
+    )
   else()
     list(APPEND emscripten_link_options
       "-sALLOW_MEMORY_GROWTH=0"
@@ -734,14 +738,15 @@ function(sps_emscripten_module)
   # 64-bit support (experimental)
   if (ARGS_64_BIT STREQUAL "ON")
     list(APPEND emscripten_link_options
-      "-sWASM_BIGINT=1"
       "-sMEMORY64=1")
     list(APPEND emscripten_compile_options
       "-target=wasm64"
       "-sWASM_BIGINT=1"
       "-sMEMORY64=1")
   endif()
-
+  list(APPEND emscripten_link_options
+    "-sWASM_BIGINT=1"
+  )
   if (ARGS_FILE_SYSTEM STREQUAL "ON")
     list(APPEND emscripten_link_options
       "-sFORCE_FILESYSTEM=1"
@@ -775,10 +780,6 @@ function(sps_emscripten_module)
   list(APPEND emscripten_link_options
     "-sASYNCIFY_IMPORTS=${async_imports_str}")
 
-  list(APPEND emscripten_link_options
-    "--source-map")
-
-  
   # C++-exceptions (allow them)
   if (ARGS_SOURCE_FILES)
     # C does not support exceptions
@@ -814,6 +815,19 @@ function(sps_emscripten_module)
     list(APPEND emscripten_link_options
       "${ARGS_EXTRA_LINK_ARGS}")
   endif()
+
+  # Initialization JavaScript file
+  if (ARGS_PRE_JS)
+    list(APPEND emscripten_link_options
+      "--pre-js" "${ARGS_PRE_JS}"
+    )
+  endif()
+
+  if(${ARGS_DEBUG} STREQUAL "SOURCE_MAPS")
+    list(APPEND emscripten_link_options
+      "-sERROR_ON_WASM_CHANGES_AFTER_LINK")
+  endif()
+  
   # Link and compile options
   target_compile_options(${ARGS_TARGET_NAME}
     PRIVATE
@@ -839,12 +853,6 @@ function(sps_emscripten_module)
     target_compile_definitions(${ARGS_TARGET_NAME} PRIVATE IS_MAIN_MODULE)    
   endif()
 
-  # Initialization JavaScript file
-  if (ARGS_PRE_JS)
-    target_link_options(${ARGS_TARGET_NAME}
-      PRIVATE
-      "--pre-js" "${ARGS_PRE_JS}")
-  endif()
 
   # Copy JavaScript files
   sps_copy_files(${ARGS_TARGET_NAME} "JavaScript" "${ARGS_JAVASCRIPT_FILES}")

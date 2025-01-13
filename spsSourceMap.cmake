@@ -23,10 +23,10 @@ endfunction()
 function(sps_update_source_map target)
   set(UPDATE_SOURCE_MAP_SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/${target}_replace_symbols_script.cmake")
   _sps_update_source_map_script(${target} ${UPDATE_SOURCE_MAP_SCRIPT} "${GENERATED_SCRIPT}")
-  add_custom_target(${target}UpdateSourceMap ALL
-    COMMAND ${CMAKE_COMMAND} -DCONFIGURATION=$<CONFIG> -P "${UPDATE_SOURCE_MAP_SCRIPT}"
-    COMMENT "Updating source map")
-  add_dependencies(${target}UpdateSourceMap ${target})
+#  add_custom_target(${target}UpdateSourceMap ALL
+#    COMMAND ${CMAKE_COMMAND} -DCONFIGURATION=$<CONFIG> -P "${UPDATE_SOURCE_MAP_SCRIPT}"
+#    COMMENT "Updating source map")
+#  add_dependencies(${target}UpdateSourceMap ${target})
 
   # Optionally, make sure `UpdateSourceMap` runs whenever `target` is built
   add_custom_command(
