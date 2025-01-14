@@ -22,7 +22,7 @@ spsMultiConfiguration
 #]==]
 function(_sps_generate_copy_script target_name input_files output_file)
   # Write the header to the script
-  file(WRITE "${output_file}" "# Auto-generated script for copying JavaScript files\n\n")
+  file(WRITE "${output_file}" "# Auto-generated script for copying files\n\n")
   if (CMAKE_CONFIGURATION_TYPES)
     set(CONFIG "\${CONFIGURATION}")
   else()
@@ -43,7 +43,8 @@ endfunction()
 
   The :cmake:command:`sps_copy_files is provided for copying files to
   output directory. It handles single and multi-configuration setups
-  and the copying is done during build.
+  and the copying is done during build. Note, this runs independently of
+  the target
 
   .. code-block:: cmake
     sps_copy_files(

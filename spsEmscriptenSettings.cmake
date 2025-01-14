@@ -1,3 +1,11 @@
+#[==[.rst:
+*********
+spsEmscriptenSettings
+*********
+#
+#]==]
+
+
 get_filename_component(_EmscriptenSetting_dir "${CMAKE_CURRENT_LIST_FILE}" DIRECTORY)
 
 include(spsHardware)
@@ -10,6 +18,28 @@ find_package(Threads REQUIRED)
 # TODO: Generated .js files with this content
 # //# sourceMappingURL=http://127.0.0.1:3001/your_file.wasm.map
 
+#[==[.rst:
+
+.. cmake:command:: sps_set_emscripten_defaults
+
+  Set default emscripten settings for debug and optimization
+
+  The :cmake:command:`sps_set_emscripten_defaults` function is provided to define options
+  for different levels of optimization and debug
+
+  .. code-block:: cmake
+    sps_set_emscripten_defaults(PROJECT_NAME)
+
+  It adds CMake options, which can be set from outside and with default values for
+  CMAKE_BUILD_TYPE=Release and CMAKE_BUILD_TYPE=Debug. The options are named:
+
+  ${PROJECT}_DEBUG
+  ${PROJECT}_OPTIMIZATION (link optimization, which is the most important)
+  ${PROJECT}_COMPILE_OPTIMIZATION 
+
+  They are only used for Emscripten.
+
+#]==]
 function(sps_set_emscripten_defaults PROJECT_NAME)
   # Check and set the default optimization value based on the build type
   if (NOT DEFINED ${PROJECT_NAME}_OPTIMIZATION)
@@ -47,13 +77,6 @@ function(sps_set_emscripten_defaults PROJECT_NAME)
 endfunction()
 
 
-#[==[.rst:
-*********
-spsEmscriptenSettings
-*********
-#
-#]==]
-
 # Function to set Emscripten optimization flags
 function(sps_set_emscripten_optimization_flags optimization_level optimization_flags link_options)
   if (${optimization_level} STREQUAL "NONE")
@@ -66,7 +89,7 @@ function(sps_set_emscripten_optimization_flags optimization_level optimization_f
     list(APPEND ${optimization_flags} "-O3")
     list(APPEND ${optimization_flags} "-msimd128")
     # Notes:
-    #  - only gcc (not clang) support "-falign-data=16", so we cannot use it yet
+    #  - only gcc (no clang) support "-falign-data=16", so we cannot use it yet
     #  - "-ffast-math", I have always induced a dead-lock when using this, also small examples (compiler issue)
     list(APPEND ${optimization_flags} -Wno-pthreads-mem-growth)
     set(${optimization_flags} "${${optimization_flags}}" PARENT_SCOPE)
@@ -347,11 +370,6 @@ function(_sps_emscripten_settings)
     # Note for this we need a VTK with improved thread support
     set(ARGS_THREAD_POOL_SIZE 4)
   endif()
-  if (NOT DEFINED ARGS_MAX_NUMBER_OF_THREADS)
-    sps_get_processor_count(MAX_CONCURRENCY)
-    set(ARGS_MAX_NUMBER_OF_THREADS ${MAX_CONCURRENCY})
-  endif()
-
   if (NOT DEFINED ARGS_MAX_NUMBER_OF_THREADS)
     sps_get_processor_count(MAX_CONCURRENCY_VAR)
     set(ARGS_MAX_NUMBER_OF_THREADS ${MAX_CONCURRENCY_VAR})
@@ -731,6 +749,7 @@ function(sps_emscripten_module)
       "-sALLOW_MEMORY_GROWTH=1"
     )
   else()
+    # Default is that we allow memory to grow
     list(APPEND emscripten_link_options
       "-sALLOW_MEMORY_GROWTH=0"
     )

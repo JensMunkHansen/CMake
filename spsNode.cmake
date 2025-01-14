@@ -1,15 +1,26 @@
+#[==[.rst:
+*********
+spsNode
+*********
+#
+# Setting for Node in Emscripten projects
+#]==]
+
 include(spsMultiConfiguration)
 
 function(_sps_generate_initialize_node_script target_name output_file)
   # Write the header to the script
   file(WRITE "${output_file}" "# Auto-generated script for copying package.json and package-lock.json and initializing node\n\n")
+
+  # Check if single or multi-configuration
   if (CMAKE_CONFIGURATION_TYPES)
     set(CONFIG "\${CONFIGURATION}")
   else()
     set(CONFIG)
   endif()
 
-  # Copy package-lock.json or package.json and initialize
+  # Copy package-lock.json and/or package.json and initialize. If a lock file exists, we
+  # use that
   if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/package-lock.json")
     file(APPEND "${output_file}" "message(STATUS \"Copying package-lock.json to ${CMAKE_CURRENT_BINARY_DIR}/\${CONFIGURATION}/package-lock.json\")\n")
     file(APPEND "${output_file}"
