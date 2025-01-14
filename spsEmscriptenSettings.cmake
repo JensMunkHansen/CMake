@@ -18,65 +18,6 @@ find_package(Threads REQUIRED)
 # TODO: Generated .js files with this content
 # //# sourceMappingURL=http://127.0.0.1:3001/your_file.wasm.map
 
-#[==[.rst:
-
-.. cmake:command:: sps_set_emscripten_defaults
-
-  Set default emscripten settings for debug and optimization
-
-  The :cmake:command:`sps_set_emscripten_defaults` function is provided to define options
-  for different levels of optimization and debug
-
-  .. code-block:: cmake
-    sps_set_emscripten_defaults(PROJECT_NAME)
-
-  It adds CMake options, which can be set from outside and with default values for
-  CMAKE_BUILD_TYPE=Release and CMAKE_BUILD_TYPE=Debug. The options are named:
-
-  ${PROJECT}_DEBUG
-  ${PROJECT}_OPTIMIZATION (link optimization, which is the most important)
-  ${PROJECT}_COMPILE_OPTIMIZATION 
-
-  They are only used for Emscripten.
-
-#]==]
-function(sps_set_emscripten_defaults PROJECT_NAME)
-  # Check and set the default optimization value based on the build type
-  if (NOT DEFINED ${PROJECT_NAME}_OPTIMIZATION)
-    if (CMAKE_BUILD_TYPE STREQUAL "Release")
-      set(${PROJECT_NAME}_OPTIMIZATION BEST CACHE STRING "Link optimization level for ${PROJECT_NAME} (default: BEST for Release)")
-    elseif (CMAKE_BUILD_TYPE STREQUAL "Debug")
-      set(${PROJECT_NAME}_OPTIMIZATION NONE CACHE STRING "Link optimization level for ${PROJECT_NAME} (default: NONE for Debug)")
-    else()
-      set(${PROJECT_NAME}_OPTIMIZATION NONE CACHE STRING "Link optimization level for ${PROJECT_NAME} (default: NONE for unknown build type)")
-    endif()
-  endif()
-  set_property(CACHE ${PROJECT_NAME}_OPTIMIZATION PROPERTY STRINGS "NONE" "SMALLEST" "BEST" "SMALLEST_WITH_CLOSURE")
-
-  if (NOT DEFINED ${PROJECT_NAME}_COMPILE_OPTIMIZATION)
-    if (CMAKE_BUILD_TYPE STREQUAL "Release")
-      set(${PROJECT_NAME}_COMPILE_OPTIMIZATION BEST CACHE STRING "Compile optimization level for ${PROJECT_NAME} (default: BEST for Release)")
-    elseif (CMAKE_BUILD_TYPE STREQUAL "Debug")
-      set(${PROJECT_NAME}_COMPILE_OPTIMIZATION NONE CACHE STRING "Compile optimization level for ${PROJECT_NAME} (default: NONE for Debug)")
-    else()
-      set(${PROJECT_NAME}_COMPILE_OPTIMIZATION NONE CACHE STRING "Compile optimization level for ${PROJECT_NAME} (default: NONE for unknown build type)")
-    endif()
-  endif()
-  set_property(CACHE ${PROJECT_NAME}_COMPILE_OPTIMIZATION PROPERTY STRINGS "NONE" "SMALLEST" "BEST" "SMALLEST_WITH_CLOSURE")
-
-  if (NOT DEFINED ${PROJECT_NAME}_DEBUG)
-    if (CMAKE_BUILD_TYPE STREQUAL "Release")
-      set(${PROJECT_NAME}_DEBUG READABLE_JS CACHE STRING "Debug level for ${PROJECT_NAME} (default: READABLE_JS for Release)")
-    elseif (CMAKE_BUILD_TYPE STREQUAL "Debug")
-      set(${PROJECT_NAME}_DEBUG DEBUG_NATIVE CACHE STRING "Debug level for ${PROJECT_NAME} (default: DEBUG_NATIVE for Debug)")
-    else()
-      set(${PROJECT_NAME}_DEBUG NONE CACHE STRING "Debug level for ${PROJECT_NAME} (default: NONE for unknown build type)")
-    endif()
-  endif()
-  set_property(CACHE ${PROJECT_NAME}_DEBUG PROPERTY STRINGS "NONE" "READABLE_JS" "PROFILE" "DEBUG_NATIVE" "SOURCE_MAPS")
-endfunction()
-
-
 # Function to set Emscripten optimization flags
 function(sps_set_emscripten_optimization_flags optimization_level optimization_flags link_options)
   if (${optimization_level} STREQUAL "NONE")
