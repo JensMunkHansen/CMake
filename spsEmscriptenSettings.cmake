@@ -557,6 +557,7 @@ sps_emscripten_module(
   SIDE_MODULE
   MAIN_MODULE
   ASYNCIFY_DEBUG
+  DEBUG_VALIDATION              (check if binaryen modifies debug information)
   64_BIT                        <ON|OFF> (default: OFF)
   TARGET_NAME                   <variable>
   SOURCE_FILES                  <list>     (.cxx, .c)
@@ -586,7 +587,7 @@ sps_emscripten_module(
 #]==]
 function(sps_emscripten_module)
   # Define the arguments that the function accepts
-  set(options SIDE_MODULE MAIN_MODULE VERBOSE DISABLE_NODE ASYNCIFY_DEBUG)
+  set(options SIDE_MODULE MAIN_MODULE VERBOSE DISABLE_NODE ASYNCIFY_DEBUG DEBUG_VALIDATION)
   set(one_value_args
     64_BIT 
     TARGET_NAME
@@ -825,10 +826,6 @@ function(sps_emscripten_module)
     list(APPEND emscripten_compile_options "-pthread")
     list(APPEND emscripten_compile_options "-matomics")
     list(APPEND emscripten_compile_options "-mbulk-memory")
-    list(APPEND emscripten_compile_options "-msimd128")
-    # TODO: Verify when this is needed
-    #list(APPEND emscripten_link_options
-    #  "-sSUPPORT_LONGJMP=1")
   endif()
 
   # Support extra link args (if provided)
@@ -844,7 +841,8 @@ function(sps_emscripten_module)
     )
   endif()
 
-  if(${ARGS_DEBUG} STREQUAL "SOURCE_MAPS")
+  # Check that binaryen does not modify debug symbols
+  if(${ARGS_DEBUG} STREQUAL "SOURCE_MAPS" AND ARGS_DEBUG_VALIDATION)
     list(APPEND emscripten_link_options
       "--embed-source"
       "-sERROR_ON_WASM_CHANGES_AFTER_LINK")
