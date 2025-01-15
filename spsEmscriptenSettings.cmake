@@ -431,7 +431,7 @@ function(_sps_emscripten_settings)
       "-sALLOW_MEMORY_GROWTH=1"
     )
     # TODO: Can we make this a general option
-    if (NOT ARGS_EXIT_RUNTIME)
+    if (NOT DEFINED ARGS_EXIT_RUNTIME)
       set(ARGS_EXIT_RUNTIME OFF)
     endif()
     if (ARGS_EXIT_RUNTIME STREQUAL "ON")
@@ -492,6 +492,7 @@ sps_emscripten_module(
   ASYNCIFY_DEBUG
   DEBUG_VALIDATION              (check if binaryen modifies debug information)
   64_BIT                        <ON|OFF> (default: OFF)
+  ENABLE_EXCEPTIONS             <ON|OFF> (default: ON)
   TARGET_NAME                   <variable>
   SOURCE_FILES                  <list>     (.cxx, .c)
   INCLUDE_DIRS                  <list>
@@ -530,6 +531,7 @@ function(sps_emscripten_module)
     EXIT_RUNTIME
     EXPORT_NAME
     DEBUG
+    ENABLE_EXCEPTIONS
     INITIAL_MEMORY
     MAXIMUM_MEMORY
     FILE_SYSTEM
@@ -558,26 +560,30 @@ function(sps_emscripten_module)
   endif()
 
   # Default arguments for optimization and debug
-  if (NOT ARGS_OPTIMIZATION)
+  if (NOT DEFINED ARGS_OPTIMIZATION)
     set(ARGS_OPTIMIZATION "NONE")
   endif()
-  if (NOT ARGS_DEBUG)
+  if (NOT DEFINED ARGS_DEBUG)
     set(ARGS_DEBUG "NONE")
   endif()
   # Platform arguments
-  if (NOT ARGS_64_BIT)
+  if (NOT DEFINED ARGS_64_BIT)
     set(ARGS_64_BIT OFF)
   endif()
-  if (NOT ARGS_FILE_SYSTEM)
+  if (NOT DEFINED ARGS_FILE_SYSTEM)
     set(ARGS_FILE_SYSTEM OFF)
   endif()
-  if (NOT ARGS_ASYNCIFY)
+  if (NOT DEFINED ARGS_ASYNCIFY)
     set(ARGS_ASYNCIFY OFF)
   endif()
   
   # Threading
   if (ARGS_THREADING_ENABLED STREQUAL "ON")
     find_package(Threads REQUIRED)
+  endif()
+
+  if (NOT DEFINED ARGS_ENABLE_EXCEPTIONS)
+    set(ARGS_ENABLE_EXCEPTIONS ON)
   endif()
 
   if (ARGS_SOURCE_FILES)
@@ -735,16 +741,21 @@ function(sps_emscripten_module)
   list(APPEND emscripten_link_options
     "-sASYNCIFY_IMPORTS=${async_imports_str}")
 
-  # C++-exceptions (allow them)
-  if (ARGS_SOURCE_FILES)
-    # C does not support exceptions
-    list(GET ${ARGS_SOURCE_FILES} 0 first_file)
-    get_filename_component(extension ${first_file} EXT)
-    if (NOT "${extension}" STREQUAL ".c")
+  if (${ARGS_ENABLE_EXCEPTIONS} STREQUAL "ON")  
+    # C++-exceptions (allow them)
+    if (ARGS_SOURCE_FILES)
+      # C does not support exceptions
+      list(GET ${ARGS_SOURCE_FILES} 0 first_file)
+      get_filename_component(extension ${first_file} EXT)
+      message(${ARGS_ENABLE_EXCEPTIONS})
+      if (NOT "${extension}" STREQUAL ".c")
+        list(APPEND emscripten_compile_options "-fexceptions")
+      endif()
+    else()
       list(APPEND emscripten_compile_options "-fexceptions")
     endif()
   else()
-    list(APPEND emscripten_compile_options "-fexceptions")
+    list(APPEND emscripten_compile_options "-fno-exceptions")
   endif()
 
   # Position-independent code (required for shared objects)
