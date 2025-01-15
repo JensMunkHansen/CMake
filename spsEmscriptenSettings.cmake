@@ -370,31 +370,6 @@ function(_sps_emscripten_settings)
 
   sps_set_emscripten_optimization_flags(${ARGS_OPTIMIZATION} emscripten_optimization_flags emscripten_link_options)
   sps_set_emscripten_debug_flags(${ARGS_DEBUG} emscripten_debug_options)
-
-  if (0)
-    # Set the debug flags based on DEBUG value
-    if(ARGS_DEBUG STREQUAL "NONE")
-      list(APPEND emscripten_debug_options
-        "-g0")
-    elseif(ARGS_DEBUG STREQUAL "READABLE_JS")
-      list(APPEND emscripten_link_options
-        "-sASSERTIONS=1") # Deadlocks without it????
-      list(APPEND emscripten_debug_options
-        "-g1")
-    elseif(ARGS_DEBUG STREQUAL "PROFILE")
-      list(APPEND emscripten_debug_options
-        "-g2")
-    elseif(ARGS_DEBUG STREQUAL "DEBUG_NATIVE")
-      list(APPEND emscripten_link_options
-        "-sASSERTIONS=2")
-    elseif(ARGS_DEBUG STREQUAL "SOURCE_MAPS")
-      list(APPEND emscripten_debug_options
-        "-gsource-map"
-      )
-    endif()
-  endif()
-  # TODO: Handle source-maps
-
   
   # Default linker options
   list(APPEND emscripten_link_options
