@@ -45,6 +45,27 @@ function(sps_set_emscripten_optimization_flags optimization_level optimization_f
   endif()
 endfunction()
 
+function(sps_set_emscripten_debug_flags debug_level debug_options)
+  if(${debug_level} STREQUAL "NONE")
+    list(APPEND ${debug_options}
+      "-g0")
+  elseif(${debug_level} STREQUAL "READABLE_JS")
+    list(APPEND ${debug_options}
+      "-g1")
+  elseif(${debug_level} STREQUAL "PROFILE")
+    list(APPEND ${debug_options}
+      "-g2")
+  elseif(${debug_level} STREQUAL "DEBUG_NATIVE")
+    list(APPEND ${debug_options}
+      "-g3")
+    list(APPEND emscripten_link_options
+      "-sASSERTIONS=1")
+  elseif(${debug_level} STREQUAL "SOURCE_MAPS")
+    list(APPEND ${debug_options}
+      "-gsource-map")
+  endif()
+  set(${debug_options} "${${debug_options}}" PARENT_SCOPE)
+endfunction()
 
 #[==[.rst:
 
