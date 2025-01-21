@@ -35,3 +35,11 @@ set(CMAKE_EXE_LINKER_FLAGS_ASAN
 set(CMAKE_SHARED_LINKER_FLAGS_ASAN
   "${CMAKE_SHARED_LINKER_FLAGS_DEBUG} -fsanitize=address" CACHE STRING
   "Linker lags to be used to create shared libraries for Asan build type." FORCE)
+
+# For single-config generators, apply the flags directly
+if(NOT isMultiConfig AND CMAKE_BUILD_TYPE STREQUAL "Asan")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS_ASAN}")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_ASAN}")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS_ASAN}")
+  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS_ASAN}")
+endif()
