@@ -2,7 +2,12 @@
 *********
 spsAsan
 *********
-  Address sanitizer for any product. Include for convenience
+  Address sanitizer for any product. Include for convenience.
+
+  We could add the following
+    -fsanitize-recover=address: Allows program continuation after an ASan error (optional).
+    -fsanitize=leak: Detects memory leaks.
+    -fsanitize-address-use-after-scope: Detects use-after-scope bugs.
 #]==]
 
 get_property(isMultiConfig GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
