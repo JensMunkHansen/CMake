@@ -32,7 +32,7 @@ function(sps_set_emscripten_optimization_flags optimization_level optimization_f
     # Notes:
     #  - only gcc (no clang) support "-falign-data=16", so we cannot use it yet
     #  - "-ffast-math", I have always induced a dead-lock when using this, also small examples (compiler issue)
-    list(APPEND ${optimization_flags} -Wno-pthreads-mem-growth)
+    # list(APPEND ${optimization_flags} -Wno-pthreads-mem-growth)
     set(${optimization_flags} "${${optimization_flags}}" PARENT_SCOPE)
   elseif (${optimization_level} STREQUAL "SMALL")
     set(${optimization_flags} "-Os" PARENT_SCOPE)
