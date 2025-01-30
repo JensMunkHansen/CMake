@@ -22,6 +22,7 @@ function(_sps_generate_initialize_node_script target_name output_file)
   # Copy package-lock.json and/or package.json and initialize. If a lock file exists, we
   # use that
   if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/package-lock.json")
+    # Here it sometimes crashes
     file(APPEND "${output_file}" "message(STATUS \"Copying package-lock.json to ${CMAKE_CURRENT_BINARY_DIR}/\${CONFIGURATION}/package-lock.json\")\n")
     file(APPEND "${output_file}"
       "execute_process(\n
@@ -33,7 +34,7 @@ function(_sps_generate_initialize_node_script target_name output_file)
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${CONFIG}\n
       )\n")
   elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/package.json")
-    file(APPEND "${output_file}" "message(STATUS \"Copying package.json to ${CMAKE_CURRENT_BINARY_DIR}/\${CONFIGURATION}/package.json\")\n")
+    file(APPEND "${output_file}" "message(STATUS \"Copying package.json to ${CMAKE_CURRENT_BINARY_DIR}/\${CONFIG}/package.json\")\n")
     file(APPEND "${output_file}"
       "execute_process(\n
         COMMAND \${CMAKE_COMMAND} -E copy_if_different \"${CMAKE_CURRENT_SOURCE_DIR}/package.json\" \"${CMAKE_CURRENT_BINARY_DIR}/${CONFIG}/package.json\"\n
