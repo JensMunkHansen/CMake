@@ -8,6 +8,8 @@ spsAsan
     -fsanitize-recover=address: Allows program continuation after an ASan error (optional).
     -fsanitize=leak: Detects memory leaks.
     -fsanitize-address-use-after-scope: Detects use-after-scope bugs.
+
+    -fsanitize=address,undefined
 #]==]
 
 get_property(isMultiConfig GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
