@@ -2,7 +2,7 @@
 *********
 spsConfig
 *********
-  Generate xxxx.h from xxx.h.in. The function configure_file generalized to support multi configurations.
+  Generate xxxx from xxx.in. The function configure_file generalized to support multi configurations.
 
   sps_config(TARGET config.h.in @ONLY)
 
