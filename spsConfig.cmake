@@ -1,3 +1,13 @@
+#[==[.rst:
+*********
+spsConfig
+*********
+  Generate xxxx.h from xxx.h.in. The function configure_file generalized to support multi configurations.
+
+  sps_config(TARGET config.h.in @ONLY)
+
+  Support with/without @ONLY
+#]==]
 function(sps_config target input_file)
     # Extract filename without extension
     get_filename_component(output_file "${input_file}" NAME_WE)
@@ -29,7 +39,6 @@ function(sps_config target input_file)
       target_include_directories(${target} PRIVATE
         "$<BUILD_INTERFACE:${target_binary_dir}/$<CONFIG>>")
     else()
-      message(FATAL_ERROR "UPS")
       set(CONFIG_FILE_PATH "${CMAKE_CURRENT_BINARY_DIR}/${output_file}")
       configure_file("${input_file}" "${CONFIG_FILE_PATH}" @ONLY)
       target_include_directories(${target} PRIVATE
