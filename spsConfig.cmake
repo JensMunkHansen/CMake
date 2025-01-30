@@ -10,8 +10,9 @@ spsConfig
 #]==]
 function(sps_config target input_file)
     # Extract filename without extension
-    get_filename_component(output_file "${input_file}" NAME_WE)
-    set(output_file "${output_file}.h")
+    get_filename_component(output_file "${input_file}" NAME)
+    string(REPLACE ".in" "" output_file "${output_file}")    
+
     # Detect whether @ONLY was passed
     set(USE_AT_ONLY OFF)
     foreach(arg ${ARGN})
@@ -26,14 +27,13 @@ function(sps_config target input_file)
     if (CMAKE_CONFIGURATION_TYPES)
       # Generate config files per configuration
       foreach(config ${CMAKE_CONFIGURATION_TYPES})
-        message(${config})
-          set(CONFIG_FILE_PATH "${target_binary_dir}/${config}/${output_file}")
-      
-          if(USE_AT_ONLY)
-              configure_file("${input_file}" "${CONFIG_FILE_PATH}" @ONLY)
-          else()
-              configure_file("${input_file}" "${CONFIG_FILE_PATH}")
-          endif()
+        set(CONFIG_FILE_PATH "${target_binary_dir}/${config}/${output_file}")
+        
+        if(USE_AT_ONLY)
+          configure_file("${input_file}" "${CONFIG_FILE_PATH}" @ONLY)
+        else()
+          configure_file("${input_file}" "${CONFIG_FILE_PATH}")
+        endif()
       endforeach()
       # Add include directory for the target
       target_include_directories(${target} PRIVATE
@@ -42,7 +42,6 @@ function(sps_config target input_file)
       set(CONFIG_FILE_PATH "${CMAKE_CURRENT_BINARY_DIR}/${output_file}")
       configure_file("${input_file}" "${CONFIG_FILE_PATH}" @ONLY)
       target_include_directories(${target} PRIVATE
-        "$<BUILD_INTERFACE:${target_binary_dir}"
-      )    
+        "$<BUILD_INTERFACE:${target_binary_dir}")
     endif()
 endfunction()
