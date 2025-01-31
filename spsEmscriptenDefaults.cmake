@@ -48,7 +48,9 @@ set(_DEFAULT_TEST_RELEASE_COMPILE_OPTIMIZATION NONE)
 set(_DEFAULT_TEST_DEBUG_DEBUG READABLE_JS)
 set(_DEFAULT_TEST_DEBUG_OPTIMIZATION NONE)
 set(_DEFAULT_TEST_DEBUG_COMPILE_OPTIMIZATION NONE)
-  
+
+option(${project_name}_WASM_SIMD "Enable SIMD" ON)
+
 function(sps_set_emscripten_defaults project_name)
   # Check and set the default optimization value based on the build type
   if (CMAKE_CONFIGURATION_TYPES)

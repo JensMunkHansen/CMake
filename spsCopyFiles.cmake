@@ -21,7 +21,6 @@ spsCopyFiles
       OUTPUT_FILE                   <script for copying>)
 #]==]
 function(_sps_generate_copy_script target_name input_files output_file)
-
   # Handle single and multi-configuration builds
   if (CMAKE_CONFIGURATION_TYPES)
     set(CONFIG "/${CONFIGURATION}")
@@ -56,6 +55,9 @@ endfunction()
       INPUT_FILES                   <files>)
 #]==]
 function(sps_copy_files target_name postfix input_files)
+  if (NOT target_name)
+    message(FATAL_ERROR "The 'sps_copy_files' function requires a target.")
+  endif()
   # Unique file name
   set(COPY_FILES_SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/${target_name}_copy_${postfix}.cmake")
 
@@ -67,5 +69,3 @@ function(sps_copy_files target_name postfix input_files)
   )
   add_dependencies(${target_name} ${target_name}_${postfix})
 endfunction()
-
-

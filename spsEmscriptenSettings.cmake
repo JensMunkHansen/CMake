@@ -28,7 +28,10 @@ function(sps_set_emscripten_optimization_flags optimization_level optimization_f
     set(${optimization_flags} "-O2" PARENT_SCOPE)
   elseif (${optimization_level} STREQUAL "BEST")
     list(APPEND ${optimization_flags} "-O3")
-    list(APPEND ${optimization_flags} "-msimd128")
+    # Not super elegant.....
+    if (${project_name}_WASM_SIMD)
+      list(APPEND ${optimization_flags} "-msimd128")
+    endif()
     # Notes:
     #  - only gcc (no clang) support "-falign-data=16", so we cannot use it yet
     #  - "-ffast-math", I have always induced a dead-lock when using this, also small examples (compiler issue)
@@ -88,43 +91,43 @@ endfunction()
 
 # Ensure at least one argument (the target) is passed
 function(sps_target_compile_flags target)
-    if (NOT target)
-        message(FATAL_ERROR "The 'sps_target_compile_flags' function requires a target.")
-    endif()
+  if (NOT target)
+    message(FATAL_ERROR "The 'sps_target_compile_flags' function requires a target.")
+  endif()
 
-    # Process the rest of the arguments as key-value pairs
-    set(options) # Define valid keys
-    set(one_value_args THREADING_ENABLED OPTIMIZATION DEBUG) # Mark keys as single-value arguments
-    cmake_parse_arguments(ARGS "" "${options}" "${one_value_args}" ${ARGN})
+  # Process the rest of the arguments as key-value pairs
+  set(options) # Define valid keys
+  set(one_value_args THREADING_ENABLED OPTIMIZATION DEBUG) # Mark keys as single-value arguments
+  cmake_parse_arguments(ARGS "" "${options}" "${one_value_args}" ${ARGN})
 
-    if(ARGS_UNPARSED_ARGUMENTS)
-      message(FATAL_ERROR "Unknown arguments: ${ARGS_UNPARSED_ARGUMENTS}")
-    endif()
+  if(ARGS_UNPARSED_ARGUMENTS)
+    message(FATAL_ERROR "Unknown arguments: ${ARGS_UNPARSED_ARGUMENTS}")
+  endif()
 
-    if (EMSCRIPTEN)
-      # Apply the THREADING option, if specified
-      if (ARGS_THREADING_ENABLED)
-        if (ARGS_THREADING_ENABLED STREQUAL "ON")
-      	  #target_link_libraries(${target} PRIVATE Threads::Threads)
-      	  target_compile_options(${target} PUBLIC
-            -Wno-pthreads-mem-growth # Do not allow worker threads to grow memory
-	    -pthread                 # Needed if accessed by pthread
-      	    -matomics                # Needed through compilation unit
-      	    -mbulk-memory            # Threads and shared memory must go hand-in-hand
-          )
-        endif()
+  if (EMSCRIPTEN)
+    # Apply the THREADING option, if specified
+    if (ARGS_THREADING_ENABLED)
+      if (ARGS_THREADING_ENABLED STREQUAL "ON")
+    	#target_link_libraries(${target} PRIVATE Threads::Threads)
+    	target_compile_options(${target} PUBLIC
+          -Wno-pthreads-mem-growth # Do not allow worker threads to grow memory
+          -pthread                 # Needed if accessed by pthread
+    	  -matomics                # Needed through compilation unit
+    	  -mbulk-memory            # Threads and shared memory must go hand-in-hand
+        )
       endif()
-      if (ARGS_OPTIMIZATION)
-        # Optimization at compile level, very little effect
-	set(emscripten_optimization_flags)
-	set(emscripten_link_options)
-	sps_set_emscripten_optimization_flags(${ARGS_OPTIMIZATION} emscripten_optimization_flags emscripten_link_options)
-      	target_compile_options(${target} PRIVATE 
-      	  ${emscripten_optimization_flags})
-      endif()
-    else()
-      message(FATAL_ERROR "This needs an Emscripten build environment")
     endif()
+    if (ARGS_OPTIMIZATION)
+      # Optimization at compile level, very little effect
+      set(emscripten_optimization_flags)
+      set(emscripten_link_options)
+      sps_set_emscripten_optimization_flags(${ARGS_OPTIMIZATION} emscripten_optimization_flags emscripten_link_options)
+    	target_compile_options(${target} PRIVATE
+    	  ${emscripten_optimization_flags})
+    endif()
+  else()
+    message(FATAL_ERROR "This needs an Emscripten build environment")
+  endif()
 endfunction()
 
 #[==[.rst:
@@ -144,26 +147,26 @@ endfunction()
   The output is either ON or OFF depending on a main is found for export.
 #]==]
 function(_sps_check_files_for_main FILES HAS_MAIN)
-    # Assume the Python script is located in the same directory as this CMake file
-    set(SCRIPT_PATH "${_EmscriptenSetting_dir}/sps_check_for_main.py")
-    if (NOT EXISTS ${SCRIPT_PATH})
-        message(FATAL_ERROR "Python script not found: ${SCRIPT_PATH}")
+  # Assume the Python script is located in the same directory as this CMake file
+  set(SCRIPT_PATH "${_EmscriptenSetting_dir}/sps_check_for_main.py")
+  if (NOT EXISTS ${SCRIPT_PATH})
+    message(FATAL_ERROR "Python script not found: ${SCRIPT_PATH}")
+  endif()
+
+  set(${HAS_MAIN} OFF PARENT_SCOPE)  # Default to no main function
+  foreach(FILE ${FILES})
+    # Use the script to check if this file has a main function
+    execute_process(
+      COMMAND ${CMAKE_COMMAND} -E env python3 ${SCRIPT_PATH} ${FILE}
+      OUTPUT_VARIABLE HAS_MAIN_OUTPUT
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+
+    if (HAS_MAIN_OUTPUT STREQUAL "1")
+      set(${HAS_MAIN} ON PARENT_SCOPE)
+      return()  # Exit as soon as we find a main function
     endif()
-
-    set(${HAS_MAIN} OFF PARENT_SCOPE)  # Default to no main function
-    foreach(FILE ${FILES})
-        # Use the script to check if this file has a main function
-        execute_process(
-            COMMAND ${CMAKE_COMMAND} -E env python3 ${SCRIPT_PATH} ${FILE}
-            OUTPUT_VARIABLE HAS_MAIN_OUTPUT
-            OUTPUT_STRIP_TRAILING_WHITESPACE
-        )
-
-        if (HAS_MAIN_OUTPUT STREQUAL "1")
-            set(${HAS_MAIN} ON PARENT_SCOPE)
-            return()  # Exit as soon as we find a main function
-        endif()
-    endforeach()
+  endforeach()
 endfunction()
 
 #[==[.rst:
@@ -181,20 +184,20 @@ endfunction()
     _sps_prefix_and_format_exports input_list(<functions> <prefixed_functions>)
 #]==]
 function(_sps_prefix_and_format_exports input_list output_variable)
-    # Prefixed functions list
-    set(prefixed_functions)
+  # Prefixed functions list
+  set(prefixed_functions)
 
-    # Prefix each function with '_'
-    foreach(func IN LISTS ${input_list})
-        list(APPEND prefixed_functions "'_${func}'")
-    endforeach()
+  # Prefix each function with '_'
+  foreach(func IN LISTS ${input_list})
+    list(APPEND prefixed_functions "'_${func}'")
+  endforeach()
 
-    # Convert the list to a comma-separated string and wrap in square brackets
-    string(REPLACE ";" "," exported_functions_comma "${prefixed_functions}")
-    string(CONCAT exported_functions_str "[" "${exported_functions_comma}" "]")
+  # Convert the list to a comma-separated string and wrap in square brackets
+  string(REPLACE ";" "," exported_functions_comma "${prefixed_functions}")
+  string(CONCAT exported_functions_str "[" "${exported_functions_comma}" "]")
 
-    # Set the output variable
-    set(${output_variable} "${exported_functions_str}" PARENT_SCOPE)
+  # Set the output variable
+  set(${output_variable} "${exported_functions_str}" PARENT_SCOPE)
 endfunction()
 
 #[==[.rst:
@@ -239,19 +242,19 @@ function(_sps_target_info target)
   # Compile options
   get_target_property(COMPILE_OPTIONS ${target} COMPILE_OPTIONS)
   message("Compile options for target ${target}: ${COMPILE_OPTIONS}")
-  
+
   # Compile definitions
   get_target_property(COMPILE_DEFINITIONS ${target} COMPILE_DEFINITIONS)
   message("Compile definitions for target ${target}: ${COMPILE_DEFINITIONS}")
-  
+
   # Include directories
   get_target_property(INCLUDE_DIRECTORIES ${target} INCLUDE_DIRECTORIES)
   message("Include directories for target ${target}: ${INCLUDE_DIRECTORIES}")
-  
+
   # Link libraries
   get_target_property(LINK_LIBRARIES ${target} LINK_LIBRARIES)
   message("Link libraries for target ${target}: ${LINK_LIBRARIES}")
-  
+
   # Link options
   get_target_property(LINK_OPTIONS ${target} LINK_OPTIONS)
   message("Link options for target ${target}: ${LINK_OPTIONS}")
@@ -280,7 +283,7 @@ _sps_emscripten_settings(
 function(_sps_emscripten_settings)
 
   # TODO: Consider not allowing -sALLOW_MEMORY_GROWTH=0 -sTOTAL_MEMORY=64MB
-  
+
   # Define the arguments that the function accepts
   set(options)  # Boolean options (without ON/OFF).
   set(one_value_args
@@ -314,10 +317,10 @@ function(_sps_emscripten_settings)
   if (NOT ARGS_EMSCRIPTEN_DEBUG_INFO)
     message(FATAL_ERROR "EMSCRIPTEN_DEBUG_INFO must be specified.")
   endif()
-  
-  # Default values  
+
+  # Default values
   if (NOT DEFINED ARGS_THREADING_ENABLED)
-    set(ARGS_THREADING_ENABLED OFF) 
+    set(ARGS_THREADING_ENABLED OFF)
   endif()
   if (NOT DEFINED ARGS_ES6_MODULE)
     set(ARGS_ES6_MODULE ON)
@@ -336,7 +339,7 @@ function(_sps_emscripten_settings)
     sps_get_processor_count(MAX_CONCURRENCY_VAR)
     set(ARGS_MAX_NUMBER_OF_THREADS ${MAX_CONCURRENCY_VAR})
   endif()
-  
+
   # Default arguments for debug and optimization
   if (NOT DEFINED ARGS_OPTIMIZATION)
     set(ARGS_OPTIMIZATION "NONE")
@@ -347,7 +350,7 @@ function(_sps_emscripten_settings)
 
   # Define valid options for OPTIMIZATION
   set(valid_optimization_levels NONE LITTLE MORE BEST SMALL SMALLEST SMALLEST_WITH_CLOSURE)
-  
+
   # Validate OPTIMIZATION argument
   list(FIND valid_optimization_levels "${ARGS_OPTIMIZATION}" opt_index)
   if (opt_index EQUAL -1)
@@ -356,7 +359,7 @@ function(_sps_emscripten_settings)
 
   # Define valid options for DEBUG
   set(valid_debug_levels NONE READABLE_JS PROFILE DEBUG_NATIVE SOURCE_MAPS)
-  
+
   # Validate DEBUG argument
   list(FIND valid_debug_levels "${ARGS_DEBUG}" opt_index)
   if (opt_index EQUAL -1)
@@ -370,7 +373,7 @@ function(_sps_emscripten_settings)
 
   sps_set_emscripten_optimization_flags(${ARGS_OPTIMIZATION} emscripten_optimization_flags emscripten_link_options)
   sps_set_emscripten_debug_flags(${ARGS_DEBUG} emscripten_debug_options)
-  
+
   # Default linker options
   list(APPEND emscripten_link_options
     "-sERROR_ON_UNDEFINED_SYMBOLS=1" # 0 for bindings project
@@ -404,7 +407,7 @@ function(_sps_emscripten_settings)
     )
     if (NOT DEFINED ARGS_ENVIRONMENT)
       if (ARGS_THREADING_ENABLED STREQUAL "ON")
-        if ("${ARGS_DISABLE_NODE}" STREQUAL "ON")      
+        if ("${ARGS_DISABLE_NODE}" STREQUAL "ON")
           list(APPEND emscripten_link_options
             "-sENVIRONMENT=web,worker"
           )
@@ -501,13 +504,13 @@ sps_emscripten_module(
   PRE_JS                        --pre-js
   ENVIRONMENT                   (default: AUTO)
   INITIAL_MEMORY                (default: 1GB) May crash if too low
-  MAXIMUM_MEMORY                (default: 4GB)  
+  MAXIMUM_MEMORY                (default: 4GB)
   TRHEADING_ENABLED             <ON|OFF>   (default: OFF)
   THREAD_POOL_SIZE              (default: 4)
   MAX_NUMBER_OF_THREADS         (default: 4)
   EMBIND                        <ON|OFF>   (default: OFF)
   OPTIMIZATION                  <variable> (default: NONE)
-  DEBUG                         <variable> (default: READABLE_JS) 
+  DEBUG                         <variable> (default: READABLE_JS)
   ES6_MODULE                    <ON|OFF>   (default: OFF)
   SIDE_MODULES                  <list> (modules (.wasm) to use)
   LIBRARIES                     <list> (libraries (.a) to link to)
@@ -523,7 +526,7 @@ function(sps_emscripten_module)
   # Define the arguments that the function accepts
   set(options SIDE_MODULE MAIN_MODULE VERBOSE DISABLE_NODE ASYNCIFY_DEBUG DEBUG_VALIDATION)
   set(one_value_args
-    64_BIT 
+    64_BIT
     TARGET_NAME
     ES6_MODULE
     ASYNCIFY
@@ -539,7 +542,7 @@ function(sps_emscripten_module)
     THREADING_ENABLED
     PRE_JS
     THREAD_POOL_SIZE
-    EXTRA_LINK_ARGS    
+    EXTRA_LINK_ARGS
     MAX_NUMBER_OF_THREADS
     ENVIRONMENT)
   set(multi_value_args SOURCE_FILES JAVASCRIPT_FILES SIDE_MODULES EXPORTED_FUNCTIONS ASYNCIFY_IMPORTS LIBRARIES INCLUDE_DIRS)
@@ -550,7 +553,7 @@ function(sps_emscripten_module)
   if(ARGS_UNPARSED_ARGUMENTS)
     message(FATAL_ERROR "Unknown arguments: ${ARGS_UNPARSED_ARGUMENTS}")
   endif()
-  
+
   # Validate required arguments
   if (NOT ARGS_TARGET_NAME)
     message(FATAL_ERROR "TARGET_NAME must be specified.")
@@ -576,7 +579,7 @@ function(sps_emscripten_module)
   if (NOT DEFINED ARGS_ASYNCIFY)
     set(ARGS_ASYNCIFY OFF)
   endif()
-  
+
   # Threading
   if (ARGS_THREADING_ENABLED STREQUAL "ON")
     find_package(Threads REQUIRED)
@@ -635,7 +638,7 @@ function(sps_emscripten_module)
   # Is it okay always to export this???
   list(APPEND emscripten_exported_runtime_methods "ccall;cwrap;stringToNewUTF8;UTF8ToString")
 
-  
+
   if (ARGS_THREADING_ENABLED STREQUAL "ON")
     list(APPEND emscripten_exported_runtime_methods "spawnThread")
   endif()
@@ -646,7 +649,7 @@ function(sps_emscripten_module)
   if (ARGS_ASYNCIFY_IMPORTS)
     list(APPEND emscripten_async_imports ${ARGS_ASYNCIFY_IMPORTS})
   endif()
-  
+
   if (ARGS_SIDE_MODULE)
     list(APPEND emscripten_link_options
       "-sSIDE_MODULE=2")
@@ -694,7 +697,7 @@ function(sps_emscripten_module)
       "-sALLOW_MEMORY_GROWTH=0"
     )
   endif()
-  
+
   # 64-bit support (experimental)
   if (ARGS_64_BIT STREQUAL "ON")
     list(APPEND emscripten_link_options
@@ -721,7 +724,7 @@ function(sps_emscripten_module)
         "-sASYNCIFY=1"
     )
     if (ARGS_ASYNCIFY_DEBUG)
-      # Debug stack to track bugs in Emscripten  
+      # Debug stack to track bugs in Emscripten
       list(APPEND emscripten_link_options
         "-sASYNCIFY_DEBUG=1"
       )
@@ -741,7 +744,7 @@ function(sps_emscripten_module)
   list(APPEND emscripten_link_options
     "-sASYNCIFY_IMPORTS=${async_imports_str}")
 
-  if (${ARGS_ENABLE_EXCEPTIONS} STREQUAL "ON")  
+  if (${ARGS_ENABLE_EXCEPTIONS} STREQUAL "ON")
     # C++-exceptions (allow them)
     if (ARGS_SOURCE_FILES)
       # C does not support exceptions
@@ -791,30 +794,30 @@ function(sps_emscripten_module)
       "--embed-source"
       "-sERROR_ON_WASM_CHANGES_AFTER_LINK")
   endif()
-  
+
   # Link and compile options
   target_compile_options(${ARGS_TARGET_NAME}
     PRIVATE
       ${emscripten_compile_options}
-      ${emscripten_optimization_flags} 
+      ${emscripten_optimization_flags}
       ${emscripten_debug_options}
   )
   target_link_options(${ARGS_TARGET_NAME}
     PRIVATE
       ${emscripten_link_options}
-      ${emscripten_optimization_flags} 
+      ${emscripten_optimization_flags}
       ${emscripten_debug_options}
   )
-  
+
   if (ARGS_SIDE_MODULE)
     # Side modules must be renamed
     set_target_properties(${ARGS_TARGET_NAME} PROPERTIES
       SUFFIX ".wasm")
     # Compile definition we use in source files
-    target_compile_definitions(${ARGS_TARGET_NAME} PRIVATE IS_SIDE_MODULE)    
+    target_compile_definitions(${ARGS_TARGET_NAME} PRIVATE IS_SIDE_MODULE)
   elseif(ARGS_MAIN_MODULE)
     # Compile definition we use in source files
-    target_compile_definitions(${ARGS_TARGET_NAME} PRIVATE IS_MAIN_MODULE)    
+    target_compile_definitions(${ARGS_TARGET_NAME} PRIVATE IS_MAIN_MODULE)
   endif()
 
 
@@ -825,7 +828,7 @@ function(sps_emscripten_module)
   if(${ARGS_DEBUG} STREQUAL "SOURCE_MAPS")
     sps_update_source_map(${ARGS_TARGET_NAME})
   endif()
-  
+
   # Display verbose information about target
   if (ARGS_VERBOSE)
     _sps_target_info(${ARGS_TARGET_NAME})
@@ -833,32 +836,32 @@ function(sps_emscripten_module)
 endfunction()
 
 function(print_target_details target)
-    message(STATUS "Target: ${target}")
+  message(STATUS "Target: ${target}")
 
-    # Get linked libraries
-    get_target_property(LINKED_LIBRARIES ${target} LINK_LIBRARIES)
-    if (LINKED_LIBRARIES)
-        message(STATUS "Linked Libraries: ${LINKED_LIBRARIES}")
-        foreach(lib ${LINKED_LIBRARIES})
-            # Print details of each linked library
-            print_target_details(${lib})
-        endforeach()
-    else()
-        message(STATUS "No linked libraries for ${target}")
-    endif()
+  # Get linked libraries
+  get_target_property(LINKED_LIBRARIES ${target} LINK_LIBRARIES)
+  if (LINKED_LIBRARIES)
+    message(STATUS "Linked Libraries: ${LINKED_LIBRARIES}")
+    foreach(lib ${LINKED_LIBRARIES})
+      # Print details of each linked library
+      print_target_details(${lib})
+    endforeach()
+  else()
+    message(STATUS "No linked libraries for ${target}")
+  endif()
 
-    # Get compile flags
-    get_target_property(COMPILE_FLAGS ${target} COMPILE_FLAGS)
-    get_target_property(COMPILE_OPTIONS ${target} COMPILE_OPTIONS)
-    if (COMPILE_FLAGS)
-        message(STATUS "Compile Flags: ${COMPILE_FLAGS}")
-    else()
-        message(STATUS "No compile flags for ${target}")
-    endif()
+  # Get compile flags
+  get_target_property(COMPILE_FLAGS ${target} COMPILE_FLAGS)
+  get_target_property(COMPILE_OPTIONS ${target} COMPILE_OPTIONS)
+  if (COMPILE_FLAGS)
+    message(STATUS "Compile Flags: ${COMPILE_FLAGS}")
+  else()
+    message(STATUS "No compile flags for ${target}")
+  endif()
 
-    if (COMPILE_OPTIONS)
-        message(STATUS "Compile Options: ${COMPILE_OPTIONS}")
-    else()
-        message(STATUS "No compile options for ${target}")
-    endif()
+  if (COMPILE_OPTIONS)
+    message(STATUS "Compile Options: ${COMPILE_OPTIONS}")
+  else()
+    message(STATUS "No compile options for ${target}")
+  endif()
 endfunction()
