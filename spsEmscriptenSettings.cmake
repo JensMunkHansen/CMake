@@ -516,6 +516,7 @@ sps_emscripten_module(
   LIBRARIES                     <list> (libraries (.a) to link to)
   EXPORTED_FUNCTIONS            <list> (without '_' prefix)
   EXPORT_NAME                   <variable>
+  COMPILE_DEFINITIONS           <list>  
   OPTIMIZATION                  <NONE, LITTLE, MORE, BEST, SMALL, SMALLEST, SMALLEST_WITH_CLOSURE>
   DEBUG                         <NONE, READABLE_JS, PROFILE, DEBUG_NATIVE>
   VERBOSE                       Show stuff)
@@ -545,7 +546,7 @@ function(sps_emscripten_module)
     EXTRA_LINK_ARGS
     MAX_NUMBER_OF_THREADS
     ENVIRONMENT)
-  set(multi_value_args SOURCE_FILES JAVASCRIPT_FILES SIDE_MODULES EXPORTED_FUNCTIONS ASYNCIFY_IMPORTS LIBRARIES INCLUDE_DIRS)
+  set(multi_value_args SOURCE_FILES COMPILE_DEFINITIONS JAVASCRIPT_FILES SIDE_MODULES EXPORTED_FUNCTIONS ASYNCIFY_IMPORTS LIBRARIES INCLUDE_DIRS)
 
   # Parse the arguments using cmake_parse_arguments
   cmake_parse_arguments(ARGS "${options}" "${one_value_args}" "${multi_value_args}" ${ARGV})
@@ -819,7 +820,9 @@ function(sps_emscripten_module)
     # Compile definition we use in source files
     target_compile_definitions(${ARGS_TARGET_NAME} PRIVATE IS_MAIN_MODULE)
   endif()
-
+  if (ARGS_COMPILE_DEFINITIONS)
+    target_compile_definitions(${ARGS_TARGET_NAME} PRIVATE ${ARGS_COMPILE_DEFINITIONS})
+  endif()
 
   # Copy JavaScript files
   sps_copy_files(${ARGS_TARGET_NAME} "JavaScript" "${ARGS_JAVASCRIPT_FILES}")
