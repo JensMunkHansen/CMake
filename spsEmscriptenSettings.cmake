@@ -429,10 +429,6 @@ function(_sps_emscripten_settings)
   else()
     # NOT AN ES6 module
 
-    # Handle this in a better way
-    list(APPEND emscripten_link_options
-      "-sALLOW_MEMORY_GROWTH=1"
-    )
     # TODO: Can we make this a general option
     if (NOT DEFINED ARGS_EXIT_RUNTIME)
       set(ARGS_EXIT_RUNTIME OFF)
@@ -697,23 +693,28 @@ function(sps_emscripten_module)
   else()
     # Default is that we allow memory to grow
     list(APPEND emscripten_link_options
-      "-sALLOW_MEMORY_GROWTH=0"
+      "-sALLOW_MEMORY_GROWTH=1"
     )
   endif()
 
   # 64-bit support (experimental)
   if (ARGS_64_BIT STREQUAL "ON")
+    
     list(APPEND emscripten_link_options
-      "-sMEMORY64=1")
+#      "-sMEMORY64=1" # Issues if not ES6
+#      "-sWASM_BIGINT=1" # Issues if not ES6
+    )
     list(APPEND emscripten_compile_options
-      "-target=wasm64"
-      "-sWASM_BIGINT=1"
-      "-sMEMORY64=1")
+      "-target=wasm64")
+#      "-sWASM_BIGINT=1" # Issues if not ES6
+#      "-sMEMORY64=1") # Issues if not ES6
   endif()
-  list(APPEND emscripten_link_options
-    "-sWASM_BIGINT=1"
+
+
+#  list(APPEND emscripten_link_options
+#    "-sWASM_BIGINT=1"
 #    "--separate-dwarf=${ARGS_TARGET_NAME}.debug.wasm"
-  )
+#  )
   if (ARGS_FILE_SYSTEM STREQUAL "ON")
     list(APPEND emscripten_link_options
       "-sFORCE_FILESYSTEM=1"
