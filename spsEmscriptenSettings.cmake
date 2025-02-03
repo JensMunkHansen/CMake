@@ -472,11 +472,15 @@ function(_sps_emscripten_settings)
       "--enable-bulk-memory"
       "-sUSE_PTHREADS=1"
       "-sSTACK_SIZE=262144"
-      "-sPTHREAD_POOL_SIZE=${ARGS_THREAD_POOL_SIZE}"
-      "-sPTHREAD_POOL_SIZE_STRICT=${ARGS_MAX_NUMBER_OF_THREADS}"
       # Bug in Emscripten, we cannot use SHARED_MEMORY on .c files if em++
       "-sSHARED_MEMORY=1"
       "-sWASM=1")
+    if (NOT ${ARGS_SIDE_MODULE})
+      # Side module does not own threads
+      list(APPEND emscripten_link_options
+        "-sPTHREAD_POOL_SIZE=${ARGS_THREAD_POOL_SIZE}"
+        "-sPTHREAD_POOL_SIZE_STRICT=${ARGS_MAX_NUMBER_OF_THREADS}")
+    endif()
   endif()
 
   # Assign the options list to the specified variable
