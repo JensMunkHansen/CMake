@@ -405,6 +405,9 @@ function(_sps_emscripten_settings)
       "-sALLOW_TABLE_GROWTH=1"
       "-sEXPORT_NAME=${ARGS_EXPORT_NAME}"
     )
+    list(APPEND emscripten_link_options
+      "-sUSE_WEBGL2=1"
+    )
     if (NOT DEFINED ARGS_ENVIRONMENT)
       if (ARGS_THREADING_ENABLED STREQUAL "ON")
         if ("${ARGS_DISABLE_NODE}" STREQUAL "ON")
