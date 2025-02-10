@@ -400,6 +400,7 @@ function(_sps_emscripten_settings)
     endif()
     list(APPEND emscripten_link_options
       "-sMODULARIZE=1"
+      "-sUSE_WEBGL2=1"
       "-sEXPORT_ES6=1"
       "-sINCLUDE_FULL_LIBRARY" # for addFunction
       "-sALLOW_TABLE_GROWTH=1"
@@ -638,7 +639,7 @@ function(sps_emscripten_module)
     set(emscripten_exported_runtime_methods "ENV;FS;addFunction;removeFunction")
   endif()
   # Is it okay always to export this???
-  list(APPEND emscripten_exported_runtime_methods "ccall;cwrap;stringToNewUTF8;UTF8ToString")
+  list(APPEND emscripten_exported_runtime_methods "ccall;cwrap;stringToNewUTF8;UTF8ToString;setValue")
 
 
   if (ARGS_THREADING_ENABLED STREQUAL "ON")
