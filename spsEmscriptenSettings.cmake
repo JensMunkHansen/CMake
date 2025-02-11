@@ -402,8 +402,8 @@ function(_sps_emscripten_settings)
       "-sMODULARIZE=1"
       "-sUSE_WEBGL2=1"
       "-sEXPORT_ES6=1"
-      "-sINCLUDE_FULL_LIBRARY" # for addFunction
-      "-sALLOW_TABLE_GROWTH=1"
+#      "-sINCLUDE_FULL_LIBRARY" # for addFunction
+#      "-sALLOW_TABLE_GROWTH=1" # TEST FOR SHARED MEMORY
       "-sEXPORT_NAME=${ARGS_EXPORT_NAME}"
     )
     list(APPEND emscripten_link_options
@@ -463,7 +463,6 @@ function(_sps_emscripten_settings)
       endif()
     endif()
   endif()
-
   # TODO: Move to module
   if (ARGS_THREADING_ENABLED STREQUAL "ON")
     list(APPEND emscripten_link_options
@@ -494,6 +493,7 @@ Create a WASM Emscripten module
 sps_emscripten_module(
   SIDE_MODULE
   MAIN_MODULE
+  IMPORTED_MEMORY
   ASYNCIFY_DEBUG
   DEBUG_VALIDATION              (check if binaryen modifies debug information)
   64_BIT                        <ON|OFF> (default: OFF)
@@ -518,6 +518,7 @@ sps_emscripten_module(
   LIBRARIES                     <list> (libraries (.a) to link to)
   EXPORTED_FUNCTIONS            <list> (without '_' prefix)
   EXPORT_NAME                   <variable>
+  SHARED_MEMORY                 <ON|OFF>
   COMPILE_DEFINITIONS           <list>  
   OPTIMIZATION                  <NONE, LITTLE, MORE, BEST, SMALL, SMALLEST, SMALLEST_WITH_CLOSURE>
   DEBUG                         <NONE, READABLE_JS, PROFILE, DEBUG_NATIVE>
@@ -527,7 +528,7 @@ sps_emscripten_module(
 #]==]
 function(sps_emscripten_module)
   # Define the arguments that the function accepts
-  set(options SIDE_MODULE MAIN_MODULE VERBOSE DISABLE_NODE ASYNCIFY_DEBUG DEBUG_VALIDATION)
+  set(options SIDE_MODULE MAIN_MODULE VERBOSE DISABLE_NODE ASYNCIFY_DEBUG DEBUG_VALIDATION IMPORTED_MEMORY)
   set(one_value_args
     64_BIT
     TARGET_NAME
@@ -537,6 +538,7 @@ function(sps_emscripten_module)
     EXIT_RUNTIME
     EXPORT_NAME
     DEBUG
+    SHARED_MEMORY
     ENABLE_EXCEPTIONS
     INITIAL_MEMORY
     MAXIMUM_MEMORY
@@ -686,7 +688,15 @@ function(sps_emscripten_module)
       "-sINITIAL_MEMORY=${ARGS_INITIAL_MEMORY}"
     )
   endif()
-  if (DEFINED ARGS_MAXIMUM_MEMORY)
+  if (DEFINED ARGS_MAXIMUM_MEMORY AND DEFINED ARGS_INITIAL_MEMORY)
+    list(APPEND emscripten_link_options
+      "-sMAXIMUM_MEMORY=${ARGS_MAXIMUM_MEMORY}")
+    if (${ARGS_MAXIMUM_MEMORY} STREQUAL ${ARGS_INITIAL_MEMORY})
+      list(APPEND emscripten_link_options
+        "-sALLOW_MEMORY_GROWTH=0"
+      )
+    endif()
+  elseif (DEFINED ARGS_MAXIMUM_MEMORY)
     list(APPEND emscripten_link_options
       "-sMAXIMUM_MEMORY=${ARGS_MAXIMUM_MEMORY}"
       "-sALLOW_MEMORY_GROWTH=1")
@@ -701,6 +711,18 @@ function(sps_emscripten_module)
     )
   endif()
 
+  if (ARGS_SHARED_MEMORY STREQUAL "ON")
+    list(APPEND emscripten_link_options
+      "-SHARED_MEMORY=1")
+  endif()
+  
+  if (ARGS_IMPORTED_MEMORY)
+    list(APPEND emscripten_link_options
+      "-sIMPORTED_MEMORY"
+#      "-sEMSCRIPTEN_ALIGN_MEMORY"
+    )
+  endif()
+  
   # 64-bit support (experimental)
   if (ARGS_64_BIT STREQUAL "ON")
     
