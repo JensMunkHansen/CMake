@@ -33,9 +33,10 @@ function(_sps_generate_copy_script target_name input_files output_file)
 
   # Write commands to copy each JavaScript file
   foreach(input_file ${input_files})
-    file(APPEND "${output_file}" "message(STATUS \"Copying ${input_file} to ${CMAKE_CURRENT_BINARY_DIR}/\${CONFIG}/${input_file}\")\n")
+    get_filename_component(file_name_without_path "${input_file}" NAME)
+    file(APPEND "${output_file}" "message(STATUS \"Copying ${input_file} to ${CMAKE_CURRENT_BINARY_DIR}/\${CONFIG}/${file_name_without_path}\")\n")
     file(APPEND "${output_file}"
-         "execute_process(COMMAND\n \${CMAKE_COMMAND} -E copy_if_different \"${CMAKE_CURRENT_SOURCE_DIR}/${input_file}\" \"${CMAKE_CURRENT_BINARY_DIR}${CONFIG}/${input_file}\")\n")
+         "execute_process(COMMAND\n \${CMAKE_COMMAND} -E copy_if_different \"${CMAKE_CURRENT_SOURCE_DIR}/${input_file}\" \"${CMAKE_CURRENT_BINARY_DIR}${CONFIG}/${file_name_without_path}\")\n")
   endforeach()
   message(STATUS "Generated script: ${output_file}")
 endfunction()
