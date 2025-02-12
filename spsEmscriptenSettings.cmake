@@ -9,7 +9,7 @@ spsEmscriptenSettings
 get_filename_component(_EmscriptenSetting_dir "${CMAKE_CURRENT_LIST_FILE}" DIRECTORY)
 
 include(spsHardware)
-include(spsMultiConfiguration)
+include(spsCopyFiles)
 include(spsNode)
 include(spsSourceMap)
 
