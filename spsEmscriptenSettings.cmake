@@ -375,11 +375,11 @@ function(_sps_emscripten_settings)
   sps_set_emscripten_debug_flags(${ARGS_DEBUG} emscripten_debug_options)
 
   # Default linker options
-  list(APPEND emscripten_link_options
-    "-sERROR_ON_UNDEFINED_SYMBOLS=1" # 0 for bindings project
-    "-sDISABLE_EXCEPTION_CATCHING=0" # We use exceptions in C++
-    "-sALLOW_BLOCKING_ON_MAIN_THREAD=1" # Experiment with threads requires this (bug in Emscripten)
-  )
+#  list(APPEND emscripten_link_options
+#    "-sERROR_ON_UNDEFINED_SYMBOLS=0" # 0 for bindings project
+#    "-sDISABLE_EXCEPTION_CATCHING=0" # We use exceptions in C++
+#    "-sALLOW_BLOCKING_ON_MAIN_THREAD=0" # Experiment with threads requires this (bug in Emscripten)
+#  )
 
   # Link to embind
   if (ARGS_EMBIND STREQUAL "ON")
@@ -445,9 +445,11 @@ function(_sps_emscripten_settings)
         "-sNO_EXIT_RUNTIME=1")
     endif()
     if (DEFINED ARGS_ENVIRONMENT)
-      list(APPEND emscripten_link_options
-        "-sENVIRONMENT=${ARGS_ENVIRONMENT}"
-      )
+      if (NOT ARGS_ENVIRONMENT STREQUAL "NONE")
+        list(APPEND emscripten_link_options
+          "-sENVIRONMENT=${ARGS_ENVIRONMENT}"
+        )
+      endif()
     else()
       # Automatic setting for environment
       if (ARGS_THREADING_ENABLED STREQUAL "ON")
@@ -493,6 +495,7 @@ Create a WASM Emscripten module
 sps_emscripten_module(
   SIDE_MODULE
   MAIN_MODULE
+  SDL2
   IMPORTED_MEMORY
   ASYNCIFY_DEBUG
   DEBUG_VALIDATION              (check if binaryen modifies debug information)
@@ -528,7 +531,7 @@ sps_emscripten_module(
 #]==]
 function(sps_emscripten_module)
   # Define the arguments that the function accepts
-  set(options SIDE_MODULE MAIN_MODULE VERBOSE DISABLE_NODE ASYNCIFY_DEBUG DEBUG_VALIDATION IMPORTED_MEMORY)
+  set(options SIDE_MODULE MAIN_MODULE SDL2 SDL_TTF SDL_MIXER FETCH VERBOSE DISABLE_NODE ASYNCIFY_DEBUG DEBUG_VALIDATION IMPORTED_MEMORY)
   set(one_value_args
     64_BIT
     TARGET_NAME
@@ -540,6 +543,7 @@ function(sps_emscripten_module)
     DEBUG
     SHARED_MEMORY
     ENABLE_EXCEPTIONS
+    ENVIRONMENT
     INITIAL_MEMORY
     MAXIMUM_MEMORY
     FILE_SYSTEM
@@ -548,8 +552,7 @@ function(sps_emscripten_module)
     PRE_JS
     THREAD_POOL_SIZE
     EXTRA_LINK_ARGS
-    MAX_NUMBER_OF_THREADS
-    ENVIRONMENT)
+    MAX_NUMBER_OF_THREADS)
   set(multi_value_args SOURCE_FILES COMPILE_DEFINITIONS JAVASCRIPT_FILES SIDE_MODULES EXPORTED_FUNCTIONS ASYNCIFY_IMPORTS LIBRARIES INCLUDE_DIRS)
 
   # Parse the arguments using cmake_parse_arguments
@@ -666,6 +669,27 @@ function(sps_emscripten_module)
     endif()
   endif()
 
+  if (ARGS_SDL2)
+    list(APPEND emscripten_link_options
+      "-sUSE_SDL=2"
+    )
+  endif()
+  if (ARGS_SDL_MIXER)
+    list(APPEND emscripten_link_options
+      "-sUSE_SDL_MIXER=2"
+    )
+  endif()      
+
+  if (ARGS_SDL_TTF)
+    list(APPEND emscripten_link_options
+      "-sUSE_SDL_TTF=2"
+    )
+  endif()
+  if (ARGS_FETCH)
+    list(APPEND emscripten_link_options
+      "-sFETCH=1"
+    )
+  endif()
   # Check for main
   if (ARGS_SOURCE_FILES)
     _sps_check_files_for_main(${ARGS_SOURCE_FILES} TARGET_HAS_MAIN)
@@ -673,7 +697,7 @@ function(sps_emscripten_module)
   if (ARGS_ES6_MODULE STREQUAL "OFF" AND NOT ARGS_SIDE_MODULE)
     # If not an ES6 module and no JavaScript files, we assume it is
     # a file to be executed. Linking to Catch2 requires main
-    set(TARGET_HAS_MAIN ON)
+    # set(TARGET_HAS_MAIN ON)
   endif()
 
   if (TARGET_HAS_MAIN)
@@ -788,7 +812,7 @@ function(sps_emscripten_module)
       list(APPEND emscripten_compile_options "-fexceptions")
     endif()
   else()
-    list(APPEND emscripten_compile_options "-fno-exceptions")
+#    list(APPEND emscripten_compile_options "-fno-exceptions")
   endif()
 
   # Position-independent code (required for shared objects)
