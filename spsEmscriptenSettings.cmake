@@ -531,7 +531,7 @@ sps_emscripten_module(
 #]==]
 function(sps_emscripten_module)
   # Define the arguments that the function accepts
-  set(options SIDE_MODULE MAIN_MODULE SDL2 SDL_TTF SDL_MIXER FETCH VERBOSE DISABLE_NODE ASYNCIFY_DEBUG DEBUG_VALIDATION IMPORTED_MEMORY)
+  set(options SIDE_MODULE MAIN_MODULE MAIN SDL2 SDL_TTF SDL_MIXER FETCH VERBOSE DISABLE_NODE ASYNCIFY_DEBUG DEBUG_VALIDATION IMPORTED_MEMORY)
   set(one_value_args
     64_BIT
     TARGET_NAME
@@ -694,10 +694,10 @@ function(sps_emscripten_module)
   if (ARGS_SOURCE_FILES)
     _sps_check_files_for_main(${ARGS_SOURCE_FILES} TARGET_HAS_MAIN)
   endif()
-  if (ARGS_ES6_MODULE STREQUAL "OFF" AND NOT ARGS_SIDE_MODULE)
-    # If not an ES6 module and no JavaScript files, we assume it is
-    # a file to be executed. Linking to Catch2 requires main
-    # set(TARGET_HAS_MAIN ON)
+  if (NOT ARGS_SIDE_MODULE AND ARGS_ES6_MODULE STREQUAL "OFF")
+    if (ARGS_MAIN)
+      set(TARGET_HAS_MAIN ON)
+    endif()
   endif()
 
   if (TARGET_HAS_MAIN)
