@@ -23,7 +23,7 @@ spsCopyFiles
 function(_sps_generate_copy_script target_name input_files output_file)
   # Handle single and multi-configuration builds
   if (CMAKE_CONFIGURATION_TYPES)
-    set(CONFIG "/${CONFIGURATION}")
+    set(CONFIG "\${CONFIGURATION}")
   else()
     set(CONFIG)
   endif()
@@ -33,10 +33,10 @@ function(_sps_generate_copy_script target_name input_files output_file)
 
   # Write commands to copy each JavaScript file
   foreach(input_file ${input_files})
-    get_filename_component(file_name_without_path "${input_file}" NAME)
-    file(APPEND "${output_file}" "message(STATUS \"Copying ${input_file} to ${CMAKE_CURRENT_BINARY_DIR}/\${CONFIG}/${file_name_without_path}\")\n")
+    #get_filename_component(file_name_without_path "${input_file}" NAME)
+    file(APPEND "${output_file}" "message(STATUS \"Copying ${input_file} to ${CMAKE_CURRENT_BINARY_DIR}/\${CONFIGURATION}/${input_file}\")\n")
     file(APPEND "${output_file}"
-         "execute_process(COMMAND\n \${CMAKE_COMMAND} -E copy_if_different \"${CMAKE_CURRENT_SOURCE_DIR}/${input_file}\" \"${CMAKE_CURRENT_BINARY_DIR}${CONFIG}/${file_name_without_path}\")\n")
+         "execute_process(COMMAND\n \${CMAKE_COMMAND} -E copy_if_different \"${CMAKE_CURRENT_SOURCE_DIR}/${input_file}\" \"${CMAKE_CURRENT_BINARY_DIR}/${CONFIG}/${input_file}\")\n")
   endforeach()
   message(STATUS "Generated script: ${output_file}")
 endfunction()
@@ -55,18 +55,18 @@ endfunction()
       TARGET_NAME
       INPUT_FILES                   <files>)
 #]==]
-function(sps_copy_files target_name postfix input_files)
-  if (NOT target_name)
+function(sps_copy_files target postfix input_files)
+  if (NOT target)
     message(FATAL_ERROR "The 'sps_copy_files' function requires a target.")
   endif()
   # Unique file name
   set(COPY_FILES_SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/${target_name}_copy_${postfix}.cmake")
 
-  _sps_generate_copy_script(${target_name} "${input_files}" "${COPY_FILES_SCRIPT}")
-  add_custom_target(${target_name}_${postfix} ALL
-    DEPENDS "${COPY_FILES_SCRIPT}"
+  _sps_generate_copy_script(${target} "${input_files}" ${COPY_FILES_SCRIPT})
+  add_custom_target("${target}_${postfix}" ALL
+    DEPENDS ${COPY_FILES_SCRIPT}
     COMMAND ${CMAKE_COMMAND} -DCONFIGURATION=$<CONFIG> -P "${COPY_FILES_SCRIPT}"
     COMMENT "Copying ${postfix} files to the appropriate output directory"
   )
-  add_dependencies(${target_name} ${target_name}_${postfix})
+  add_dependencies(${target} "${target}_${postfix}")
 endfunction()

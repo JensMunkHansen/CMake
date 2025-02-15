@@ -265,9 +265,6 @@ endfunction()
 Set various variables for Emscripten
 .. code-block:: cmake
 _sps_emscripten_settings(
-  TRHEADING_ENABLED             <ON|OFF> (default: OFF)
-  THREAD_POOL_SIZE              (default: 4)
-  MAX_NUMBER_OF_THREADS         (default: 4, hard limit for runtime threads)
   EMBIND                        <ON|OFF> (default: OFF)
   ES6_MODULE                    <ON|OFF> (default: ON)
   EXPORT_NAME                   <variable>
@@ -288,9 +285,6 @@ function(_sps_emscripten_settings)
   set(options)  # Boolean options (without ON/OFF).
   set(one_value_args
     DISABLE_NODE
-    THREADING_ENABLED
-    THREAD_POOL_SIZE
-    MAX_NUMBER_OF_THREADS
     ENVIRONMENT
     EMBIND
     ES6_MODULE
@@ -330,14 +324,6 @@ function(_sps_emscripten_settings)
   endif()
   if (NOT DEFINED ARGS_INITIAL_MEMORY)
     set(ARGS_INITIAL_MEMORY "1GB")
-  endif()
-  if (NOT DEFINED ARGS_THREAD_POOL_SIZE)
-    # Note for this we need a VTK with improved thread support
-    set(ARGS_THREAD_POOL_SIZE 4)
-  endif()
-  if (NOT DEFINED ARGS_MAX_NUMBER_OF_THREADS)
-    sps_get_processor_count(MAX_CONCURRENCY_VAR)
-    set(ARGS_MAX_NUMBER_OF_THREADS ${MAX_CONCURRENCY_VAR})
   endif()
 
   # Default arguments for debug and optimization
@@ -465,23 +451,6 @@ function(_sps_emscripten_settings)
       endif()
     endif()
   endif()
-  # TODO: Move to module
-  if (ARGS_THREADING_ENABLED STREQUAL "ON")
-    list(APPEND emscripten_link_options
-      "-pthread"
-      "-flto"
-      "--enable-bulk-memory"
-      "-sUSE_PTHREADS=1"
-      "-sSTACK_SIZE=262144"
-      # Bug in Emscripten, we cannot use SHARED_MEMORY on .c files if em++
-      "-sSHARED_MEMORY=1"
-      "-sWASM=1")
-    # Side module does not own threads (gives a warning, but no biggee)
-    list(APPEND emscripten_link_options
-      "-sPTHREAD_POOL_SIZE=${ARGS_THREAD_POOL_SIZE}"
-      "-sPTHREAD_POOL_SIZE_STRICT=${ARGS_MAX_NUMBER_OF_THREADS}")
-  endif()
-
   # Assign the options list to the specified variable
   set(${ARGS_EMSCRIPTEN_LINK_OPTIONS} "${emscripten_link_options}" PARENT_SCOPE)
   set(${ARGS_EMSCRIPTEN_OPTIMIZATION_FLAGS} "${emscripten_optimization_flags}" PARENT_SCOPE)
@@ -562,6 +531,16 @@ function(sps_emscripten_module)
     message(FATAL_ERROR "Unknown arguments: ${ARGS_UNPARSED_ARGUMENTS}")
   endif()
 
+  if (NOT DEFINED ARGS_THREAD_POOL_SIZE)
+    # Note for this we need a VTK with improved thread support
+    set(ARGS_THREAD_POOL_SIZE 4)
+  endif()
+
+  if (NOT DEFINED ARGS_MAX_NUMBER_OF_THREADS)
+    sps_get_processor_count(MAX_CONCURRENCY_VAR)
+    set(ARGS_MAX_NUMBER_OF_THREADS ${MAX_CONCURRENCY_VAR})
+  endif()
+  
   # Validate required arguments
   if (NOT ARGS_TARGET_NAME)
     message(FATAL_ERROR "TARGET_NAME must be specified.")
@@ -628,14 +607,30 @@ function(sps_emscripten_module)
     DISABLE_NODE ${ARGS_DISABLE_NODE}
     DEBUG ${ARGS_DEBUG}
     ENVIRONMENT ${ARGS_ENVIRONMENT}
-    THREADING_ENABLED ${ARGS_THREADING_ENABLED}
-    THREAD_POOL_SIZE ${ARGS_THREAD_POOL_SIZE}
-    MAX_NUMBER_OF_THREADS ${ARGS_MAX_NUMBER_OF_THREADS}
     OPTIMIZATION ${ARGS_OPTIMIZATION}
     EMSCRIPTEN_LINK_OPTIONS emscripten_link_options
     EMSCRIPTEN_OPTIMIZATION_FLAGS emscripten_optimization_flags
     EMSCRIPTEN_DEBUG_INFO emscripten_debug_options
   )
+
+  if (NOT ARGS_SIDE_MODULE)
+    if (ARGS_THREADING_ENABLED STREQUAL "ON")
+      list(APPEND emscripten_link_options
+        "-pthread"
+        "-flto"
+        "--enable-bulk-memory"
+        "-sUSE_PTHREADS=1"
+        "-sSTACK_SIZE=262144"
+        # Bug in Emscripten, we cannot use SHARED_MEMORY on .c files if em++
+        "-sSHARED_MEMORY=1"
+        "-sWASM=1")
+      # Side module does not own threads (gives a warning, but no biggee)
+      list(APPEND emscripten_link_options
+        "-sPTHREAD_POOL_SIZE=${ARGS_THREAD_POOL_SIZE}"
+        "-sPTHREAD_POOL_SIZE_STRICT=${ARGS_MAX_NUMBER_OF_THREADS}")
+    endif()
+  endif()
+  
 
   if (ARGS_ES6_MODULE STREQUAL ON)
     list(APPEND emscripten_exported_functions "free")
