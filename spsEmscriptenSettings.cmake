@@ -290,6 +290,7 @@ function(_sps_emscripten_settings)
     ES6_MODULE
     EXPORT_NAME
     OPTIMIZATION
+    THREADING_ENABLED
     DEBUG
     INITIAL_MEMORY
     MAXIMUM_MEMORY
@@ -606,6 +607,7 @@ function(sps_emscripten_module)
     EXPORT_NAME ${ARGS_EXPORT_NAME}
     DISABLE_NODE ${ARGS_DISABLE_NODE}
     DEBUG ${ARGS_DEBUG}
+    THREADING_ENABLED ${ARGS_THREADING_ENABLED}
     ENVIRONMENT ${ARGS_ENVIRONMENT}
     OPTIMIZATION ${ARGS_OPTIMIZATION}
     EMSCRIPTEN_LINK_OPTIONS emscripten_link_options
@@ -613,22 +615,20 @@ function(sps_emscripten_module)
     EMSCRIPTEN_DEBUG_INFO emscripten_debug_options
   )
 
-  if (NOT ARGS_SIDE_MODULE)
-    if (ARGS_THREADING_ENABLED STREQUAL "ON")
-      list(APPEND emscripten_link_options
-        "-pthread"
-        "-flto"
-        "--enable-bulk-memory"
-        "-sUSE_PTHREADS=1"
-        "-sSTACK_SIZE=262144"
-        # Bug in Emscripten, we cannot use SHARED_MEMORY on .c files if em++
-        "-sSHARED_MEMORY=1"
-        "-sWASM=1")
-      # Side module does not own threads (gives a warning, but no biggee)
-      list(APPEND emscripten_link_options
-        "-sPTHREAD_POOL_SIZE=${ARGS_THREAD_POOL_SIZE}"
-        "-sPTHREAD_POOL_SIZE_STRICT=${ARGS_MAX_NUMBER_OF_THREADS}")
-    endif()
+  if (ARGS_THREADING_ENABLED STREQUAL "ON")
+    list(APPEND emscripten_link_options
+      "-pthread"
+      "-flto"
+      "--enable-bulk-memory"
+      "-sUSE_PTHREADS=1"
+      "-sSTACK_SIZE=262144"
+      # Bug in Emscripten, we cannot use SHARED_MEMORY on .c files if em++
+      "-sSHARED_MEMORY=1"
+      "-sWASM=1")
+    # Side module does not own threads (gives a warning, but no biggee)
+    list(APPEND emscripten_link_options
+      "-sPTHREAD_POOL_SIZE=${ARGS_THREAD_POOL_SIZE}"
+      "-sPTHREAD_POOL_SIZE_STRICT=${ARGS_MAX_NUMBER_OF_THREADS}")
   endif()
   
 
