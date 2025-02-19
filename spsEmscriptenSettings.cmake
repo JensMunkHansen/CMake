@@ -694,7 +694,7 @@ function(sps_emscripten_module)
     )
   endif()
   # Check for main
-  if (ARGS_SOURCE_FILES)
+  if (ARGS_SOURCE_FILES AND ARGS_ES6_MODULE STREQUAL "OFF")
     _sps_check_files_for_main(${ARGS_SOURCE_FILES} TARGET_HAS_MAIN)
   endif()
   if (NOT ARGS_SIDE_MODULE AND ARGS_ES6_MODULE STREQUAL "OFF")
