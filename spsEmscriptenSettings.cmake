@@ -645,9 +645,14 @@ function(sps_emscripten_module)
   if (ARGS_THREADING_ENABLED STREQUAL "ON")
     list(APPEND emscripten_exported_runtime_methods "spawnThread")
   endif()
-
+  set(USE_JSON_EXPORTS FALSE)
   if (ARGS_EXPORTED_FUNCTIONS)
-    list(APPEND emscripten_exported_functions ${ARGS_EXPORTED_FUNCTIONS})
+    string(FIND "${ARGS_EXPORTED_FUNCTIONS}" "@" at_pos)
+    if (at_pos GREATER -1)
+      set(USE_JSON_EXPORTS TRUE)
+    else()
+      list(APPEND emscripten_exported_functions ${ARGS_EXPORTED_FUNCTIONS})
+    endif()
   endif()
   if (ARGS_ASYNCIFY_IMPORTS)
     list(APPEND emscripten_async_imports ${ARGS_ASYNCIFY_IMPORTS})
@@ -656,6 +661,9 @@ function(sps_emscripten_module)
   if (ARGS_SIDE_MODULE)
     list(APPEND emscripten_link_options
       "-sSIDE_MODULE=2")
+    if (ARGS_SIDE_MODULES)
+      list(APPEND emscripten_link_options ${ARGS_SIDE_MODULES})
+    endif()
   elseif (ARGS_MAIN_MODULE)
     if (ARGS_SIDE_MODULES)
       list(APPEND emscripten_link_options "-sMAIN_MODULE=2" ${ARGS_SIDE_MODULES})
@@ -782,14 +790,21 @@ function(sps_emscripten_module)
 
   # Prefix and format the exports
   _sps_prefix_and_format_exports(emscripten_async_imports async_imports_str)
-  _sps_prefix_and_format_exports(emscripten_exported_functions exported_functions_str)
+  if (NOT USE_JSON_EXPORTS)
+    _sps_prefix_and_format_exports(emscripten_exported_functions exported_functions_str)
+  endif()
   _sps_format_exports(emscripten_exported_runtime_methods exported_runtime_methods_str)
 
   # Here add the exports
   list(APPEND emscripten_link_options
     "-sEXPORTED_RUNTIME_METHODS=${exported_runtime_methods_str}")
-  list(APPEND emscripten_link_options
-    "-sEXPORTED_FUNCTIONS=${exported_functions_str}")
+  if (NOT USE_JSON_EXPORTS)
+    list(APPEND emscripten_link_options
+      "-sEXPORTED_FUNCTIONS=${exported_functions_str}")
+  else()
+    list(APPEND emscripten_link_options
+      "-sEXPORTED_FUNCTIONS=${ARGS_EXPORTED_FUNCTIONS}")
+  endif()
   list(APPEND emscripten_link_options
     "-sASYNCIFY_IMPORTS=${async_imports_str}")
 
