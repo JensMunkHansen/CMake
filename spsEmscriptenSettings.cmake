@@ -389,8 +389,8 @@ function(_sps_emscripten_settings)
       "-sMODULARIZE=1"
       "-sUSE_WEBGL2=1"
       "-sEXPORT_ES6=1"
-#      "-sINCLUDE_FULL_LIBRARY" # for addFunction
-#      "-sALLOW_TABLE_GROWTH=1" # TEST FOR SHARED MEMORY
+      "-sINCLUDE_FULL_LIBRARY" # for addFunction
+      "-sALLOW_TABLE_GROWTH=1" # TEST FOR SHARED MEMORY
       "-sEXPORT_NAME=${ARGS_EXPORT_NAME}"
     )
     list(APPEND emscripten_link_options
