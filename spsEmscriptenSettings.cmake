@@ -122,8 +122,8 @@ function(sps_target_compile_flags target)
       set(emscripten_optimization_flags)
       set(emscripten_link_options)
       sps_set_emscripten_optimization_flags(${ARGS_OPTIMIZATION} emscripten_optimization_flags emscripten_link_options)
-    	target_compile_options(${target} PRIVATE
-    	  ${emscripten_optimization_flags})
+      target_compile_options(${target} PRIVATE
+    	${emscripten_optimization_flags})
     endif()
   else()
     message(FATAL_ERROR "This needs an Emscripten build environment")
@@ -494,6 +494,7 @@ sps_emscripten_module(
   SHARED_MEMORY                 <ON|OFF>
   COMPILE_DEFINITIONS           <list>  
   OPTIMIZATION                  <NONE, LITTLE, MORE, BEST, SMALL, SMALLEST, SMALLEST_WITH_CLOSURE>
+  COMPILE_OPTIMIZATION                  <NONE, LITTLE, MORE, BEST, SMALL, SMALLEST, SMALLEST_WITH_CLOSURE>
   DEBUG                         <NONE, READABLE_JS, PROFILE, DEBUG_NATIVE>
   VERBOSE                       Show stuff)
 
@@ -518,6 +519,7 @@ function(sps_emscripten_module)
     MAXIMUM_MEMORY
     FILE_SYSTEM
     OPTIMIZATION
+    COMPILE_OPTIMIZATION
     THREADING_ENABLED
     PRE_JS
     THREAD_POOL_SIZE
@@ -749,6 +751,11 @@ function(sps_emscripten_module)
 #      "-sEMSCRIPTEN_ALIGN_MEMORY"
     )
   endif()
+
+  sps_target_compile_flags(${ARGS_TARGET_NAME}
+    THREADING_ENABLED ${ARGS_THREADING_ENABLED}
+    OPTIMIZATION ${ARGS_COMPILE_OPTIMIZATION}
+    DEBUG ${ARGS_DEBUG})
   
   # 64-bit support (experimental)
   if (ARGS_64_BIT STREQUAL "ON")
@@ -834,11 +841,13 @@ function(sps_emscripten_module)
   # Threading
   if (ARGS_THREADING_ENABLED STREQUAL "ON")
     target_link_libraries(${ARGS_TARGET_NAME} PRIVATE Threads::Threads)
-    list(APPEND emscripten_compile_options "-pthread")
-    list(APPEND emscripten_compile_options "-matomics")
-    list(APPEND emscripten_compile_options "-mbulk-memory")
+    #list(APPEND emscripten_compile_options "-pthread")
+    #list(APPEND emscripten_compile_options "-matomics")
+    #list(APPEND emscripten_compile_options "-mbulk-memory")
   endif()
 
+
+  
   # Support extra link args (if provided)
   if (ARGS_EXTRA_LINK_ARGS)
     list(APPEND emscripten_link_options
