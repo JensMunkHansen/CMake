@@ -2,7 +2,7 @@ if (TARGET build)
   if (EMSCRIPTEN)
     target_compile_options(build
       INTERFACE
-        -O3 -msimd128 -ffast-math -mllvm -vectorize-loops)
+      -O3 -msimd128 -ffast-math -mllvm -vectorize-loops)
   else()
     target_compile_options(build
       INTERFACE
