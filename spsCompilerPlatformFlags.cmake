@@ -8,17 +8,17 @@ if (TARGET build)
       INTERFACE
       # GNU flags for Release
       $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Release>>:-O3 -march=native -mtune=native -flto -fuse-linker-plugin -ftree-vectorize -fopt-info-vec>
-      # GNU flags for Debug (example)
+      # GNU flags for Debug
       $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Debug>>:-O0 -g>
 
       # Clang flags for Release
       $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Release>>:-O3 -march=native -Rpass=loop-vectorize -Rpass-missed=loop-vectorize>
-      # Clang flags for Debug (example)
+      # Clang flags for Debug
       $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Debug>>:-O0 -g>
       
       # MSVC flags for Release
       $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:Release>>:/O2 /GL /fp:fast /Qvec /Qpar /arch:AVX2>
-      # MSVC flags for Debug (example)
+      # MSVC flags for Debug
       $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:Debug>>:/Od /Zi>)
   endif()
   target_compile_features(build INTERFACE cxx_std_20)
