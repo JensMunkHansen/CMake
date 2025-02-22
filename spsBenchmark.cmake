@@ -5,9 +5,11 @@ if (NOT benchmark_FOUND OR EMSCRIPTEN)
   include(FetchContent)
   message(STATUS "Google Benchmark not found, using FetchContent...")
 
-  set(CMAKE_CXX_FLAGS "-matomics -mbulk-memory")
-  set(CMAKE_C_FLAGS "-matomics -mbulk-memory")
-  
+  if (EMSCRIPTEN)
+    set(CMAKE_CXX_FLAGS "-matomics -mbulk-memory")
+    set(CMAKE_C_FLAGS "-matomics -mbulk-memory")
+  endif()
+
   FetchContent_Declare(benchmark
     GIT_REPOSITORY https://github.com/google/benchmark.git
     GIT_TAG v1.8.3
