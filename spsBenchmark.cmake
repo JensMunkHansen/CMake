@@ -1,7 +1,7 @@
 find_package(benchmark QUIET)
 
 # If not found, use FetchContent
-if (1)#NOT benchmark_FOUND OR EMSCRIPTEN)
+if (NOT benchmark_FOUND OR EMSCRIPTEN)
   include(FetchContent)
   message(STATUS "Google Benchmark not found, using FetchContent...")
 
@@ -10,8 +10,8 @@ if (1)#NOT benchmark_FOUND OR EMSCRIPTEN)
     set(CMAKE_C_FLAGS "-matomics -mbulk-memory")
   endif()
 
-  set(FETCHCONTENT_BASE_DIR "${CMAKE_BINARY_DIR}/../cmake-dependencies")
-  set(FETCHCONTENT_FULLY_DISCONNECTED ON) # Prevent auto-deleting
+  #set(FETCHCONTENT_BASE_DIR "${CMAKE_BINARY_DIR}/../cmake-dependencies")
+  #set(FETCHCONTENT_FULLY_DISCONNECTED ON) # Prevent auto-deleting
   
   FetchContent_Declare(benchmark
     GIT_REPOSITORY https://github.com/google/benchmark.git
