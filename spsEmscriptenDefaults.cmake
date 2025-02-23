@@ -13,10 +13,10 @@
   It adds CMake options, which can be set from outside and with default values for
   CMAKE_BUILD_TYPE=Release and CMAKE_BUILD_TYPE=Debug. The options are named:
 
-  ${PROJECT}_DEBUG
+  ${PROJECT}_DEBUGINFO
   ${PROJECT}_OPTIMIZATION (link optimization, which is the most important)
 
-  ${PROJECT}_TEST_DEBUG
+  ${PROJECT}_TEST_DEBUGINFO
   ${PROJECT}_TEST_OPTIMIZATION (link optimization, which is the most important)
   
   They are only used for Emscripten.
@@ -32,36 +32,36 @@
 # real configuration types.
 
 # Default configurations
-set(_DEFAULT_RELEASE_DEBUG READABLE_JS)
+set(_DEFAULT_RELEASE_DEBUGINFO READABLE_JS)
 set(_DEFAULT_RELEASE_OPTIMIZATION BEST)
-set(_DEFAULT_DEBUG_DEBUG DEBUG_NATIVE)
+set(_DEFAULT_DEBUG_DEBUGINFO DEBUG_NATIVE)
 set(_DEFAULT_DEBUG_OPTIMIZATION NONE)
 
 # Default test configurations
-set(_DEFAULT_TEST_RELEASE_DEBUG READABLE_JS)
+set(_DEFAULT_TEST_RELEASE_DEBUGINFO READABLE_JS)
 set(_DEFAULT_TEST_RELEASE_OPTIMIZATION NONE)
-set(_DEFAULT_TEST_DEBUG_DEBUG READABLE_JS)
+set(_DEFAULT_TEST_DEBUG_DEBUGINFO READABLE_JS)
 set(_DEFAULT_TEST_DEBUG_OPTIMIZATION NONE)
 
 option(${project_name}_WASM_SIMD "Enable SIMD" ON)
 
 # Define reusable lists for optimization
 set(_OPTIMIZATION_LEVELS
-  NO_OPTIMIZATION
-  LITTLE
-  MORE
-  BEST
-  SMALL
-  SMALLEST
-  SMALLEST_WITH_CLOSURE
+  NO_OPTIMIZATION       # -O0
+  LITTLE                # -O1
+  MORE                  # -O2
+  BEST                  # -O3
+  SMALL                 # -Os
+  SMALLEST              # -Oz
+  SMALLEST_WITH_CLOSURE # -Oz --closure 1
 )
 
 # Define reusable lists for debuginfo
 set(_DEBUG_LEVELS
-  NONE
-  READABLE_JS
-  PROFILE
-  DEBUG_NATIVE
+  NONE              # -g0
+  READABLE_JS       # -g1
+  PROFILE           # -g2
+  DEBUG_NATIVE      # -g3
   SOURCE_MAPS
 )
 
@@ -70,7 +70,7 @@ function(sps_set_emscripten_defaults project_name)
   if (CMAKE_CONFIGURATION_TYPES)
     message("This is a multi-configuration build, so defaults are not set using CMAKE_BUILD_TYPE\n")
     message("\tYou can set options:\n"
-      "\t-D${project_name}_DEBUG=\n"
+      "\t-D${project_name}_DEBUGINFO=\n"
       "\t-D${project_name}_OPTIMIZATION=\n")
   endif()
 
@@ -88,8 +88,8 @@ function(sps_set_emscripten_defaults project_name)
     "Link optimization level for ${project_name}" 
     "${_OPTIMIZATION_LEVELS}"
   )
-  set_project_option(${project_name}_DEBUG 
-    ${_DEFAULT_RELEASE_DEBUG} 
+  set_project_option(${project_name}_DEBUGINFO
+    ${_DEFAULT_RELEASE_DEBUGINFO} 
     "Debug level for ${project_name}" 
     "${_DEBUG_LEVELS}"
   )
@@ -100,20 +100,20 @@ function(sps_set_emscripten_defaults project_name)
     "Link optimization level for ${project_name} (test)" 
     "${_OPTIMIZATION_LEVELS}"
   )
-  set_project_option(${project_name}_TEST_DEBUG 
-    ${_DEFAULT_TEST_RELEASE_DEBUG} 
+  set_project_option(${project_name}_TEST_DEBUGINFO
+    ${_DEFAULT_TEST_RELEASE_DEBUGINFO} 
     "Debug level for ${project_name} (test)" 
     "${_DEBUG_LEVELS}"
   )
 
   # Programs
   message("Default for Emscripten targets (if any)")
-  message("${project_name}_DEBUG=${${project_name}_DEBUG}")
+  message("${project_name}_DEBUGINFO=${${project_name}_DEBUGINFO}")
   message("${project_name}_OPTIMIZATION=${${project_name}_OPTIMIZATION}")
 
   # Unit tests
   message("Default for Emscripten test targets (if any)")
-  message("${project_name}_TEST_DEBUG=${${project_name}_TEST_DEBUG}")
+  message("${project_name}_TEST_DEBUGINFO=${${project_name}_TEST_DEBUGINFO}")
   message("${project_name}_TEST_OPTIMIZATION=${${project_name}_TEST_OPTIMIZATION}")
 endfunction()
 
