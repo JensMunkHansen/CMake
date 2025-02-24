@@ -14,7 +14,7 @@ if (NOT benchmark_FOUND OR EMSCRIPTEN)
       set(CMAKE_C_FLAGS "-matomics -mbulk-memory")
     endif()
     
-    set(CONTENT_BASE_DIR "${PROJECT_SOURCE_DIR}/cmake-dependencies")
+    set(CONTENT_BASE_DIR "${PROJECT_SOURCE_DIR}/../cmake-dependencies")
     file(MAKE_DIRECTORY "${CONTENT_BASE_DIR}")
     set(FETCHCONTENT_BASE_DIR "${CONTENT_BASE_DIR}")
   
@@ -72,7 +72,6 @@ if (NOT benchmark_FOUND OR EMSCRIPTEN)
             -DCMAKE_INSTALL_PREFIX=${BENCHMARK_INSTALL_DIR}
 	    -DCMAKE_CONFIGURATION_TYPES="Debug;Release"	
             -DBENCHMARK_ENABLE_TESTING=OFF
-	    -DCMAKE_DEBUG_POSTFIX="d"	    
             -DBENCHMARK_ENABLE_GTEST_TESTS=OFF
       	  RESULT_VARIABLE CONFIG_RESULT
       )
