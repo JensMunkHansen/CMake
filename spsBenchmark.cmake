@@ -70,26 +70,41 @@ if (NOT benchmark_FOUND OR EMSCRIPTEN)
       execute_process(
         COMMAND ${CMAKE_COMMAND} -S "${BENCHMARK_SRC_DIR}" -B "${BENCHMARK_BUILD_DIR}"
             -DCMAKE_INSTALL_PREFIX=${BENCHMARK_INSTALL_DIR}
+	    -DCMAKE_CONFIGURATION_TYPES="Debug;Release"	
             -DBENCHMARK_ENABLE_TESTING=OFF
+	    -DCMAKE_DEBUG_POSTFIX="d"	    
             -DBENCHMARK_ENABLE_GTEST_TESTS=OFF
       	  RESULT_VARIABLE CONFIG_RESULT
       )
       if(NOT CONFIG_RESULT EQUAL 0)
         message(FATAL_ERROR "Failed to configure Google Benchmark")
       endif()
-      
-      # Build and install Google Benchmark.
-      message(STATUS "Building and installing Google Benchmark...")
+
+      # Build and install Debug configuration.
+      message(STATUS "Building and installing Google Benchmark (Debug)...")
       execute_process(
-        COMMAND ${CMAKE_COMMAND} --build "${BENCHMARK_BUILD_DIR}" --target install
-        RESULT_VARIABLE BUILD_RESULT
+	COMMAND ${CMAKE_COMMAND} --build "${BENCHMARK_BUILD_DIR}" --target install --config Debug
+	RESULT_VARIABLE BUILD_RESULT_DEBUG
       )
-      if(NOT BUILD_RESULT EQUAL 0)
-        message(FATAL_ERROR "Failed to build/install Google Benchmark")
+      if(NOT BUILD_RESULT_DEBUG EQUAL 0)
+	message(FATAL_ERROR "Failed to build/install Google Benchmark (Debug)")
       endif()
-      find_package(benchmark CONFIG REQUIRED
-	PATHS "${BENCHMARK_INSTALL_DIR}/lib/cmake/benchmark"
-	NO_DEFAULT_PATH)
+
+      # Build and install Release configuration.
+      message(STATUS "Building and installing Google Benchmark (Release)...")
+      execute_process(
+	COMMAND ${CMAKE_COMMAND} --build "${BENCHMARK_BUILD_DIR}" --target install --config Release
+	RESULT_VARIABLE BUILD_RESULT_RELEASE
+      )
+      if(NOT BUILD_RESULT_RELEASE EQUAL 0)
+	message(FATAL_ERROR "Failed to build/install Google Benchmark (Release)")
+      endif()
+
+      # Now you can use find_package to import benchmark.
+      # Note: Depending on how Benchmark installs its package configuration files,
+      # you might have configuration-specific subdirectories.
+      set(benchmark_DIR "${BENCHMARK_INSTALL_DIR}/lib/cmake/benchmark")
+      find_package(benchmark CONFIG REQUIRED)
     endif()
   endif()
 else()

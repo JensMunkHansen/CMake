@@ -23,8 +23,9 @@ if (TARGET build)
   endif()
   target_compile_features(build INTERFACE cxx_std_20)
   target_link_options(build INTERFACE
-    $<$<CXX_COMPILER_ID:Clang>:-fuse-ld=lld -flto>
-    $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:Release>>:/LTCG> # TODO: Try this
+    # This requires Clang17
+    $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Release>>:-fuse-ld=lld -flto>
+    $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:Release>>:/LTCG>
   )
   if (MSVC)
     set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} /LTCG")    
