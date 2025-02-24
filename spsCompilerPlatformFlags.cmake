@@ -21,7 +21,7 @@ if (TARGET build)
       # MSVC flags for Debug
       $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:Debug>>:/Od /Zi>)
   endif()
-  target_compile_features(build INTERFACE cxx_std_20)
+  target_compile_features(build INTERFACE cxx_std_17)
   target_link_options(build INTERFACE
     # This requires Clang17
     $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Release>>:-fuse-ld=lld -flto>
