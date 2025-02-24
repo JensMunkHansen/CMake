@@ -50,6 +50,9 @@ if (TARGET build)
       #       Binary Optimization Layout Tool (BOLT) on the final binary (5-20% faster)
       #       bolt binary optimized_binary
       # Clang flags for Debug
+      # L1: 32 kB (10 kB), some have 48 kB (16 kB)
+      # L2: 1.25 MB
+      # _mm_prefetch((const char*)&A[i], _MM_HINT_T0);
   endif()
   target_compile_features(build INTERFACE cxx_std_17)
   target_link_options(build INTERFACE
