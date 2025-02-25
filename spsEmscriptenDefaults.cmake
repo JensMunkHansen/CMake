@@ -75,15 +75,15 @@ function(sps_set_emscripten_defaults project_name)
   endif()
 
   # Define a helper macro to avoid repetition
-  macro(set_project_option option_name default_value description valid_values)
-    if (NOT DEFINED ${option_name})
+  macro(sps_project_option option_name default_value description valid_values)
+    if (NOT DEFINED CACHE{${option_name}})
       set(${option_name} ${default_value} CACHE STRING "${description} (default: ${default_value})")
     endif()
     set_property(CACHE ${option_name} PROPERTY STRINGS ${valid_values})
   endmacro()
 
   # Set project-level optimization and debug options
-  set_project_option(${project_name}_OPTIMIZATION 
+  set_project_option(${project_name}_OPTIMIZATION
     ${_DEFAULT_RELEASE_OPTIMIZATION} 
     "Link optimization level for ${project_name}" 
     "${_OPTIMIZATION_LEVELS}"
@@ -95,7 +95,7 @@ function(sps_set_emscripten_defaults project_name)
   )
 
   # Set test-specific optimization and debug options
-  set_project_option(${project_name}_TEST_OPTIMIZATION 
+  set_project_option(${project_name}_TEST_OPTIMIZATION
     ${_DEFAULT_TEST_RELEASE_OPTIMIZATION} 
     "Link optimization level for ${project_name} (test)" 
     "${_OPTIMIZATION_LEVELS}"
