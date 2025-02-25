@@ -75,7 +75,7 @@ function(sps_set_emscripten_defaults project_name)
   endif()
 
   # Define a helper macro to avoid repetition
-  macro(sps_project_option option_name default_value description valid_values)
+  macro(set_project_option option_name default_value description valid_values)
     if (NOT DEFINED CACHE{${option_name}})
       set(${option_name} ${default_value} CACHE STRING "${description} (default: ${default_value})")
     endif()
