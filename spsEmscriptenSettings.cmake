@@ -624,8 +624,6 @@ function(sps_emscripten_module)
       "--enable-bulk-memory"
       "-sUSE_PTHREADS=1"
       "-sSTACK_SIZE=262144"
-      # Bug in Emscripten, we cannot use SHARED_MEMORY on .c files if em++
-      # "-sSHARED_MEMORY=1"
     )
     if (NOT ${ARGS_SIDE_MODULE})
       # Side module does not own threads (gives a warning, but no biggee)
@@ -750,10 +748,10 @@ function(sps_emscripten_module)
   if (ARGS_IMPORTED_MEMORY)
     list(APPEND emscripten_link_options
       "-sIMPORTED_MEMORY"
-#      "-sEMSCRIPTEN_ALIGN_MEMORY"
     )
   endif()
 
+  # TODO: Set this outside
   sps_target_compile_flags(${ARGS_TARGET_NAME}
     THREADING_ENABLED ${ARGS_THREADING_ENABLED}
     OPTIMIZATION ${ARGS_COMPILE_OPTIMIZATION}
@@ -761,11 +759,6 @@ function(sps_emscripten_module)
   
   # 64-bit support (experimental)
   if (ARGS_64_BIT STREQUAL "ON")
-    
-    list(APPEND emscripten_link_options
-#      "-sMEMORY64=1" # Issues if not ES6
-#      "-sWASM_BIGINT=1" # Issues if not ES6
-    )
     list(APPEND emscripten_compile_options
       "-target=wasm64")
 #      "-sWASM_BIGINT=1" # Issues if not ES6
