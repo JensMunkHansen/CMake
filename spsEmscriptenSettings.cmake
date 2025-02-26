@@ -89,7 +89,7 @@ endfunction()
     )
 #]==]
 
-# Ensure at least one argument (the target) is passed
+# Ensure at least one argument (the target) is passed. This is stupid!!!
 function(sps_target_compile_flags target)
   if (NOT target)
     message(FATAL_ERROR "The 'sps_target_compile_flags' function requires a target.")
@@ -625,8 +625,8 @@ function(sps_emscripten_module)
       "-sUSE_PTHREADS=1"
       "-sSTACK_SIZE=262144"
       # Bug in Emscripten, we cannot use SHARED_MEMORY on .c files if em++
-      "-sSHARED_MEMORY=1"
-      "-sWASM=1")
+      # "-sSHARED_MEMORY=1"
+      )
     # Side module does not own threads (gives a warning, but no biggee)
     list(APPEND emscripten_link_options
       "-sPTHREAD_POOL_SIZE=${ARGS_THREAD_POOL_SIZE}"
@@ -720,7 +720,7 @@ function(sps_emscripten_module)
   if (DEFINED ARGS_MAXIMUM_MEMORY AND DEFINED ARGS_INITIAL_MEMORY)
     list(APPEND emscripten_link_options
       "-sMAXIMUM_MEMORY=${ARGS_MAXIMUM_MEMORY}")
-    if (${ARGS_MAXIMUM_MEMORY} STREQUAL ${ARGS_INITIAL_MEMORY})
+    if ("${ARGS_MAXIMUM_MEMORY}" STREQUAL "${ARGS_INITIAL_MEMORY}")
       list(APPEND emscripten_link_options
         "-sALLOW_MEMORY_GROWTH=0"
       )
