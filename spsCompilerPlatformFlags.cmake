@@ -22,6 +22,7 @@ if (TARGET build)
       -fopt-info-vec           # To see if vectorization is done succesfully
       # -fopt-info-vec-optimized # To see which loops were optimizated for vectorization (more details)
       >
+      
       # GNU flags for Debug
       $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Debug>>:-O0 -g>
 
@@ -38,7 +39,7 @@ if (TARGET build)
       # -mllvm -enable-loop-flatten
       # -mllvm -enable-epilogue-vectorization
       # -mllvm -enable-slp-vectorization
-
+      >
       $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Debug>>:-O0 -g>
       
       # MSVC flags for Release

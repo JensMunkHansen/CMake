@@ -1,7 +1,7 @@
 find_package(benchmark QUIET)
 
-#set(USE_FETCH_CONTENT FALSE) # Try this to avoid benchmark is cleaned when rebuilding
-set(USE_FETCH_CONTENT TRUE)
+set(USE_FETCH_CONTENT FALSE) # Try this to avoid benchmark is cleaned when rebuilding
+# set(USE_FETCH_CONTENT TRUE)
 
 # If not found, use FetchContent
 if (NOT benchmark_FOUND OR EMSCRIPTEN)
