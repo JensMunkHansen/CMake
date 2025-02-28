@@ -624,6 +624,7 @@ function(sps_emscripten_module)
       "--enable-bulk-memory"
       "-sUSE_PTHREADS=1"
       "-sSTACK_SIZE=262144"
+      "-SHARED_MEMORY=1" # TRY ME
     )
     if (NOT ${ARGS_SIDE_MODULE})
       # Side module does not own threads (gives a warning, but no biggee)
@@ -718,12 +719,13 @@ function(sps_emscripten_module)
     )
   endif()
   if (DEFINED ARGS_MAXIMUM_MEMORY AND DEFINED ARGS_INITIAL_MEMORY)
-    list(APPEND emscripten_link_options
-      "-sMAXIMUM_MEMORY=${ARGS_MAXIMUM_MEMORY}")
     if ("${ARGS_MAXIMUM_MEMORY}" STREQUAL "${ARGS_INITIAL_MEMORY}")
       list(APPEND emscripten_link_options
         "-sALLOW_MEMORY_GROWTH=0"
       )
+    else()
+      list(APPEND emscripten_link_options
+        "-sMAXIMUM_MEMORY=${ARGS_MAXIMUM_MEMORY}")
     endif()
   elseif (DEFINED ARGS_MAXIMUM_MEMORY)
     list(APPEND emscripten_link_options
