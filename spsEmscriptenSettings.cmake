@@ -625,6 +625,7 @@ function(sps_emscripten_module)
       "-sUSE_PTHREADS=1"
       "-sSTACK_SIZE=262144"
       "-SHARED_MEMORY=1" # TRY ME
+      # "-sMALLOC=emmalloc"
     )
     if (NOT ${ARGS_SIDE_MODULE})
       # Side module does not own threads (gives a warning, but no biggee)
