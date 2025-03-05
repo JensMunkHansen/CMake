@@ -13,19 +13,28 @@ if (NOT benchmark_FOUND OR EMSCRIPTEN)
       set(CMAKE_CXX_FLAGS "-matomics -mbulk-memory")
       set(CMAKE_C_FLAGS "-matomics -mbulk-memory")
     endif()
-    
-    set(CONTENT_BASE_DIR "${PROJECT_SOURCE_DIR}/../cmake-dependencies")
-    file(MAKE_DIRECTORY "${CONTENT_BASE_DIR}")
-    set(FETCHCONTENT_BASE_DIR "${CONTENT_BASE_DIR}")
-  
-    FetchContent_Declare(benchmark
-      GIT_REPOSITORY https://github.com/google/benchmark.git
-      GIT_TAG v1.8.3
-      GIT_SHALLOW ON
-      GIT_PROGRESS ON
-      FIND_PACKAGE_ARGS 1.8.3
-    )
-  
+
+    if(CMAKE_SYSTEM_NAME STREQUAL "Windows" AND C_COMPILER_ID STREQUAL "Clang")
+      FetchContent_Declare(benchmark
+        GIT_REPOSITORY https://github.com/google/benchmark.git
+        GIT_TAG v1.8.3
+        GIT_SHALLOW ON
+        GIT_PROGRESS ON
+        FIND_PACKAGE_ARGS 1.8.3
+        CMAKE_ARGS
+          -G "Visual Studio 17 2022"
+          -DCMAKE_GENERATOR_TOOLSET="ClangCL"
+          -DCMAKE_C_COMPILER="C:/Program Files/Microsoft Visual Studio/2022/Professional/VC/Tools/Llvm/x64/bin/clang-cl.exe"
+          -DCMAKE_CXX_COMPILER="C:/Program Files/Microsoft Visual Studio/2022/Professional/VC/Tools/Llvm/x64/bin/clang-cl.exe")
+    else()
+      FetchContent_Declare(benchmark
+        GIT_REPOSITORY https://github.com/google/benchmark.git
+        GIT_TAG v1.8.3
+        GIT_SHALLOW ON
+        GIT_PROGRESS ON
+        FIND_PACKAGE_ARGS 1.8.3)
+    endif()
+
     # Disable tests to speed up build
     set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "Disable benchmark tests" FORCE)
     set(BENCHMARK_ENABLE_GTEST_TESTS OFF CACHE BOOL "Disable benchmark gtests" FORCE)
