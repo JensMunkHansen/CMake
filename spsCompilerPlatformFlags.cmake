@@ -26,10 +26,13 @@ if (TARGET build)
       # GNU flags for Debug
       $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Debug>>:-O0 -g>
 
+      $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:RelWithDebInfo>>:-Og -g>
+
+      
       # Clang flags for Release
       $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Release>>:
       -O3 -march=native -mtune=native -flto=full -funroll-loops
-      # -mavx512f -mavx512bw -mavx512dq -mfma
+      # -mavx512f -mavx512bw -mavx512dq -mfma (native covers us)
       -ffast-math -ffp-contract=fast -fassociative-math -freciprocal-math  # Matches GCC's -ffast-math  
       -Rpass=loop-vectorize # Show succesfull vectorized loops
       # -Rpass-missed=loop-vectorize # Show why certain loops not vectorized
@@ -41,6 +44,16 @@ if (TARGET build)
       # -mllvm -enable-slp-vectorization
       >
       $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Debug>>:-O0 -g>
+      $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:RelWithDebInfo>>:
+      -Og
+      # Use older version of DWARF for compatibility with valgrind
+      -gdwarf-4
+      # Keep frame pointer intact in every function
+      # -fno-omit-frame-pointer (not working)
+      # No inlining (not working)
+      # -fno-inline
+      -g
+      >
       
       # MSVC flags for Release
       $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:Release>>:/O2 /GL /fp:fast /Qvec /Qpar /arch:AVX2>
