@@ -1,3 +1,6 @@
+# Clear flags for RelWithDebInfo
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "")
+
 if (TARGET build)
   if (EMSCRIPTEN)
     target_compile_options(build
@@ -59,6 +62,8 @@ if (TARGET build)
       $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:Release>>:/O2 /GL /fp:fast /Qvec /Qpar /arch:AVX2>
       # MSVC flags for Debug
       $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:Debug>>:/Od /Zi>)
+      # MSVC flags for RelWithDebInfo
+      $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:RelWithDebInfo>>:/O1 /Zi>)
 
       # TODO: Profile-Guided Optimization (PGO) (10-30%)
       #       Binary Optimization Layout Tool (BOLT) on the final binary (5-20% faster)
@@ -70,7 +75,7 @@ if (TARGET build)
   endif()
   target_compile_features(build INTERFACE cxx_std_17)
   target_link_options(build INTERFACE
-    # This requires Clang17
+    # This requires Clang17++
     $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Release>>:-fuse-ld=lld -flto>
     $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:Release>>:/LTCG>
   )
