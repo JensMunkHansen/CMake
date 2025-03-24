@@ -621,7 +621,7 @@ function(sps_emscripten_module)
     list(APPEND emscripten_link_options
       "-pthread"
       "-flto"
-      "--enable-bulk-memory"
+#      "--enable-bulk-memory"
       "-sUSE_PTHREADS=1"
       "-sSTACK_SIZE=262144"
       "-SHARED_MEMORY=1" # TRY ME
@@ -726,7 +726,9 @@ function(sps_emscripten_module)
       )
     else()
       list(APPEND emscripten_link_options
-        "-sMAXIMUM_MEMORY=${ARGS_MAXIMUM_MEMORY}")
+        "-sMAXIMUM_MEMORY=${ARGS_MAXIMUM_MEMORY}"
+        "-sALLOW_MEMORY_GROWTH=1"
+      )
     endif()
   elseif (DEFINED ARGS_MAXIMUM_MEMORY)
     list(APPEND emscripten_link_options
