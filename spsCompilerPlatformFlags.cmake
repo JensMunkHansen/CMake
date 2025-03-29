@@ -73,7 +73,7 @@ if (TARGET build)
       # L2: 1.25 MB
       # _mm_prefetch((const char*)&A[i], _MM_HINT_T0);
   endif()
-  target_compile_features(build INTERFACE cxx_std_17)
+  target_compile_features(build INTERFACE cxx_std_20)
   target_link_options(build INTERFACE
     # This requires Clang17++
     $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Release>>:-fuse-ld=lld -flto>
