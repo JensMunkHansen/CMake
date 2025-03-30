@@ -24,8 +24,8 @@ function (_sps_add_flag flag)
   foreach (lang IN LISTS ARGN)
     check_compiler_flag("${lang}" "${flag}" "sps_have_compiler_flag-${lang}-${flag}")
     if (sps_have_compiler_flag-${lang}-${flag})
-      if (TARGET spsbuild)
-	target_compile_options(spsbuild
+      if (TARGET build)
+	target_compile_options(build
           INTERFACE
           "$<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:${lang}>:${flag}>>")
       endif ()
@@ -130,4 +130,13 @@ elseif (SPS_ENABLE_EXTRA_BUILD_WARNINGS)
   _sps_add_flag(-Wunused-variable ${langs})
 
   # Fortran flags.
+elseif (SPS_PEDANTIC_BUILD_WARNINGS)
+  set(langs C CXX)
+  _sps_add_flag(-Weverything ${langs})
+  # Instead of enabling warnings, this mode *disables* warnings.
+  set(langs CXX)
+  _sps_add_flag(-Wno-c++98-compat-pedantic ${langs})
+  _sps_add_flag(-Wno-padded ${largs})
+  _sps_add_flag(-Wno-documentation ${largs})
+  
 endif ()

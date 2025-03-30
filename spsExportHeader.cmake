@@ -8,6 +8,11 @@ function(sps_generate_custom_export_header TARGET_NAME)
     # Determine target type
     get_target_property(TARGET_TYPE ${TARGET_NAME} TYPE)
 
+    set(visibility PUBLIC)
+    if(TARGET_TYPE STREQUAL "INTERFACE_LIBRARY")
+      set(visibility INTERFACE)
+    endif()    
+    
     # Determine if we're building a WASM side module
     if(TARGET_TYPE STREQUAL "EXECUTABLE")
         set(IS_WASM TRUE)
@@ -45,7 +50,7 @@ function(sps_generate_custom_export_header TARGET_NAME)
                 @ONLY)
         endforeach()
         # Use the build directory as include path
-        target_include_directories(${TARGET_NAME} PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>>")
+        target_include_directories(${TARGET_NAME} ${visibility} "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>>")
     else()
         # Single-config generators
         set(EXPORT_HEADER "${CMAKE_CURRENT_BINARY_DIR}/${TARGET_NAME_LOWER}_exports.h")
@@ -53,7 +58,7 @@ function(sps_generate_custom_export_header TARGET_NAME)
           ${_ExportHeader_dir}/export_template.h.in
           ${EXPORT_HEADER}
           @ONLY)
-        target_include_directories(${TARGET_NAME} PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
+        target_include_directories(${TARGET_NAME} ${visibility} ${CMAKE_CURRENT_BINARY_DIR})
     endif()
 
     message(STATUS "Generated export header for ${TARGET_NAME}: ${EXPORT_HEADER}")

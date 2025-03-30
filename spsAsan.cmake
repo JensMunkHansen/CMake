@@ -32,11 +32,11 @@ set(CMAKE_C_FLAGS_ASAN
   "Flags used by the C compiler for Asan build type or configuration." FORCE)
 
 set(CMAKE_CXX_FLAGS_ASAN
-  "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address -fno-omit-frame-pointer" CACHE STRING
+  "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=thread -fsanitize=address -fno-omit-frame-pointer" CACHE STRING
   "Flags used by the C++ compiler for Asan build type or configuration." FORCE)
 
 set(CMAKE_EXE_LINKER_FLAGS_ASAN
-  "${CMAKE_SHARED_LINKER_FLAGS_DEBUG} -fsanitize=address" CACHE STRING
+  "${CMAKE_SHARED_LINKER_FLAGS_DEBUG} -fsanitize=thread -fsanitize=address" CACHE STRING
   "Linker flags to be used to create executables for Asan build type." FORCE)
 
 set(CMAKE_SHARED_LINKER_FLAGS_ASAN

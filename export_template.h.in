@@ -1,0 +1,6 @@
+// clang-format off
+#ifndef @TARGET_NAME@_EXPORT_H
+#define @TARGET_NAME@_EXPORT_H
+
+#endif
+// clang-format on
