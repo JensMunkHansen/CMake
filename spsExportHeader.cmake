@@ -8,6 +8,11 @@ function(sps_generate_custom_export_header TARGET_NAME)
     # Determine target type
     get_target_property(TARGET_TYPE ${TARGET_NAME} TYPE)
 
+    if(TARGET_TYPE STREQUAL "INTERFACE_LIBRARY")
+      message(STATUS "Target ${TARGET_NAME} is an INTERFACE library")
+      return()
+    endif()    
+    
     # Determine if we're building a WASM side module
     if(TARGET_TYPE STREQUAL "EXECUTABLE")
         set(IS_WASM TRUE)
