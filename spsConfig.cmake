@@ -14,6 +14,12 @@ function(sps_configure_file target input_file output_file)
         message(FATAL_ERROR "sps_config: Target '${target}' does not exist.")
     endif()
 
+    set(visibility PUBLIC)
+    get_target_property(TARGET_TYPE ${TARGET_NAME} TYPE)
+    if(TARGET_TYPE STREQUAL "INTERFACE_LIBRARY")
+      set(visibility INTERFACE)
+    endif()    
+    
     # Detect whether @ONLY was passed
     set(USE_AT_ONLY OFF)
     foreach(arg ${ARGN})
@@ -43,7 +49,7 @@ function(sps_configure_file target input_file output_file)
         endforeach()
 
         # Add include directory for multi-config generators
-        target_include_directories(${target} PRIVATE
+        target_include_directories(${target} ${visibility}
             "$<BUILD_INTERFACE:${target_binary_dir}/$<CONFIG>>"
         )
     else()
