@@ -11,50 +11,53 @@ if (TARGET build)
       INTERFACE
       # GNU flags for Release
       $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Release>>:-O3
-      -march=native # Current CPU
-      -mtune=native # Compatibility with older CPUs
+      -march=native                           # Current CPU
+      -mtune=native                           # Compatibility with older CPUs
       -funroll-loops
-      # -funroll-loops-threshold=1000 # More unrolling
+      # -funroll-loops-threshold=1000         # More unrolling
       -ffast-math
-      -flto # Link-time optimization
-      -fuse-linker-plugin # Compiler and linker communicated more efficenly
-      # -fprefetch-loop-arrays # Helps memory-bound loops
-      -ftree-vectorize # auto-vectorization
-      # -falign-loops=32 # ensure loops starts on aligned boundaries
+      -flto                                   # Link-time optimization
+      -fuse-linker-plugin                     # Compiler and linker communicated more efficenly
+      # -fprefetch-loop-arrays                # Helps memory-bound loops
+      -ftree-vectorize                        # auto-vectorization
+      # -falign-loops=32                      # ensure loops starts on aligned boundaries
       # -falign-functions=32 -falign-jumps=32 # Instruction cache efficiency
-      -fopt-info-vec           # To see if vectorization is done succesfully
-      # -fopt-info-vec-optimized # To see which loops were optimizated for vectorization (more details)
+      -fopt-info-vec                          # To see if vectorization is done succesfully
+      # -fopt-info-vec-optimized              # To see which loops were optimizated for vectorization (more details)
       >
       
       # GNU flags for Debug
       $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Debug>>:-O0 -g>
-
       $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:RelWithDebInfo>>:-Og -g>
 
-      
       # Clang flags for Release
-      $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Release>>:
-      -O3 -march=native -mtune=native -flto=full -funroll-loops
-      # -mavx512f -mavx512bw -mavx512dq -mfma (native covers us)
-      -ffast-math -ffp-contract=fast -fassociative-math -freciprocal-math  # Matches GCC's -ffast-math  
-      -Rpass=loop-vectorize # Show succesfull vectorized loops
-      # -Rpass-missed=loop-vectorize # Show why certain loops not vectorized
-      # -Rpass-analysis=loop-vectorize> # Print analysis of loop vectorization
+      $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Release>>:-O3
+      -march=native
+      -mtune=native
+      -flto=full
+      -funroll-loops
+      # -mavx512f -mavx512bw -mavx512dq -mfma # -march=native covers maximum available
+      -ffast-math
+      -ffp-contract=fast                      # Extra to match GCC's -ffast-math  
+      -fassociative-math                      # Extra to match GCC's -ffast-math  
+      -freciprocal-math                       # Extra to match GCC's -ffast-math  
+      -Rpass=loop-vectorize                   # Show succesfull vectorized loops
+      # -Rpass-missed=loop-vectorize          # Show why certain loops not vectorized
+      # -Rpass-analysis=loop-vectorize>       # Print analysis of loop vectorization
       # -fwhole-program-vtables
       # -fprefetch-loop-arrays
       # -mllvm -enable-loop-flatten
       # -mllvm -enable-epilogue-vectorization
       # -mllvm -enable-slp-vectorization
       >
+
+      # Clang flags for Debug
       $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Debug>>:-O0 -g>
       $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:RelWithDebInfo>>:
       -Og
-      # Use older version of DWARF for compatibility with valgrind
-      -gdwarf-4
-      # Keep frame pointer intact in every function
-      # -fno-omit-frame-pointer (not working)
-      # No inlining (not working)
-      # -fno-inline
+      -gdwarf-4                            # Use older version of DWARF for compatibility with valgrind
+      # -fno-omit-frame-pointer            # Keep frame pointer intact in every function
+      # -fno-inline                        # No inlining (not working)
       -g
       >
       
@@ -72,6 +75,9 @@ if (TARGET build)
       # L1: 32 kB (10 kB), some have 48 kB (16 kB)
       # L2: 1.25 MB
       # _mm_prefetch((const char*)&A[i], _MM_HINT_T0);
+      # _mm_prefetch((const char*)&A[i], _MM_HINT_T1);
+      # _mm_prefetch((const char*)&A[i], _MM_HINT_T2);
+      # _mm_prefetch((const char*)&A[i], _MM_HINT_NTA);
   endif()
   target_compile_features(build INTERFACE cxx_std_20)
   # Visual lies about __cplusplus
