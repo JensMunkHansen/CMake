@@ -100,14 +100,14 @@ if (TARGET build)
 endif()
 
 function(sps_link_optimization target)
-  target_compile_option(${target} PRIVATE
+  target_compile_options(${target} PRIVATE
     $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Release>>:
-    -flto=full
+    -flto=full>
   )
   target_compile_options(${target} PRIVATE
     $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Release>>:
     -flto                                                # Link-time optimization
-    -fuse-linker-plugin                                  # Compiler and linker communicated more efficenly
+    -fuse-linker-plugin>                                 # Compiler and linker communicated more efficenly
   )
   target_link_options(${target} PRIVATE
     # This requires Clang17++
