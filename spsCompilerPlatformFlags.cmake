@@ -62,7 +62,7 @@ if (TARGET build)
       $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:Release>>:/O2 /GL /fp:fast /Qvec /Qpar /arch:AVX2>
       # MSVC flags for Debug
       $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:Debug>>:/Od /Zi>
-      # MSVC flags for RelWithDebInfo
+      # MSVC flags for RelWithDebInfo    
       $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:RelWithDebInfo>>:/O1 /Zi>)
 
       # TODO: Profile-Guided Optimization (PGO) (10-30%)
@@ -74,6 +74,10 @@ if (TARGET build)
       # _mm_prefetch((const char*)&A[i], _MM_HINT_T0);
   endif()
   target_compile_features(build INTERFACE cxx_std_20)
+  # Visual lies about __cplusplus
+  target_compile_options(build INTERFACE
+    $<$<CXX_COMPILER_ID:MSVC>:/Zc:__cplusplus>
+  )  
   target_link_options(build INTERFACE
     # This requires Clang17++
     $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Release>>:-fuse-ld=lld -flto>
