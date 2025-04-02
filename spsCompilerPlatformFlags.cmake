@@ -16,8 +16,8 @@ if (TARGET build)
       -funroll-loops
       # -funroll-loops-threshold=1000         # More unrolling
       -ffast-math
-      -flto                                   # Link-time optimization
-      -fuse-linker-plugin                     # Compiler and linker communicated more efficenly
+      #-flto                                   # Link-time optimization
+      #-fuse-linker-plugin                     # Compiler and linker communicated more efficenly
       # -fprefetch-loop-arrays                # Helps memory-bound loops
       -ftree-vectorize                        # auto-vectorization
       # -falign-loops=32                      # ensure loops starts on aligned boundaries
@@ -34,7 +34,9 @@ if (TARGET build)
       $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Release>>:-O3
       -march=native
       -mtune=native
-      -flto=full
+
+                                              # TODO: Move optimization to real and not interface targets
+      # -flto=full                              # Can give issue with IR in static libraries
       -funroll-loops
       # -mavx512f -mavx512bw -mavx512dq -mfma # -march=native covers maximum available
       -ffast-math
@@ -78,20 +80,37 @@ if (TARGET build)
       # _mm_prefetch((const char*)&A[i], _MM_HINT_T1);
       # _mm_prefetch((const char*)&A[i], _MM_HINT_T2);
       # _mm_prefetch((const char*)&A[i], _MM_HINT_NTA);
+
+      
   endif()
   target_compile_features(build INTERFACE cxx_std_20)
   # Visual lies about __cplusplus
   target_compile_options(build INTERFACE
     $<$<CXX_COMPILER_ID:MSVC>:/Zc:__cplusplus>
-  )  
-  target_link_options(build INTERFACE
-    # This requires Clang17++
-    $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Release>>:-fuse-ld=lld -flto>
-    $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:Release>>:/LTCG>
   )
+#   target_link_options(build INTERFACE
+#     # This requires Clang17++
+#     $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Release>>:-fuse-ld=lld -flto>  # Don't use this on static libraries
+#     $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:Release>>:/LTCG>
+#   )
   if (MSVC)
     set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} /LTCG")    
   endif()
   
-endif ()
+endif()
 
+function(sps_link_optimization target)
+  target_compile_option(${target} PRIVATE
+    $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Release>>:
+    -flto=full
+  )
+  target_compile_options(${target} PRIVATE
+    $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Release>>:
+    -flto                                                # Link-time optimization
+    -fuse-linker-plugin                                  # Compiler and linker communicated more efficenly
+  )
+  target_link_options(${target} PRIVATE
+    # This requires Clang17++
+    $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Release>>:-fuse-ld=lld -flto>  # Don't use this on static libraries
+    $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:Release>>:/LTCG>)
+endfunction()
