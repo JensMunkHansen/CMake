@@ -27,20 +27,28 @@ else()
   endif()
 endif()
 
+if (SPS_SANITIZE_THREAD)
+  set(_sps_sanitize_args
+    -fsanitize=thread)
+else()
+  set(_sps_sanitize_args
+    -fsanitize=address
+  )
+endif()
 set(CMAKE_C_FLAGS_ASAN
-  "${CMAKE_C_FLAGS_DEBUG} -fsanitize=address -fno-omit-frame-pointer" CACHE STRING
+  "${CMAKE_C_FLAGS_DEBUG} ${_sps_sanitize_args} -fno-omit-frame-pointer" CACHE STRING
   "Flags used by the C compiler for Asan build type or configuration." FORCE)
 
 set(CMAKE_CXX_FLAGS_ASAN
-  "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=thread -fsanitize=address -fno-omit-frame-pointer" CACHE STRING
+  "${CMAKE_CXX_FLAGS_DEBUG} ${_sps_sanitize_args} -fno-omit-frame-pointer" CACHE STRING
   "Flags used by the C++ compiler for Asan build type or configuration." FORCE)
 
 set(CMAKE_EXE_LINKER_FLAGS_ASAN
-  "${CMAKE_SHARED_LINKER_FLAGS_DEBUG} -fsanitize=thread -fsanitize=address" CACHE STRING
+  "${CMAKE_SHARED_LINKER_FLAGS_DEBUG} ${_sps_sanitize_args}" CACHE STRING
   "Linker flags to be used to create executables for Asan build type." FORCE)
 
 set(CMAKE_SHARED_LINKER_FLAGS_ASAN
-  "${CMAKE_SHARED_LINKER_FLAGS_DEBUG} -fsanitize=address" CACHE STRING
+  "${CMAKE_SHARED_LINKER_FLAGS_DEBUG} ${_sps_sanitize_args}" CACHE STRING
   "Linker lags to be used to create shared libraries for Asan build type." FORCE)
 
 # For single-config generators, apply the flags directly
