@@ -58,3 +58,10 @@ if(NOT isMultiConfig AND CMAKE_BUILD_TYPE STREQUAL "Asan")
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS_ASAN}")
   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS_ASAN}")
 endif()
+
+# On window
+# ASan is officially supported starting with VS 2019 version 16.9, but:
+# It only works with x64 builds, not x86.
+# It requires /fsanitize=address instead of -fsanitize=address.
+# You must disable certain runtime features like /RTC1, /Gy, etc.
+# Linking must be done with /INFERASANLIBS.
