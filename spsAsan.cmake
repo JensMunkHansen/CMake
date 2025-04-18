@@ -27,14 +27,28 @@ else()
   endif()
 endif()
 
-if (SPS_SANITIZE_THREAD)
-  set(_sps_sanitize_args
-    -fsanitize=thread)
+# Setup sanitizer flags
+if(SPS_SANITIZE_THREAD)
+  set(_sps_sanitize_flags "thread")
 else()
-  set(_sps_sanitize_args
-    -fsanitize=address
-  )
+  set(_sps_sanitize_flags "address")
 endif()
+
+# Compiler/platform detection
+if(MSVC)
+  # MSVC AddressSanitizer (only works on x64)
+  set(_sps_sanitize_args "/fsanitize=${_sps_sanitize_flags}")
+  set(_sps_linker_args "/INFERASANLIBS")
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+  set(_sps_sanitize_args "-fno-omit-frame-pointer -fsanitize=${_sps_sanitize_flags}")
+  set(_sps_linker_args "${_sps_sanitize_args}")
+else()
+  message(WARNING "Unknown compiler for ASan: ${CMAKE_CXX_COMPILER_ID}")
+  set(_sps_sanitize_args "")
+  set(_sps_linker_args "")
+endif()
+
+# Define config-specific flags
 set(CMAKE_C_FLAGS_ASAN
   "${CMAKE_C_FLAGS_DEBUG} ${_sps_sanitize_args} -fno-omit-frame-pointer" CACHE STRING
   "Flags used by the C compiler for Asan build type or configuration." FORCE)
