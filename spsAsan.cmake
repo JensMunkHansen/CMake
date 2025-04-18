@@ -73,6 +73,11 @@ if(NOT isMultiConfig AND CMAKE_BUILD_TYPE STREQUAL "Asan")
   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS_ASAN}")
 endif()
 
+if(MSVC)
+  # Avoid conflicting runtime: force dynamic CRT for ASan
+  set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL" CACHE STRING "" FORCE)
+endif()
+
 # On window
 # ASan is officially supported starting with VS 2019 version 16.9, but:
 # It only works with x64 builds, not x86.
