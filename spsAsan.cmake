@@ -38,7 +38,7 @@ endif()
 if(MSVC)
   # MSVC AddressSanitizer (only works on x64)
   set(_sps_sanitize_args "/fsanitize=${_sps_sanitize_flags}")
-  set(_sps_linker_args "/INFERASANLIBS")
+  set(_sps_linker_args "/INFERASANLIBS") # TODO: Actually use these
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
   set(_sps_sanitize_args "-fno-omit-frame-pointer -fsanitize=${_sps_sanitize_flags}")
   set(_sps_linker_args "${_sps_sanitize_args}")
