@@ -74,8 +74,18 @@ if(NOT isMultiConfig AND CMAKE_BUILD_TYPE STREQUAL "Asan")
 endif()
 
 if(MSVC)
-  # Avoid conflicting runtime: force dynamic CRT for ASan
-  set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL" CACHE STRING "" FORCE)
+  # For multi-config generators like Visual Studio, Ninja Multi-Config
+  if(CMAKE_CONFIGURATION_TYPES)
+    # For multi-config, CMake automatically handles Debug and Release configurations
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL" CACHE STRING "" FORCE)
+  else()
+    # For single-config (e.g., make, single-config generators)
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+      set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDebugDLL" CACHE STRING "" FORCE)
+    else()
+      set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL" CACHE STRING "" FORCE)
+    endif()
+  endif()
 endif()
 
 # On window
