@@ -16,10 +16,10 @@ if (NOT benchmark_FOUND OR EMSCRIPTEN)
 
     FetchContent_Declare(benchmark
       GIT_REPOSITORY https://github.com/google/benchmark.git
-      GIT_TAG v1.8.3
+      GIT_TAG v1.9.2
       GIT_SHALLOW ON
       GIT_PROGRESS ON
-      FIND_PACKAGE_ARGS 1.8.3)
+      FIND_PACKAGE_ARGS 1.9.2)
 
     # Disable tests to speed up build
     set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "Disable benchmark tests" FORCE)
@@ -35,7 +35,7 @@ if (NOT benchmark_FOUND OR EMSCRIPTEN)
 
     # Define repository information.
     set(BENCHMARK_REPO "https://github.com/google/benchmark.git")
-    set(BENCHMARK_TAG "v1.8.3")
+    set(BENCHMARK_TAG "v1.9.2")
 
     find_package(benchmark
       PATHS "${BENCHMARK_INSTALL_DIR}/lib/cmake/benchmark"
