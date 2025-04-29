@@ -85,13 +85,22 @@ if (TARGET build)
 
   # Microsoft has screwed up Clang support
   if (MSVC)
-    target_compile_options(build
-      INTERFACE
-      $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:Release>>:/O2 /GL /fp:fast /Qpar /arch:AVX2>
-      # MSVC flags for Debug
-      $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:Debug>>:/Od /Zi>
-      # MSVC flags for RelWithDebInfo    
-      $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:RelWithDebInfo>>:/O1 /Zi>)
+
+  set(IS_MSVC_OR_CLANG_CL FALSE)
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    set(IS_MSVC_OR_CLANG_CL TRUE)
+  elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND MSVC)
+    set(IS_MSVC_OR_CLANG_CL TRUE)
+  endif()
+
+  if(IS_MSVC_OR_CLANG_CL)
+  target_compile_options(build INTERFACE
+    $<$<CONFIG:Release>:/O2 /GL /fp:fast /Qpar /arch:AVX2>
+    $<$<CONFIG:Debug>:/Od /Zi>
+    $<$<CONFIG:RelWithDebInfo>:/O1 /Zi>
+  )
+  endif()
+    
   endif()
 
   target_compile_features(build INTERFACE cxx_std_20)
