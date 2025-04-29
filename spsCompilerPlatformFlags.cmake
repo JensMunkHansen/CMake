@@ -6,7 +6,8 @@ if (TARGET build)
     target_compile_options(build
       INTERFACE
       -O3 -msimd128 -ffast-math -mllvm -vectorize-loops)
-  else()
+  elseif(NOT MSVC)
+    # Microsft has screwed up their Clang support to only support MSVC flags!!!!
     target_compile_options(build
       INTERFACE
       # GNU flags for Release
@@ -80,9 +81,19 @@ if (TARGET build)
       # _mm_prefetch((const char*)&A[i], _MM_HINT_T1);
       # _mm_prefetch((const char*)&A[i], _MM_HINT_T2);
       # _mm_prefetch((const char*)&A[i], _MM_HINT_NTA);
-
-      
   endif()
+
+  # Microsoft has screwed up Clang support
+  if (MSVC)
+    target_compile_options(build
+      INTERFACE
+      $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:Release>>:/O2 /GL /fp:fast /Qpar /arch:AVX2>
+      # MSVC flags for Debug
+      $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:Debug>>:/Od /Zi>
+      # MSVC flags for RelWithDebInfo    
+      $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:RelWithDebInfo>>:/O1 /Zi>)
+  endif()
+
   target_compile_features(build INTERFACE cxx_std_20)
   # Visual lies about __cplusplus
   target_compile_options(build INTERFACE
@@ -122,8 +133,12 @@ function(sps_link_optimization target)
     -flto                                                # Link-time optimization
     -fuse-linker-plugin>                                 # Compiler and linker communicated more efficenly
   )
-  target_link_options(${target} PRIVATE
-    # This requires Clang17++
-    $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Release>>:-fuse-ld=lld -flto>  # Don't use this on static libraries
-    $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:Release>>:/LTCG>)
+  if (NOT MSVC)
+    target_link_options(${target} PRIVATE
+      # This requires Clang17++
+      $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Release>>:-fuse-ld=lld -flto>)
+  else()
+    target_link_options(${target} PRIVATE
+      $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:Release>>:/LTCG>)
+  endif()
 endfunction()
