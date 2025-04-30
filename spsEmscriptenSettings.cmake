@@ -29,8 +29,8 @@ function(sps_set_emscripten_optimization_flags optimization_level optimization_f
   elseif (${optimization_level} STREQUAL "BEST")
     list(APPEND ${optimization_flags} "-O3")
     # Not super elegant.....
-    if (${project_name}_WASM_SIMD)
-#      list(APPEND ${optimization_flags} "-msimd128")
+    if (${${PROJECT_NAME}_WASM_SIMD})
+      list(APPEND ${optimization_flags} "-msimd128")
     endif()
     # Notes:
     #  - only gcc (no clang) support "-falign-data=16", so we cannot use it yet
