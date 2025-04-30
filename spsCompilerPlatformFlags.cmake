@@ -109,7 +109,7 @@ if (TARGET build)
     $<$<CXX_COMPILER_ID:MSVC>:/Zc:__cplusplus>
   )
 # Check for MSVC or clang-cl
-  if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_SIMULATE_ID STREQUAL "MSVC")
+  if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_SIMULATE_ID STREQUAL "MSVC" AND MSVC)
     target_compile_options(build INTERFACE /Zc:__cplusplus)
   endif()
   
