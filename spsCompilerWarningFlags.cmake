@@ -135,6 +135,6 @@ elseif (SPS_PEDANTIC_BUILD_WARNINGS)
   _sps_add_flag(-Weverything ${langs})
   # Instead of enabling warnings, this mode *disables* warnings.
   _sps_add_flag(-Wno-c++98-compat-pedantic ${langs})
-  _sps_add_flag(-Wno-padded ${largs})
-  
+  _sps_add_flag(-Wno-padded ${langs})
+  _sps_add_flag(-Wno-float-equal ${langs})
 endif ()
