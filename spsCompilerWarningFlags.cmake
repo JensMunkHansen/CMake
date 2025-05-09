@@ -131,12 +131,10 @@ elseif (SPS_ENABLE_EXTRA_BUILD_WARNINGS)
 
   # Fortran flags.
 elseif (SPS_PEDANTIC_BUILD_WARNINGS)
-  set(langs C CXX)
+  set(langs CXX)
   _sps_add_flag(-Weverything ${langs})
   # Instead of enabling warnings, this mode *disables* warnings.
-  set(langs CXX)
   _sps_add_flag(-Wno-c++98-compat-pedantic ${langs})
   _sps_add_flag(-Wno-padded ${largs})
-  _sps_add_flag(-Wno-documentation ${largs})
   
 endif ()
