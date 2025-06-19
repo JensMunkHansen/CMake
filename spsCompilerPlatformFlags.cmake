@@ -55,7 +55,10 @@ if (TARGET build)
       >
 
       # Clang flags for Debug
-      $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Debug>>:-O0 -g>
+      $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Debug>>:-O0
+      -g
+      -march=native
+      >
       $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:RelWithDebInfo>>:
       -Og
       -gdwarf-4                            # Use older version of DWARF for compatibility with valgrind
