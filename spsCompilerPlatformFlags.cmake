@@ -28,12 +28,16 @@ if (TARGET build)
       >
       
       # GNU flags for Debug
-      $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Debug>>:-O0 -g>
+      $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Debug>>:-O0
+      -march=native
+      -g>
       $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:RelWithDebInfo>>:-Og -g>
 
       # Clang flags for Release
       $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Release>>:-O3
       -march=native
+      -mavx512f
+      -mavx512bw      
       -mtune=native
 
                                               # TODO: Move optimization to real and not interface targets
@@ -58,9 +62,11 @@ if (TARGET build)
       $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Debug>>:-O0
       -g
       -march=native
-      >
+      -mavx512f>
       $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:RelWithDebInfo>>:
       -Og
+      -march=native
+      -mavx512f
       -gdwarf-4                            # Use older version of DWARF for compatibility with valgrind
       # -fno-omit-frame-pointer            # Keep frame pointer intact in every function
       # -fno-inline                        # No inlining (not working)
