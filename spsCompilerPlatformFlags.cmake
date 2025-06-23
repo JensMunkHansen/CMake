@@ -76,7 +76,7 @@ if (TARGET build)
       # MSVC flags for Release
       $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:Release>>:/O2 /GL /fp:fast /Qvec /Qpar /arch:AVX2>
       # MSVC flags for Debug
-      $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:Debug>>:/Od /Zi>
+      $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:Debug>>:/Od /Zi /arch:AVX2>
       # MSVC flags for RelWithDebInfo    
       $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:RelWithDebInfo>>:/O1 /Zi>)
 
@@ -129,12 +129,9 @@ if (TARGET build)
 #     $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:Release>>:/LTCG>
 #   )
   if (MSVC)
-    set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} /LTCG")    
+    set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} /LTCG")
   endif()
   # TODO: Try this
-#  target_compile_options(build INTERFACE 
-#    "$<$<AND:$<CXX_COMPILER_ID:Clang>,$<CXX_SIMULATE_ID:MSVC>>:/Zc:__cplusplus>"
-#  )
   
 endif()
 
