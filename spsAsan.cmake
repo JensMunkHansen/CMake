@@ -39,8 +39,10 @@ if(MSVC)
   # MSVC AddressSanitizer (only works on x64)
   set(_sps_sanitize_args "/fsanitize=${_sps_sanitize_flags}")
   set(_sps_linker_args "/INFERASANLIBS") # TODO: Actually use these
+  set(_sps_no_omit_frame-pointer)
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
-  set(_sps_sanitize_args "-fno-omit-frame-pointer -fsanitize=${_sps_sanitize_flags}")
+  set(_sps_no_omit_frame-pointer "-fno-omit-frame-pointer"))
+  set(_sps_sanitize_args "${_sps_no_omit_frame-pointer} -fsanitize=${_sps_sanitize_flags}")
   set(_sps_linker_args "${_sps_sanitize_args}")
 else()
   message(WARNING "Unknown compiler for ASan: ${CMAKE_CXX_COMPILER_ID}")
@@ -50,11 +52,11 @@ endif()
 
 # Define config-specific flags
 set(CMAKE_C_FLAGS_ASAN
-  "${CMAKE_C_FLAGS_DEBUG} ${_sps_sanitize_args} -fno-omit-frame-pointer" CACHE STRING
+  "${CMAKE_C_FLAGS_DEBUG} ${_sps_sanitize_args} ${_sps_no_omit_frame-pointer}" CACHE STRING
   "Flags used by the C compiler for Asan build type or configuration." FORCE)
 
 set(CMAKE_CXX_FLAGS_ASAN
-  "${CMAKE_CXX_FLAGS_DEBUG} ${_sps_sanitize_args} -fno-omit-frame-pointer" CACHE STRING
+  "${CMAKE_CXX_FLAGS_DEBUG} ${_sps_sanitize_args} ${_sps_no_omit_frame-pointer}" CACHE STRING
   "Flags used by the C++ compiler for Asan build type or configuration." FORCE)
 
 set(CMAKE_EXE_LINKER_FLAGS_ASAN
@@ -88,9 +90,3 @@ if(MSVC)
   endif()
 endif()
 
-# On window
-# ASan is officially supported starting with VS 2019 version 16.9, but:
-# It only works with x64 builds, not x86.
-# It requires /fsanitize=address instead of -fsanitize=address.
-# You must disable certain runtime features like /RTC1, /Gy, etc.
-# Linking must be done with /INFERASANLIBS.
