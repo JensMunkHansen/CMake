@@ -41,7 +41,7 @@ if(MSVC)
   set(_sps_linker_args "/INFERASANLIBS") # TODO: Actually use these
   set(_sps_no_omit_frame-pointer)
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
-  set(_sps_no_omit_frame-pointer "-fno-omit-frame-pointer"))
+  set(_sps_no_omit_frame-pointer "-fno-omit-frame-pointer")
   set(_sps_sanitize_args "${_sps_no_omit_frame-pointer} -fsanitize=${_sps_sanitize_flags}")
   set(_sps_linker_args "${_sps_sanitize_args}")
 else()
