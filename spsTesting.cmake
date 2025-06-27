@@ -13,4 +13,8 @@ if (BUILD_TESTING)
   endif()
   include(Catch)
   enable_testing()
+
+  include(CTest)
+
 endif()
+
