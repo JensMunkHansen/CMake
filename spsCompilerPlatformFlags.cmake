@@ -9,8 +9,6 @@ if (TARGET build)
     elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND MSVC)
       set(IS_MSVC_OR_CLANG_CL TRUE)
     endif()
-    # Linker flags need for MSVC
-    set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} /LTCG")    
   endif()
 
   # MSVC or Microsofts Clang version
@@ -20,12 +18,9 @@ if (TARGET build)
       $<$<CONFIG:Debug>:/Od /Zi /arch:AVX2>
       $<$<CONFIG:Asan>:/Od /GL /arch:AVX2>
       $<$<CONFIG:RelWithDebInfo>:/O1 /Zi /arch:AVX2>
-    )
-
-    # Microsoft report old c++ version from 1997, if not set
-    target_compile_options(build INTERFACE
       $<$<CXX_COMPILER_ID:MSVC>:/Zc:__cplusplus>
     )
+
     # Linker flags needed by Microsoft
     set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} /LTCG")    
   else()
