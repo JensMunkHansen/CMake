@@ -27,20 +27,31 @@ else()
   endif()
 endif()
 
-# Setup sanitizer flags
-if(SPS_SANITIZE_THREAD)
-  set(_sps_sanitize_flags "thread")
+# Detect clang-cl (Clang with MSVC compatibility frontend)
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND MSVC)
+  set(IS_CLANG_CL TRUE)
 else()
-  set(_sps_sanitize_flags "address")
+  set(IS_CLANG_CL FALSE)
+endif()
+
+# Setup sanitizer flags
+set(_sps_sanitize_flags "address")
+
+set(_sps_no_omit_frame_pointer "")
+if (NOT MSVC)
+  set(_sps_omit_frame_pointer "-fno-omit-frame-pointer")
+  if(SPS_SANITIZE_THREAD)
+    set(_sps_sanitize_flags "thread")
+  endif()
 endif()
 
 # Compiler/platform detection
-if(MSVC)
-  # MSVC AddressSanitizer (only works on x64)
+if(MSVC AND NOT IS_CLANG_CL)
+  # MSVC AddressSanitizer (only works on x64, Debug and RelWithDebInfo)
   set(_sps_sanitize_args "/fsanitize=${_sps_sanitize_flags}")
   set(_sps_linker_args "/INFERASANLIBS") # TODO: Actually use these
   set(_sps_no_omit_frame-pointer)
-elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU" AND NOT IS_CLANG_CL)
   set(_sps_no_omit_frame-pointer "-fno-omit-frame-pointer")
   set(_sps_sanitize_args "${_sps_no_omit_frame-pointer} -fsanitize=${_sps_sanitize_flags}")
   set(_sps_linker_args "${_sps_sanitize_args}")
