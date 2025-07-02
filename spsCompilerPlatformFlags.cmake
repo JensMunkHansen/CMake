@@ -62,7 +62,7 @@ function(sps_link_optimization target)
   if (NOT MSVC)
     target_link_options(${target} PRIVATE
       # This requires at least Clang17++
-      $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Release>>:-fuse-ld=lld -flto>)
+      $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Release>>:-fuse-ld=lld -flto>) # Can tigger floating point NaN errors.
   else()
     target_link_options(${target} PRIVATE
       $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:Release>>:/LTCG>)
