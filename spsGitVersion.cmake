@@ -55,118 +55,129 @@ function(sps_get_git_version out_hash out_datetime out_count out_tag out_dirty)
 endfunction()
 
 
-# Usage:
+# get_git_version(...)
+# Keyword-style API:
 #   get_git_version(
-#     OUT_HASH OUT_DATETIME OUT_COUNT_TOTAL OUT_TAG OUT_DIRTY
-#     OUT_COUNT_SINCE_TAG OUT_DESCRIBE OUT_HAS_TAG
-#   )
+#     OUT_HASH <var>            # short hash (12)
+#     OUT_DATETIME <var>        # commit datetime (formatted)
+#     OUT_COUNT_TOTAL <var>     # total commits on HEAD
+#     OUT_TAG <var>             # latest tag (empty if none)
+#     OUT_DIRTY <var>           # "0" or "1" (tracked changes only by default)
+#     OUT_COUNT_SINCE_TAG <var> # commits since latest tag (0 if none)
+#     OUT_DESCRIBE <var>        # git describe --tags --long --always
+#     OUT_HAS_TAG <var>         # "1" if repo has any tag, else "0"
 #
-# Any of the OUT_* names can be "" if you don't care about that value.
+# Options:
+#   SOURCE_DIR <path>           # default: CMAKE_SOURCE_DIR
+#   DATE_FORMAT <fmt>           # default: %Y%m%d_%H%M%S
+#   INCLUDE_UNTRACKED           # count untracked files as "dirty"
+#   QUIET                       # suppress status messages (currently none)
+#
+# Example:
+#   get_git_version(OUT_HASH GIT_HASH OUT_TAG GIT_TAG OUT_DIRTY GIT_DIRTY)
 
-function(get_git_version out_hash out_datetime out_count_total out_tag out_dirty out_count_since_tag out_describe out_has_tag)
+function(get_git_version)
+  set(options INCLUDE_UNTRACKED QUIET)
+  set(one_value_args
+    OUT_HASH OUT_DATETIME OUT_COUNT_TOTAL OUT_TAG OUT_DIRTY
+    OUT_COUNT_SINCE_TAG OUT_DESCRIBE OUT_HAS_TAG
+    SOURCE_DIR DATE_FORMAT
+  )
+  set(multi_value_args)
+  cmake_parse_arguments(GGV "${options}" "${one_value_args}" "${multi_value_args}" ${ARGV})
+
+  # Defaults
+  if (NOT GGV_SOURCE_DIR)
+    set(GGV_SOURCE_DIR "${CMAKE_SOURCE_DIR}")
+  endif()
+  if (NOT GGV_DATE_FORMAT)
+    set(GGV_DATE_FORMAT "%Y%m%d_%H%M%S")
+  endif()
+
   find_package(Git QUIET)
-  if (NOT Git_FOUND OR NOT EXISTS "${CMAKE_SOURCE_DIR}/.git")
-    string(TIMESTAMP now "%Y%m%d_%H%M%S" UTC)
-    if (NOT "${out_hash}" STREQUAL "")            set(${out_hash}     "unknown"            PARENT_SCOPE) endif()
-    if (NOT "${out_datetime}" STREQUAL "")        set(${out_datetime} "${now}"             PARENT_SCOPE) endif()
-    if (NOT "${out_count_total}" STREQUAL "")     set(${out_count_total} "0"               PARENT_SCOPE) endif()
-    if (NOT "${out_tag}" STREQUAL "")             set(${out_tag}      "${PROJECT_VERSION}" PARENT_SCOPE) endif()
-    if (NOT "${out_dirty}" STREQUAL "")           set(${out_dirty}    "0"                  PARENT_SCOPE) endif()
-    if (NOT "${out_count_since_tag}" STREQUAL "") set(${out_count_since_tag} "0"           PARENT_SCOPE) endif()
-    if (NOT "${out_describe}" STREQUAL "")        set(${out_describe} ""                   PARENT_SCOPE) endif()
-    if (NOT "${out_has_tag}" STREQUAL "")         set(${out_has_tag}  "0"                  PARENT_SCOPE) endif()
-    return()
-  endif()
 
-  # Short hash
-  execute_process(
-    COMMAND "${GIT_EXECUTABLE}" -C "${CMAKE_SOURCE_DIR}" rev-parse --short=12 HEAD
-    OUTPUT_VARIABLE GIT_HASH
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    ERROR_VARIABLE _ignored)
-
-  # Commit datetime (commit time, stable per commit)
-  execute_process(
-    COMMAND "${GIT_EXECUTABLE}" -C "${CMAKE_SOURCE_DIR}"
-            show -s --format=%cd --date=format:%Y%m%d_%H%M%S HEAD
-    OUTPUT_VARIABLE GIT_DATETIME
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    ERROR_VARIABLE _ignored)
-
-  # Total commit count
-  execute_process(
-    COMMAND "${GIT_EXECUTABLE}" -C "${CMAKE_SOURCE_DIR}" rev-list --count HEAD
-    OUTPUT_VARIABLE GIT_COUNT_TOTAL
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    ERROR_VARIABLE _ignored)
-
-  # Latest tag (if any)
-  execute_process(
-    COMMAND "${GIT_EXECUTABLE}" -C "${CMAKE_SOURCE_DIR}" describe --tags --abbrev=0
-    OUTPUT_VARIABLE GIT_TAG
-    RESULT_VARIABLE TAG_OK
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    ERROR_VARIABLE _ignored)
-  if (TAG_OK EQUAL 0 AND NOT GIT_TAG STREQUAL "")
-    set(GIT_HAS_TAG "1")
+  if (NOT Git_FOUND OR NOT EXISTS "${GGV_SOURCE_DIR}/.git")
+    string(TIMESTAMP now "${GGV_DATE_FORMAT}" UTC)
+    set(_HASH "unknown")
+    set(_DT   "${now}")
+    set(_COUNT_TOTAL "0")
+    set(_TAG "")
+    set(_HAS_TAG "0")
+    set(_SINCE_TAG "0")
+    set(_DESCRIBE "")
+    set(_DIRTY "0")
   else()
-    set(GIT_HAS_TAG "0")
-    set(GIT_TAG "")
-  endif()
-
-  # Long describe (works with/without tags)
-  execute_process(
-    COMMAND "${GIT_EXECUTABLE}" -C "${CMAKE_SOURCE_DIR}" describe --tags --long --always
-    OUTPUT_VARIABLE GIT_DESCRIBE
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    ERROR_VARIABLE _ignored)
-
-  # Commits since last tag
-  if (GIT_HAS_TAG STREQUAL "1")
+    # Short hash
     execute_process(
-      COMMAND "${GIT_EXECUTABLE}" -C "${CMAKE_SOURCE_DIR}" rev-list --count "${GIT_TAG}..HEAD"
-      OUTPUT_VARIABLE GIT_COMMITS_SINCE_TAG
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-      ERROR_VARIABLE _ignored)
-  else()
-    set(GIT_COMMITS_SINCE_TAG "0")
+      COMMAND "${GIT_EXECUTABLE}" -C "${GGV_SOURCE_DIR}" rev-parse --short=12 HEAD
+      OUTPUT_VARIABLE _HASH OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_VARIABLE _ig
+    )
+    # Commit datetime (stable per commit)
+    execute_process(
+      COMMAND "${GIT_EXECUTABLE}" -C "${GGV_SOURCE_DIR}" show -s --format=%cd --date=format:${GGV_DATE_FORMAT} HEAD
+      OUTPUT_VARIABLE _DT OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_VARIABLE _ig
+    )
+    # Total commits
+    execute_process(
+      COMMAND "${GIT_EXECUTABLE}" -C "${GGV_SOURCE_DIR}" rev-list --count HEAD
+      OUTPUT_VARIABLE _COUNT_TOTAL OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_VARIABLE _ig
+    )
+    # Latest tag (if any)
+    execute_process(
+      COMMAND "${GIT_EXECUTABLE}" -C "${GGV_SOURCE_DIR}" describe --tags --abbrev=0
+      OUTPUT_VARIABLE _TAG RESULT_VARIABLE _TAG_OK
+      OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_VARIABLE _ig
+    )
+    if (_TAG_OK EQUAL 0 AND NOT _TAG STREQUAL "")
+      set(_HAS_TAG "1")
+    else()
+      set(_TAG "")
+      set(_HAS_TAG "0")
+    endif()
+    # Commits since tag
+    if (_HAS_TAG STREQUAL "1")
+      execute_process(
+        COMMAND "${GIT_EXECUTABLE}" -C "${GGV_SOURCE_DIR}" rev-list --count "${_TAG}..HEAD"
+        OUTPUT_VARIABLE _SINCE_TAG OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_VARIABLE _ig
+      )
+    else()
+      set(_SINCE_TAG "0")
+    endif()
+    # Describe (works w/ or w/o tags)
+    execute_process(
+      COMMAND "${GIT_EXECUTABLE}" -C "${GGV_SOURCE_DIR}" describe --tags --long --always
+      OUTPUT_VARIABLE _DESCRIBE OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_VARIABLE _ig
+    )
+    # Dirty: tracked-only by default; include untracked if requested
+    if (GGV_INCLUDE_UNTRACKED)
+      set(_uno_arg "--untracked-files=all")
+    else()
+      set(_uno_arg "--untracked-files=no")
+    endif()
+    execute_process(
+      COMMAND "${GIT_EXECUTABLE}" -C "${GGV_SOURCE_DIR}" status --porcelain ${_uno_arg}
+      OUTPUT_VARIABLE _STATUS OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_VARIABLE _ig
+    )
+    if (_STATUS STREQUAL "")  # clean
+      set(_DIRTY "0")
+    else()
+      set(_DIRTY "1")
+    endif()
   endif()
 
-  # Dirty (tracked changes only; untracked ignored so build dirs don't trip it)
-  execute_process(
-    COMMAND "${GIT_EXECUTABLE}" -C "${CMAKE_SOURCE_DIR}" status --porcelain --untracked-files=no
-    OUTPUT_VARIABLE GIT_STATUS
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    ERROR_VARIABLE _ignored)
-  if (GIT_STATUS STREQUAL "")
-    set(GIT_DIRTY "0")
-  else()
-    set(GIT_DIRTY "1")
-  endif()
+  # Helper to set parent scope only if caller provided an OUT_* var
+  macro(_gv_set out_key value)
+    if (GGV_${out_key})
+      set(${GGV_${out_key}} "${value}" PARENT_SCOPE)
+    endif()
+  endmacro()
 
-  # Write only the outputs the caller asked for
-  if (NOT "${out_hash}" STREQUAL "")
-    set(${out_hash} "${GIT_HASH}" PARENT_SCOPE)
-  endif()
-  if (NOT "${out_datetime}" STREQUAL "")
-    set(${out_datetime} "${GIT_DATETIME}" PARENT_SCOPE)
-  endif()
-  if (NOT "${out_count_total}" STREQUAL "")
-    set(${out_count_total} "${GIT_COUNT_TOTAL}" PARENT_SCOPE)
-  endif()
-  if (NOT "${out_tag}" STREQUAL "")
-    set(${out_tag} "${GIT_TAG}" PARENT_SCOPE)
-  endif()
-  if (NOT "${out_dirty}" STREQUAL "")
-    set(${out_dirty} "${GIT_DIRTY}" PARENT_SCOPE)
-  endif()
-  if (NOT "${out_count_since_tag}" STREQUAL "")
-    set(${out_count_since_tag} "${GIT_COMMITS_SINCE_TAG}" PARENT_SCOPE)
-  endif()
-  if (NOT "${out_describe}" STREQUAL "")
-    set(${out_describe} "${GIT_DESCRIBE}" PARENT_SCOPE)
-  endif()
-  if (NOT "${out_has_tag}" STREQUAL "")
-    set(${out_has_tag} "${GIT_HAS_TAG}" PARENT_SCOPE)
-  endif()
+  _gv_set(OUT_HASH            "${_HASH}")
+  _gv_set(OUT_DATETIME        "${_DT}")
+  _gv_set(OUT_COUNT_TOTAL     "${_COUNT_TOTAL}")
+  _gv_set(OUT_TAG             "${_TAG}")
+  _gv_set(OUT_DIRTY           "${_DIRTY}")
+  _gv_set(OUT_COUNT_SINCE_TAG "${_SINCE_TAG}")
+  _gv_set(OUT_DESCRIBE        "${_DESCRIBE}")
+  _gv_set(OUT_HAS_TAG         "${_HAS_TAG}")
 endfunction()
