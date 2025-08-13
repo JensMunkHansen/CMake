@@ -1,82 +1,38 @@
-function(sps_get_git_version out_hash out_datetime out_count out_tag out_dirty)
-  find_package(Git QUIET)
-  if (NOT Git_FOUND OR NOT EXISTS "${CMAKE_SOURCE_DIR}/.git")
-    # Fallbacks for non-git trees / tarballs
-    string(TIMESTAMP now "%Y%m%d_%H%M%S" UTC)
-    set(${out_hash}     "unknown"         PARENT_SCOPE)
-    set(${out_datetime} "${now}"          PARENT_SCOPE)
-    set(${out_count}    "0"               PARENT_SCOPE)
-    set(${out_tag}      "${PROJECT_VERSION}" PARENT_SCOPE)
-    set(${out_dirty}    "0"               PARENT_SCOPE)
-    return()
-  endif()
-
-  execute_process(
-    COMMAND "${GIT_EXECUTABLE}" -C "${CMAKE_SOURCE_DIR}" rev-parse --short=12 HEAD
-    OUTPUT_VARIABLE GIT_HASH
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
-
-  execute_process(
-    COMMAND "${GIT_EXECUTABLE}" -C "${CMAKE_SOURCE_DIR}" show -s --format=%cd --date=format:%Y%m%d_%H%M%S HEAD
-    OUTPUT_VARIABLE GIT_DATETIME
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
-
-  execute_process(
-    COMMAND "${GIT_EXECUTABLE}" -C "${CMAKE_SOURCE_DIR}" rev-list --count HEAD
-    OUTPUT_VARIABLE GIT_COUNT
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
-
-  # Prefer latest tag; fallback to commit hash if no tags
-  execute_process(
-    COMMAND "${GIT_EXECUTABLE}" -C "${CMAKE_SOURCE_DIR}" describe --tags --abbrev=0
-    OUTPUT_VARIABLE GIT_TAG
-    RESULT_VARIABLE TAG_OK
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
-  if (NOT TAG_OK EQUAL 0 OR GIT_TAG STREQUAL "")
-    set(GIT_TAG "${GIT_HASH}")
-  endif()
-
-  # Dirty flag (1 if there are uncommitted changes)
-  execute_process(
-    COMMAND "${GIT_EXECUTABLE}" -C "${CMAKE_SOURCE_DIR}" status --porcelain
-    OUTPUT_VARIABLE GIT_STATUS
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
-  if (GIT_STATUS STREQUAL "")
-    set(GIT_DIRTY "0")
-  else()
-    set(GIT_DIRTY "1")
-  endif()
-
-  set(${out_hash}     "${GIT_HASH}"     PARENT_SCOPE)
-  set(${out_datetime} "${GIT_DATETIME}" PARENT_SCOPE)
-  set(${out_count}    "${GIT_COUNT}"    PARENT_SCOPE)
-  set(${out_tag}      "${GIT_TAG}"      PARENT_SCOPE)
-  set(${out_dirty}    "${GIT_DIRTY}"    PARENT_SCOPE)
-endfunction()
-
-
-# get_git_version(...)
-# Keyword-style API:
-#   get_git_version(
-#     OUT_HASH <var>            # short hash (12)
-#     OUT_DATETIME <var>        # commit datetime (formatted)
-#     OUT_COUNT_TOTAL <var>     # total commits on HEAD
-#     OUT_TAG <var>             # latest tag (empty if none)
-#     OUT_DIRTY <var>           # "0" or "1" (tracked changes only by default)
-#     OUT_COUNT_SINCE_TAG <var> # commits since latest tag (0 if none)
-#     OUT_DESCRIBE <var>        # git describe --tags --long --always
-#     OUT_HAS_TAG <var>         # "1" if repo has any tag, else "0"
+#[==[.rst:
+*************
+spsGitVersion
+*************
 #
-# Options:
-#   SOURCE_DIR <path>           # default: CMAKE_SOURCE_DIR
-#   DATE_FORMAT <fmt>           # default: %Y%m%d_%H%M%S
-#   INCLUDE_UNTRACKED           # count untracked files as "dirty"
-#   QUIET                       # suppress status messages (currently none)
-#
-# Example:
-#   get_git_version(OUT_HASH GIT_HASH OUT_TAG GIT_TAG OUT_DIRTY GIT_DIRTY)
+#]==]
 
-function(get_git_version)
+#[==[.rst:
+
+.. cmake:command:: sps_get_git_version
+
+  The :cmake:command:`sps_get_git_version` function is provided to
+  extract version information from git using a keyword-style API:
+
+    sps_get_git_version(
+      OUT_HASH <var>            # short hash (12)
+      OUT_DATETIME <var>        # commit datetime (formatted)
+      OUT_COUNT_TOTAL <var>     # total commits on HEAD
+      OUT_TAG <var>             # latest tag (empty if none)
+      OUT_DIRTY <var>           # "0" or "1" (tracked changes only by default)
+      OUT_COUNT_SINCE_TAG <var> # commits since latest tag (0 if none)
+      OUT_DESCRIBE <var>        # git describe --tags --long --always
+      OUT_HAS_TAG <var>         # "1" if repo has any tag, else "0"
+
+    Options:
+      SOURCE_DIR <path>           # default: CMAKE_SOURCE_DIR
+      DATE_FORMAT <fmt>           # default: %Y%m%d_%H%M%S
+      INCLUDE_UNTRACKED           # count untracked files as "dirty"
+      QUIET                       # suppress status messages (currently none)
+
+    Eample:
+    .. code-block:: cmake
+      sps_get_git_version(OUT_HASH GIT_HASH OUT_TAG GIT_TAG OUT_DIRTY GIT_DIRTY)
+ ]==]
+function(sps_get_git_version)
   set(options INCLUDE_UNTRACKED QUIET)
   set(one_value_args
     OUT_HASH OUT_DATETIME OUT_COUNT_TOTAL OUT_TAG OUT_DIRTY
@@ -180,4 +136,84 @@ function(get_git_version)
   _gv_set(OUT_COUNT_SINCE_TAG "${_SINCE_TAG}")
   _gv_set(OUT_DESCRIBE        "${_DESCRIBE}")
   _gv_set(OUT_HAS_TAG         "${_HAS_TAG}")
+endfunction()
+
+#[==[.rst:
+
+.. cmake:command:: sps_extract_version_from_tag
+
+  The :cmake:command:`sps_extract_version_from_tag` function is provided to
+  extract major, minor and patch version from a git tag
+
+  sps_extract_version_from_tag(TAG <tag_string>
+    OUT_MAJOR <var>
+    OUT_MINOR <var>
+    OUT_PATCH <var>
+    [ALLOW_MISSING] )  # If set, missing components become 0
+
+   Eamples
+   .. code-block:: cmake
+     extract_version_from_tag(TAG "v1.2.3" OUT_MAJOR MAJOR OUT_MINOR MINOR OUT_PATCH PATCH)
+     -> MAJOR=1, MINOR=2, PATCH=3
+
+     extract_version_from_tag(TAG "1.2" OUT_MAJOR M OUT_MINOR m OUT_PATCH p ALLOW_MISSING)
+     -> M=1, m=2, p=0
+
+     extract_version_from_tag(TAG "release-5.7.0")
+     -> M=5, m=7, p=0
+ ]==]
+function(sps_extract_version_from_tag)
+  set(options ALLOW_MISSING)
+  set(one_value_args TAG OUT_MAJOR OUT_MINOR OUT_PATCH)
+  set(multi_value_args)
+  cmake_parse_arguments(EVT "${options}" "${one_value_args}" "${multi_value_args}" ${ARGV})
+
+  if (NOT EVT_TAG)
+    message(FATAL_ERROR "extract_version_from_tag: TAG argument is required")
+  endif()
+
+  # Strip leading 'v' or non-digit prefix
+  string(REGEX REPLACE "^[^0-9]*" "" _ver "${EVT_TAG}")
+
+  # Split into components
+  string(REPLACE "." ";" _parts "${_ver}")
+
+  # Default values
+  set(_maj 0)
+  set(_min 0)
+  set(_pat 0)
+
+  list(LENGTH _parts _len)
+
+  if (_len GREATER 0)
+    list(GET _parts 0 _maj)
+  endif()
+  if (_len GREATER 1)
+    list(GET _parts 1 _min)
+  elseif (NOT EVT_ALLOW_MISSING)
+    set(_min 0)
+  endif()
+  if (_len GREATER 2)
+    list(GET _parts 2 _pat)
+  elseif (NOT EVT_ALLOW_MISSING)
+    set(_pat 0)
+  endif()
+
+  # Validate numeric
+  foreach(val IN ITEMS _maj _min _pat)
+    if (NOT "${${val}}" MATCHES "^[0-9]+$")
+      message(FATAL_ERROR
+        "extract_version_from_tag: Invalid numeric in tag '${EVT_TAG}' (parsed '${${val}}')")
+    endif()
+  endforeach()
+
+  if (EVT_OUT_MAJOR)
+    set(${EVT_OUT_MAJOR} "${_maj}" PARENT_SCOPE)
+  endif()
+  if (EVT_OUT_MINOR)
+    set(${EVT_OUT_MINOR} "${_min}" PARENT_SCOPE)
+  endif()
+  if (EVT_OUT_PATCH)
+    set(${EVT_OUT_PATCH} "${_pat}" PARENT_SCOPE)
+  endif()
 endfunction()
