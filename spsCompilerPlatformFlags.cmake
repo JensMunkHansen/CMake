@@ -24,21 +24,41 @@ if (TARGET build)
     # Linker flags needed by Microsoft
     set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} /LTCG")    
   else()
+    # Determine architecture flags based on PBB_DISABLE_AVX512 option
+    if(PBB_DISABLE_AVX512)
+      set(_ARCH_FLAGS "-march=skylake;-mtune=native")  # Skylake has AVX2 but no AVX-512
+      set(_ARCH_FLAGS_CLANG "-march=skylake")
+      message(STATUS "AVX-512 disabled - using Skylake architecture (AVX2 max)")
+    else()
+      set(_ARCH_FLAGS "-march=native;-mtune=native")
+      set(_ARCH_FLAGS_CLANG "-march=native")
+    endif()
+    
     # Linux build
     target_compile_options(build
       INTERFACE
       # GNU flags
-      $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Release>>:-O3 -march=native -mtune=native -ffast-math>
-      $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Debug>>:-O0 -g -march=native>
-      $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:RelWithDebInfo>>:-Og -g -march=native>
-      $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Asan>>:-O3 -march=native>
+      $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Release>>:-O3 ${_ARCH_FLAGS} -ffast-math>
+      $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Debug>>:-O0 -g ${_ARCH_FLAGS}>
+      $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:RelWithDebInfo>>:-Og -g ${_ARCH_FLAGS}>
+      $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Asan>>:-O3 ${_ARCH_FLAGS}>
       
       # Clang flags for Release
-      $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Release>>:-O3 -march=native -ffast-math>
-      $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Debug>>:-O0 -g -march=native>
-      $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:RelWithDebInfo>>: -Og -march=native -g>
-      $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Asan>>:-O3 -march=native>
-    )      
+      $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Release>>:-O3 ${_ARCH_FLAGS_CLANG} -ffast-math>
+      $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Debug>>:-O0 -g ${_ARCH_FLAGS_CLANG}>
+      $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:RelWithDebInfo>>: -Og ${_ARCH_FLAGS_CLANG} -g>
+      $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Asan>>:-O3 ${_ARCH_FLAGS_CLANG}>
+    )
+    
+    # Add explicit AVX-512 disable flags if requested
+    if(PBB_DISABLE_AVX512)
+      target_compile_options(build INTERFACE
+        -mno-avx512f -mno-avx512dq -mno-avx512bw -mno-avx512vl -mno-avx512cd
+        # Use DWARF-4 debug format for better Valgrind compatibility
+        $<$<CONFIG:Debug>:-gdwarf-4>
+        $<$<CONFIG:RelWithDebInfo>:-gdwarf-4>
+      )
+    endif()      
   endif()
 
   # Set C++ target version
