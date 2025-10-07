@@ -61,13 +61,20 @@ else()
   set(_sps_linker_args "")
 endif()
 
+# Define macro for ASan detection
+if(MSVC AND NOT IS_CLANG_CL)
+  set(_sps_asan_define "/DPBB_USING_ASAN=1")
+else()
+  set(_sps_asan_define "-DPBB_USING_ASAN=1")
+endif()
+
 # Define config-specific flags
 set(CMAKE_C_FLAGS_ASAN
-  "${CMAKE_C_FLAGS_DEBUG} ${_sps_sanitize_args} ${_sps_no_omit_frame-pointer}" CACHE STRING
+  "${CMAKE_C_FLAGS_DEBUG} ${_sps_sanitize_args} ${_sps_no_omit_frame-pointer} ${_sps_asan_define}" CACHE STRING
   "Flags used by the C compiler for Asan build type or configuration." FORCE)
 
 set(CMAKE_CXX_FLAGS_ASAN
-  "${CMAKE_CXX_FLAGS_DEBUG} ${_sps_sanitize_args} ${_sps_no_omit_frame-pointer}" CACHE STRING
+  "${CMAKE_CXX_FLAGS_DEBUG} ${_sps_sanitize_args} ${_sps_no_omit_frame-pointer} ${_sps_asan_define}" CACHE STRING
   "Flags used by the C++ compiler for Asan build type or configuration." FORCE)
 
 set(CMAKE_EXE_LINKER_FLAGS_ASAN
