@@ -63,9 +63,9 @@ endif()
 
 # Define macro for ASan detection
 if(MSVC AND NOT IS_CLANG_CL)
-  set(_sps_asan_define "/DPBB_USING_ASAN=1")
+  set(_sps_asan_define "/DSPS_USING_ASAN=1")
 else()
-  set(_sps_asan_define "-DPBB_USING_ASAN=1")
+  set(_sps_asan_define "-DSPS_USING_ASAN=1")
 endif()
 
 # Define config-specific flags
