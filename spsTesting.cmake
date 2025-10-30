@@ -1,5 +1,13 @@
+#[==[.rst:
+*********
+spsTesting
+*********
+  Include this for enabling the Catch2 test framework.
+#]==]
+
 if (BUILD_TESTING)
-  find_package(Catch2 QUIET)
+  include(CTest)
+  find_package(Catch2 3.5.2 QUIET)
   if (Catch2_FOUND)
     message(STATUS "✅ Catch2 found at: ${Catch2_DIR}")
     message(STATUS "   Catch2 version: ${Catch2_VERSION}")
@@ -11,7 +19,6 @@ if (BUILD_TESTING)
 
     include(FetchContent)
 
-    include(CTest)
     FetchContent_Declare(
       catch2
       GIT_REPOSITORY https://github.com/catchorg/Catch2.git
@@ -22,8 +29,5 @@ if (BUILD_TESTING)
   endif()
   include(Catch)
   enable_testing()
-
-  include(CTest)
-
 endif()
 
