@@ -20,9 +20,14 @@ endif()
 include(GNUInstallDirs)
 if(UNIX)
   option(BUILD_SHARED_LIBS "Build shared libraries (.so or .dyld)." ON)
-  message("Installing RPATH")
+
+  # Use install RPATH even in build tree so binaries are relocatable
   set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
+  set(CMAKE_SKIP_BUILD_RPATH FALSE)
+
+  # Installed binaries: look next to <prefix>/lib and the exe dir
   set(CMAKE_INSTALL_RPATH "$ORIGIN/../${CMAKE_INSTALL_LIBDIR}:$ORIGIN")
+  set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
   
   set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
   set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
