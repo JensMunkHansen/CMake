@@ -12,7 +12,14 @@ spsTBB
 include(FetchContent)
 
 if(WIN32)
-    find_package(TBB 2021.0 QUIET CONFIG)
+    # If TBB_DIR is already set, use it directly
+    if(DEFINED TBB_DIR AND EXISTS "${TBB_DIR}")
+        message(STATUS "🎯 Using provided TBB_DIR: ${TBB_DIR}")
+        find_package(TBB 2021.0 QUIET CONFIG)
+    else()
+        find_package(TBB 2021.0 QUIET CONFIG)
+    endif()
+
     if (TBB_FOUND)
       message(STATUS "✅ TBB found at: ${TBB_DIR}")
       set(USE_INSTALLED_TBB TRUE)
@@ -63,7 +70,13 @@ if(WIN32)
     endif()
 else()
     # Linux / macOS: try to find system TBB
-    find_package(TBB 2021.0 QUIET CONFIG)
+    # If TBB_DIR is already set, use it directly
+    if(DEFINED TBB_DIR AND EXISTS "${TBB_DIR}")
+        message(STATUS "🎯 Using provided TBB_DIR: ${TBB_DIR}")
+        find_package(TBB 2021.0 QUIET CONFIG)
+    else()
+        find_package(TBB 2021.0 QUIET CONFIG)
+    endif()
 
     if(TBB_FOUND)
       set(USE_INSTALLED_TBB TRUE)      
