@@ -14,7 +14,7 @@ include(FetchContent)
 if(WIN32)
     find_package(TBB 2021.0 QUIET CONFIG)
     if (TBB_FOUND)
-      message(STATUS "Using installed TBB from: ${TBB_DIR}")
+      message(STATUS "✅ TBB found at: ${TBB_DIR}")
       set(USE_INSTALLED_TBB TRUE)
 
       get_filename_component(_tbb_install_prefix "${TBB_DIR}/../../.." ABSOLUTE)
@@ -29,7 +29,9 @@ if(WIN32)
         IMPORTED_LOCATION_DEBUG   "${_tbb_bin_dir}/tbb12_debug.dll"
       )      
     else()
-      message(STATUS "Windows detected — fetching and building oneTBB")
+      message(STATUS "❌ TBB NOT found - will use FetchContent")
+      message(STATUS "   Searched in: ${CMAKE_PREFIX_PATH}")
+      message(STATUS "   Looking for: TBBConfig.cmake or TBB-config.cmake")
       
       # Disable tests and examples
       set(TBB_TEST OFF CACHE BOOL "" FORCE)
@@ -65,7 +67,7 @@ else()
 
     if(TBB_FOUND)
       set(USE_INSTALLED_TBB TRUE)      
-      message(STATUS "System TBB found: ${TBB_LIBRARIES}")
+      message(STATUS "✅ System TBB found at: ${TBB_LIBRARIES}")
       # Export canonical targets
       foreach(tgt tbb tbbmalloc tbbmalloc_proxy)
         if(NOT TARGET TBB::${tgt} AND TARGET ${tgt})
