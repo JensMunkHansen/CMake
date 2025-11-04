@@ -28,6 +28,12 @@ if(UNIX)
   # Installed binaries: look next to <prefix>/lib and the exe dir
   set(CMAKE_INSTALL_RPATH "$ORIGIN/../${CMAKE_INSTALL_LIBDIR}:$ORIGIN")
   set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
+  # Also add external dependency directory to RPATH for shared dependencies
+  if(CMAKE_PREFIX_PATH)
+    set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH}:${CMAKE_PREFIX_PATH}/lib")
+    message(STATUS "Added external dependency path to RPATH: ${CMAKE_PREFIX_PATH}/lib")
+  endif()
   
   set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
   set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
