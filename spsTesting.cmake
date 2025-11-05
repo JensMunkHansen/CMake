@@ -30,6 +30,10 @@ if (BUILD_TESTING)
     message(STATUS "   Searched in: ${CMAKE_PREFIX_PATH}")
     message(STATUS "   Looking for: Catch2Config.cmake or catch2-config.cmake")
 
+    # Backup BUILD_TESTING to prevent Catch2 from building its own tests
+    set(SPS_BACKUP_BUILD_TESTING ${BUILD_TESTING})
+    set(BUILD_TESTING OFF CACHE BOOL "Build tests (disabled for dependencies)" FORCE)
+
     include(FetchContent)
 
     FetchContent_Declare(
@@ -39,6 +43,9 @@ if (BUILD_TESTING)
     )
     FetchContent_MakeAvailable(catch2)
     message(STATUS "✅ Catch2 downloaded via FetchContent")
+
+    # Restore original BUILD_TESTING value
+    set(BUILD_TESTING ${SPS_BACKUP_BUILD_TESTING} CACHE BOOL "Build tests" FORCE)
   endif()
   include(Catch)
   enable_testing()
