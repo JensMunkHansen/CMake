@@ -1,26 +1,18 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index f3e69b8..575facd 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -476,9 +476,7 @@
-
- install(DIRECTORY Eigen DESTINATION ${INCLUDE_INSTALL_DIR} COMPONENT Devel)
-
-
--option(EIGEN_BUILD_DOC "Enable creation of Eigen documentation" ON)
--if(EIGEN_BUILD_DOC)
--  add_subdirectory(doc EXCLUDE_FROM_ALL)
--endif()
-+# Force disable documentation to avoid configuration issues
-+set(EIGEN_BUILD_DOC OFF CACHE BOOL "Enable creation of Eigen documentation" FORCE)
-@@ -535,6 +535,20 @@
-
+@@ -535,10 +535,20 @@ endif()
+ 
  add_subdirectory(unsupported)
-
+ 
 -add_subdirectory(demos EXCLUDE_FROM_ALL)
--add_subdirectory(scripts EXCLUDE_FROM_ALL)
 +# Options to control configuration of optional components
 +option(EIGEN_BUILD_DEMOS "Build demos (requires configuration)" OFF)
 +option(EIGEN_BUILD_SCRIPTS "Build scripts (requires configuration)" OFF)
-+
+ 
+-# must be after test and unsupported, for configuring buildtests.in
+-add_subdirectory(scripts EXCLUDE_FROM_ALL)
 +if(EIGEN_BUILD_DEMOS)
 +  add_subdirectory(demos EXCLUDE_FROM_ALL)
 +endif()
@@ -28,13 +20,9 @@
 +if(EIGEN_BUILD_SCRIPTS)
 +  add_subdirectory(scripts EXCLUDE_FROM_ALL)
 +endif()
-@@ -544,7 +558,10 @@
-
++
++# Disable CTest to avoid dashboard targets
++# include(CTest)
+ 
+ # TODO: consider also replacing EIGEN_BUILD_BTL by a custom target "make btl"?
  if(EIGEN_BUILD_BTL)
--  add_subdirectory(bench/btl EXCLUDE_FROM_ALL)
-+  if(EIGEN_BUILD_BTL)
-+    add_subdirectory(bench/btl EXCLUDE_FROM_ALL)
-+  endif()
- endif()
-
- if(NOT WIN32)

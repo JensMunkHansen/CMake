@@ -13,7 +13,8 @@ set(SPS_EIGEN3_VERSION "3.4.0")
 message(STATUS "=== EIGEN3 SEARCH ===")
 
 # Try to find Eigen3, avoiding user registry
-find_package(Eigen3 ${SPS_EIGEN3_VERSION} QUIET CONFIG NO_MODULE NO_CMAKE_PACKAGE_REGISTRY)
+# find_package(Eigen3 ${SPS_EIGEN3_VERSION} QUIET CONFIG NO_MODULE NO_CMAKE_PACKAGE_REGISTRY)
+set(Eigen3_FOUND FALSE)
 
 if(Eigen3_FOUND)
     message(STATUS "✅ Eigen3 ${Eigen3_VERSION} found successfully!")
