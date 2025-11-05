@@ -11,6 +11,30 @@
 -endif()
 +# Force disable documentation to avoid configuration issues
 +set(EIGEN_BUILD_DOC OFF CACHE BOOL "Enable creation of Eigen documentation" FORCE)
+@@ -535,6 +535,20 @@
 
+ add_subdirectory(unsupported)
 
- option(BUILD_TESTING "Enable creation of Eigen tests." ON)
+-add_subdirectory(demos EXCLUDE_FROM_ALL)
+-add_subdirectory(scripts EXCLUDE_FROM_ALL)
++# Options to control configuration of optional components
++option(EIGEN_BUILD_DEMOS "Build demos (requires configuration)" OFF)
++option(EIGEN_BUILD_SCRIPTS "Build scripts (requires configuration)" OFF)
++
++if(EIGEN_BUILD_DEMOS)
++  add_subdirectory(demos EXCLUDE_FROM_ALL)
++endif()
++
++if(EIGEN_BUILD_SCRIPTS)
++  add_subdirectory(scripts EXCLUDE_FROM_ALL)
++endif()
+@@ -544,7 +558,10 @@
+
+ if(EIGEN_BUILD_BTL)
+-  add_subdirectory(bench/btl EXCLUDE_FROM_ALL)
++  if(EIGEN_BUILD_BTL)
++    add_subdirectory(bench/btl EXCLUDE_FROM_ALL)
++  endif()
+ endif()
+
+ if(NOT WIN32)
