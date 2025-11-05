@@ -13,8 +13,7 @@ set(SPS_EIGEN3_VERSION "3.4.0")
 message(STATUS "=== EIGEN3 SEARCH ===")
 
 # Try to find Eigen3, avoiding user registry
-# find_package(Eigen3 ${SPS_EIGEN3_VERSION} QUIET CONFIG NO_MODULE NO_CMAKE_PACKAGE_REGISTRY)
-set(Eigen3_FOUND FALSE)
+find_package(Eigen3 ${SPS_EIGEN3_VERSION} QUIET CONFIG NO_MODULE NO_CMAKE_PACKAGE_REGISTRY)
 
 if(Eigen3_FOUND)
     message(STATUS "✅ Eigen3 ${Eigen3_VERSION} found successfully!")
@@ -38,6 +37,10 @@ else()
         GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
         GIT_TAG ${SPS_EIGEN3_VERSION}
         PATCH_COMMAND git apply "${_eigen_patch_file}"
+        CMAKE_ARGS
+            -DCMAKE_Fortran_COMPILER:FILEPATH=   # Disable Fortran to avoid MSVC/MinGW conflicts
+            -DEIGEN_TESTING=OFF
+            -DEIGEN_BUILD_DOC=OFF
     )
 
     # Ignore deprecation warning for FetchContent_Populate
