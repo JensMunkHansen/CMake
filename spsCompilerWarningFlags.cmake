@@ -61,11 +61,26 @@ if (SPS_ENABLE_EXTRA_BUILD_WARNINGS_EVERYTHING)
   _sps_add_flag(-Wno-extra-semi ${langs})
 
 elseif (SPS_ENABLE_EXTRA_BUILD_WARNINGS)
-  # C flags.
-  set(langs C)
+  # === FOUNDATION: Essential baseline warnings ===
+  set(langs C CXX)
+  _sps_add_flag(-Wall ${langs})
+  _sps_add_flag(-Wextra ${langs})
+  _sps_add_flag(-Wshadow ${langs})  # Critical for threading code - catches variable shadowing
 
-  # C++ flags.
+  # === LOGIC/BUG DETECTION ===
+  _sps_add_flag(-Wduplicated-cond ${langs})      # Duplicated if conditions (GCC)
+  _sps_add_flag(-Wduplicated-branches ${langs})  # Identical if/else branches (GCC)
+  _sps_add_flag(-Wlogical-op ${langs})           # Suspicious logical operations (GCC)
+  _sps_add_flag(-Wnull-dereference ${langs})     # Potential null dereferences (GCC 6+)
+
+  # === C++ SPECIFIC: Modern practices ===
   set(langs CXX)
+  _sps_add_flag(-Wold-style-cast ${langs})       # Enforce C++ style casts
+  _sps_add_flag(-Woverloaded-virtual ${langs})   # Virtual function hiding
+  _sps_add_flag(-Wsuggest-override ${langs})     # Missing override keywords (GCC)
+  # Note: -Wextra-semi disabled - semicolons after macros improve IDE behavior with/without clang-tidy
+
+  # === C++ SPECIFIC: Destructor/Virtual/Move warnings ===
   _sps_add_flag(-Winconsistent-missing-destructor-override ${langs})
   _sps_add_flag(-Wnon-virtual-dtor ${langs})
   _sps_add_flag(-Wpessimizing-move ${langs})
@@ -74,15 +89,27 @@ elseif (SPS_ENABLE_EXTRA_BUILD_WARNINGS)
   _sps_add_flag(-Wunused-lambda-capture ${langs})
   _sps_add_flag(-Wunused-private-field ${langs})
 
-  # C and C++ flags.
+  # === C++ SPECIFIC: Type safety and casting ===
+  _sps_add_flag(-Wuseless-cast ${langs})         # Unnecessary casts (GCC)
+  _sps_add_flag(-Wcast-qual ${langs})            # Casts removing qualifiers
+
+  # === C AND C++: Unused code detection ===
   set(langs C CXX)
   _sps_add_flag(-Wabsolute-value ${langs})
-  _sps_add_flag(-Wsign-compare ${langs})
   _sps_add_flag(-Wunreachable-code ${langs})
   _sps_add_flag(-Wunused-but-set-variable ${langs})
   _sps_add_flag(-Wunused-function ${langs})
   _sps_add_flag(-Wunused-local-typedef ${langs})
   _sps_add_flag(-Wunused-parameter ${langs})
   _sps_add_flag(-Wunused-variable ${langs})
+
+  # === C AND C++: Type conversions and comparisons ===
+  _sps_add_flag(-Wsign-compare ${langs})
+  # Note: -Wconversion, -Wsign-conversion, and -Wfloat-conversion are too noisy for template/container code
+  # Consider enabling them for specific files if needed
+
+  # === C AND C++: Additional hygiene ===
+  _sps_add_flag(-Wmissing-field-initializers ${langs})  # Incomplete struct initialization
+  _sps_add_flag(-Wundef ${langs})                       # Undefined macros in #if
 
 endif ()
