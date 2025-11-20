@@ -24,8 +24,8 @@ if (TARGET build)
     # Linker flags needed by Microsoft
     set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} /LTCG")    
   else()
-    # Determine architecture flags based on PBB_DISABLE_AVX512 option
-    if(PBB_DISABLE_AVX512)
+    # Determine architecture flags based on SPS_DISABLE_AVX512 option
+    if(SPS_DISABLE_AVX512)
       set(_ARCH_FLAGS "-march=skylake;-mtune=native")  # Skylake has AVX2 but no AVX-512
       set(_ARCH_FLAGS_CLANG "-march=skylake")
       message(STATUS "AVX-512 disabled - using Skylake architecture (AVX2 max)")
@@ -51,7 +51,7 @@ if (TARGET build)
     )
     
     # Add explicit AVX-512 disable flags if requested
-    if(PBB_DISABLE_AVX512)
+    if(SPS_DISABLE_AVX512)
       target_compile_options(build INTERFACE
         -mno-avx512f -mno-avx512dq -mno-avx512bw -mno-avx512vl -mno-avx512cd
         # Use DWARF-4 debug format for better Valgrind compatibility
