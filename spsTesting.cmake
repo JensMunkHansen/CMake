@@ -5,9 +5,12 @@ spsTesting
   Include this for enabling the Catch2 test framework.
 #]==]
 
+include(spsSBOM)
+sps_get_version(CATCH2_VERSION "3.5.2")
+
 if (BUILD_TESTING)
   include(CTest)
-  find_package(Catch2 3.5.2 QUIET)
+  find_package(Catch2 ${CATCH2_VERSION} QUIET)
   if (Catch2_FOUND)
     message(STATUS "✅ Catch2 found at: ${Catch2_DIR}")
     message(STATUS "   Catch2 version: ${Catch2_VERSION}")
@@ -39,7 +42,7 @@ if (BUILD_TESTING)
     FetchContent_Declare(
       catch2
       GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-      GIT_TAG v3.5.2
+      GIT_TAG v${CATCH2_VERSION}
     )
     FetchContent_MakeAvailable(catch2)
     message(STATUS "✅ Catch2 downloaded via FetchContent")

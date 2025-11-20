@@ -9,6 +9,9 @@ spsTBB
   - Ensures RPATH or DLLs are set correctly for runtime.
 #]==]
 
+include(spsSBOM)
+sps_get_version(TBB_VERSION "2021.13.0")
+
 include(FetchContent)
 
 if(WIN32)
@@ -44,8 +47,7 @@ if(WIN32)
       set(TBB_TEST OFF CACHE BOOL "" FORCE)
       set(TBB_EXAMPLES OFF CACHE BOOL "" FORCE)
       set(TBB_STRICT OFF CACHE BOOL "" FORCE)
-      set(TBB_VERSION "2021.13.0")
-      
+
       FetchContent_Declare(
           oneTBB
           GIT_REPOSITORY https://github.com/oneapi-src/oneTBB.git

@@ -8,7 +8,9 @@ spsEigen
   - Applies patch to disable unnecessary components
 #]==]
 
-set(SPS_EIGEN3_VERSION "3.4.0")
+include(spsSBOM)
+sps_get_version(EIGEN3_VERSION "3.4.0")
+set(SPS_EIGEN3_VERSION "${EIGEN3_VERSION}")
 
 message(STATUS "=== EIGEN3 SEARCH ===")
 
