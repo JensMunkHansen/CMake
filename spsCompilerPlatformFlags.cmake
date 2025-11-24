@@ -14,6 +14,7 @@ if (TARGET build)
   # MSVC or Microsofts Clang version
   if(IS_MSVC_OR_CLANG_CL)
     target_compile_options(build INTERFACE
+      /EHsc  # Enable C++ stack unwinding and assume extern "C" functions never throw
       $<$<CONFIG:Release>:/O2 /GL /fp:fast /Qpar /arch:AVX2>
       $<$<CONFIG:Debug>:/Od /Zi /arch:AVX2>
       $<$<CONFIG:Asan>:/Od /GL /arch:AVX2>
