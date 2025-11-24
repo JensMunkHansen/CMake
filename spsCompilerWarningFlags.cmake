@@ -155,5 +155,8 @@ elseif (SPS_ENABLE_EXTRA_BUILD_WARNINGS)
   _sps_add_clangcl_flag(-Wno-nonportable-system-include-path ${langs})  # Windows include paths
   _sps_add_clangcl_flag(-Wno-sign-conversion ${langs})       # int to size_t conversions
   _sps_add_clangcl_flag(-Wno-unsafe-buffer-usage ${langs})   # Allow raw pointer/array access (essential for SIMD)
+  _sps_add_clangcl_flag(-Wno-shorten-64-to-32 ${langs})      # int64_t to int32_t truncation (intentional)
+  _sps_add_clangcl_flag(-Wno-switch-default ${langs})        # Switch without default case
+  _sps_add_clangcl_flag(-Wno-nan-infinity-disabled ${langs}) # Fast-math mode NaN/infinity
 
 endif ()
