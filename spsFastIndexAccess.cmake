@@ -18,10 +18,15 @@
 # Note: If older ClangCL versions fail, set SPS_SUPPORTS_FAST_INDEX_ACCESS=0
 # or enable SPS_NEEDS_CLANGCL_NO_STRICT_ALIASING=1 for explicit flag.
 #
-# Exports: SPS_SUPPORTS_FAST_INDEX_ACCESS (0 or 1) to parent scope
+# Exports:
+#  - SPS_SUPPORTS_FAST_INDEX_ACCESS (0 or 1)
+#  - SPS_NEEDS_NO_STRICT_ALIASING (0 or 1)
+#  - SPS_NEEDS_CLANGCL_NO_STRICT_ALIASING (0 or 1)
+#  - SPS_SUPPORTS_WUNSAFE_BUFFER_USAGE (0 or 1)
 
 function(sps_check_fast_index_access)
     set(SPS_SUPPORTS_FAST_INDEX_ACCESS 0)
+    set(SPS_SUPPORTS_WUNSAFE_BUFFER_USAGE 0)
 
     if(MSVC)
         # Windows builds: MSVC or ClangCL
@@ -36,6 +41,11 @@ function(sps_check_fast_index_access)
             set(SPS_SUPPORTS_FAST_INDEX_ACCESS 1)
             message(STATUS "FAST_INDEX_ACCESS: Enabled (ClangCL)")
 
+            # ClangCL supports pragma directives for -Wunsafe-buffer-usage even though
+            # check_cxx_compiler_flag doesn't work (uses Microsoft command-line syntax)
+            set(SPS_SUPPORTS_WUNSAFE_BUFFER_USAGE 1)
+            message(STATUS "Enabled -Wunsafe-buffer-usage pragma suppression for ClangCL")
+
             # For older ClangCL versions that fail, uncomment to add explicit flag:
             # set(SPS_NEEDS_CLANGCL_NO_STRICT_ALIASING 1)
             # This will add: /clang:-fno-strict-aliasing
@@ -45,12 +55,18 @@ function(sps_check_fast_index_access)
         # Unix-like platforms: GCC, Clang, etc.
         include(CheckCXXCompilerFlag)
         check_cxx_compiler_flag("-fno-strict-aliasing" HAS_NO_STRICT_ALIASING)
+        check_cxx_compiler_flag("-Wunsafe-buffer-usage" HAS_WUNSAFE_BUFFER_USAGE)
 
         if(HAS_NO_STRICT_ALIASING)
             if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
                 set(SPS_SUPPORTS_FAST_INDEX_ACCESS 1)
                 set(SPS_NEEDS_NO_STRICT_ALIASING 1)
                 message(STATUS "FAST_INDEX_ACCESS: Enabled (Clang with -fno-strict-aliasing)")
+
+                # Clang supports -Wunsafe-buffer-usage pragma suppression
+                if(HAS_WUNSAFE_BUFFER_USAGE)
+                    set(SPS_SUPPORTS_WUNSAFE_BUFFER_USAGE 1)
+                endif()
 
             elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
                 set(SPS_SUPPORTS_FAST_INDEX_ACCESS 1)
@@ -68,6 +84,7 @@ function(sps_check_fast_index_access)
     set(SPS_SUPPORTS_FAST_INDEX_ACCESS ${SPS_SUPPORTS_FAST_INDEX_ACCESS} PARENT_SCOPE)
     set(SPS_NEEDS_NO_STRICT_ALIASING ${SPS_NEEDS_NO_STRICT_ALIASING} PARENT_SCOPE)
     set(SPS_NEEDS_CLANGCL_NO_STRICT_ALIASING ${SPS_NEEDS_CLANGCL_NO_STRICT_ALIASING} PARENT_SCOPE)
+    set(SPS_SUPPORTS_WUNSAFE_BUFFER_USAGE ${SPS_SUPPORTS_WUNSAFE_BUFFER_USAGE} PARENT_SCOPE)
 endfunction()
 
 # Run the check
