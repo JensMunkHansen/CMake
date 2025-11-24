@@ -110,10 +110,8 @@ elseif (SPS_ENABLE_EXTRA_BUILD_WARNINGS)
   _sps_add_flag_all(-Wall ${langs})
   _sps_add_flag_all(-Wextra ${langs})
   _sps_add_flag_all(-Wshadow ${langs})                       # Critical for threading code - catches variable shadowing
-  _sps_add_flag_all(-Wduplicated-cond ${langs})              # Duplicated if conditions
-  _sps_add_flag_all(-Wduplicated-branches ${langs})          # Identical if/else branches
-  _sps_add_flag_all(-Wlogical-op ${langs})                   # Suspicious logical operations
   _sps_add_flag_all(-Wnull-dereference ${langs})             # Potential null dereferences
+  # Note: -Wduplicated-cond, -Wduplicated-branches, -Wlogical-op are GCC-only, removed for ClangCL compatibility
   _sps_add_flag_all(-Wabsolute-value ${langs})               # Clang-only
   _sps_add_flag_all(-Wunreachable-code ${langs})             # Clang-only
   _sps_add_flag_all(-Wunused-but-set-variable ${langs})
