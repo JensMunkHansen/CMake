@@ -64,6 +64,27 @@ endfunction ()
 
 #[==[.rst:
 
+.. cmake:command:: _sps_add_msvc_flag
+
+  Apply warning flags to native MSVC only (not ClangCL).
+  This function allows MSVC-specific flags like /W3 to be applied without affecting ClangCL builds.
+
+#]==]
+function (_sps_add_msvc_flag flag)
+  foreach (lang IN LISTS ARGN)
+    # Only apply to native MSVC (not ClangCL)
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+      if (TARGET build)
+        target_compile_options(build
+          INTERFACE
+          "$<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:${lang}>:${flag}>>")
+      endif ()
+    endif()
+  endforeach ()
+endfunction ()
+
+#[==[.rst:
+
 .. cmake:command:: _sps_add_flag_all
 
   Apply warning flags to all platforms: Unix (GCC/Clang) and Windows (ClangCL).
@@ -124,6 +145,10 @@ elseif (SPS_ENABLE_EXTRA_BUILD_WARNINGS)
   _sps_add_flag_all(-Wsign-compare ${langs})
   _sps_add_flag_all(-Wmissing-field-initializers ${langs})   # Incomplete struct initialization
   # Note: -Wconversion, -Wsign-conversion, and -Wfloat-conversion are too noisy for template/container code
+
+  # === MSVC SPECIFIC: Warning level ===
+  set(langs CXX)
+  _sps_add_msvc_flag(/W3 ${langs})                           # Higher warning level for native MSVC
 
   # === C++ SPECIFIC: Modern practices and type safety ===
   set(langs CXX)
