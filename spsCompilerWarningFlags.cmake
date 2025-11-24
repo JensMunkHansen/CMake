@@ -102,7 +102,7 @@ if (SPS_ENABLE_EXTRA_BUILD_WARNINGS_EVERYTHING)
   _sps_add_flag_all(-Wno-missing-prototypes ${langs})        # Anonymous namespaces provide internal linkage
   _sps_add_flag_all(-Wno-padded ${langs})
   _sps_add_flag_all(-Wno-float-equal ${langs})
-  _sps_add_flag_all(-Wno-extra-semi ${langs})
+  _sps_add_flag_all(-Wno-extra-semi ${langs})                # Semicolons after macros improve IDE behavior
 
 elseif (SPS_ENABLE_EXTRA_BUILD_WARNINGS)
   # === C AND C++: Foundation warnings ===
@@ -154,5 +154,6 @@ elseif (SPS_ENABLE_EXTRA_BUILD_WARNINGS)
   _sps_add_clangcl_flag(-Wno-missing-prototypes ${langs})    # Functions without prototypes
   _sps_add_clangcl_flag(-Wno-nonportable-system-include-path ${langs})  # Windows include paths
   _sps_add_clangcl_flag(-Wno-sign-conversion ${langs})       # int to size_t conversions
+  _sps_add_clangcl_flag(-Wno-unsafe-buffer-usage ${langs})   # Allow raw pointer/array access (essential for SIMD)
 
 endif ()
