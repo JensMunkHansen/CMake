@@ -22,6 +22,14 @@ include(CheckCompilerFlag)
 #]==]
 function (_sps_add_flag flag)
   foreach (lang IN LISTS ARGN)
+    # Skip GCC/Clang-style warning flags on native MSVC (they get misinterpreted)
+    # For example, -Wall becomes /Wall which enables ALL warnings including very noisy ones
+    # ClangCL is handled separately via _sps_add_clangcl_flag()
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC" AND flag MATCHES "^-W")
+      # Skip this flag for native MSVC
+      continue()
+    endif()
+
     check_compiler_flag("${lang}" "${flag}" "sps_have_compiler_flag-${lang}-${flag}")
     if (sps_have_compiler_flag-${lang}-${flag})
       if (TARGET build)
