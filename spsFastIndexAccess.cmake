@@ -28,17 +28,12 @@ function(sps_check_fast_index_access)
             message(STATUS "FAST_INDEX_ACCESS: Enabled (MSVC)")
 
         elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-            # ClangCL: Should work like MSVC (inherits lenient aliasing semantics)
+            # ClangCL: Testing on CI - should work like MSVC (inherits lenient aliasing semantics)
             # If flag is needed, use: /clang:-fno-strict-aliasing (Microsoft-style to pass to Clang)
-            # Disabled pending testing - to enable, change this to 1
-            set(SUPPORTS_FAST_INDEX_ACCESS 0)
-            message(STATUS "FAST_INDEX_ACCESS: Disabled (ClangCL - needs testing on CI)")
+            set(SUPPORTS_FAST_INDEX_ACCESS 1)
+            message(STATUS "FAST_INDEX_ACCESS: Enabled (ClangCL - TESTING on CI)")
 
-            # To test on CI, uncomment these lines:
-            # set(SUPPORTS_FAST_INDEX_ACCESS 1)
-            # message(STATUS "FAST_INDEX_ACCESS: Enabled (ClangCL - assuming MSVC semantics)")
-
-            # If reinterpret_cast fails, try adding this flag:
+            # If tests fail, uncomment this line to add explicit flag:
             # set(NEEDS_CLANGCL_NO_STRICT_ALIASING 1)
         endif()
 
