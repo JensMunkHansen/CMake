@@ -110,8 +110,10 @@ elseif (SPS_ENABLE_EXTRA_BUILD_WARNINGS)
   _sps_add_flag_all(-Wall ${langs})
   _sps_add_flag_all(-Wextra ${langs})
   _sps_add_flag_all(-Wshadow ${langs})                       # Critical for threading code - catches variable shadowing
+  # _sps_add_flag_all(-Wduplicated-cond ${langs})            # GCC-only: ClangCL doesn't support, bypasses check_compiler_flag
+  # _sps_add_flag_all(-Wduplicated-branches ${langs})        # GCC-only: ClangCL doesn't support, bypasses check_compiler_flag
+  # _sps_add_flag_all(-Wlogical-op ${langs})                 # GCC-only: ClangCL doesn't support, bypasses check_compiler_flag
   _sps_add_flag_all(-Wnull-dereference ${langs})             # Potential null dereferences
-  # Note: -Wduplicated-cond, -Wduplicated-branches, -Wlogical-op are GCC-only, removed for ClangCL compatibility
   _sps_add_flag_all(-Wabsolute-value ${langs})               # Clang-only
   _sps_add_flag_all(-Wunreachable-code ${langs})             # Clang-only
   _sps_add_flag_all(-Wunused-but-set-variable ${langs})
@@ -135,10 +137,13 @@ elseif (SPS_ENABLE_EXTRA_BUILD_WARNINGS)
   _sps_add_flag_all(-Wreorder-ctor ${langs})                 # Clang-only
   _sps_add_flag_all(-Wunused-lambda-capture ${langs})        # Clang-only
   _sps_add_flag_all(-Wunused-private-field ${langs})         # Clang-only
+  # _sps_add_flag_all(-Wuseless-cast ${langs})               # GCC-only: Too strict for template/SIMD code with specific-width types
   _sps_add_flag_all(-Wno-extra-semi ${langs})                # Semicolons after macros improve IDE behavior
-  # Note: -Wuseless-cast removed - too strict for template/SIMD code with specific-width types
   _sps_add_clangcl_flag(-Wno-c++98-compat ${langs})          # Suppress C++98 compatibility warnings
+  _sps_add_clangcl_flag(-Wno-c++98-compat-bind-to-temporary-copy ${langs})  # Catch2 compatibility
   _sps_add_clangcl_flag(-Wno-pre-c++17-compat ${langs})      # Suppress pre-C++17 compatibility warnings
   _sps_add_clangcl_flag(-Wno-reserved-macro-identifier ${langs})
+  _sps_add_clangcl_flag(-Wno-undef ${langs})                 # HAS_CXXABI_H and other platform macros
+  _sps_add_clangcl_flag(-Wno-documentation ${langs})         # Pre-existing doxygen issues
 
 endif ()
