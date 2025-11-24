@@ -137,8 +137,8 @@ elseif (SPS_ENABLE_EXTRA_BUILD_WARNINGS)
   _sps_add_flag_all(-Wreorder-ctor ${langs})                 # Clang-only
   _sps_add_flag_all(-Wunused-lambda-capture ${langs})        # Clang-only
   _sps_add_flag_all(-Wunused-private-field ${langs})         # Clang-only
-  _sps_add_flag_all(-Wuseless-cast ${langs})                 # Unnecessary casts
   _sps_add_flag_all(-Wno-extra-semi ${langs})                # Semicolons after macros improve IDE behavior
+  # Note: -Wuseless-cast removed - too strict for template/SIMD code with specific-width types
   _sps_add_clangcl_flag(-Wno-c++98-compat ${langs})          # Suppress C++98 compatibility warnings
   _sps_add_clangcl_flag(-Wno-pre-c++17-compat ${langs})      # Suppress pre-C++17 compatibility warnings
   _sps_add_clangcl_flag(-Wno-reserved-macro-identifier ${langs})
