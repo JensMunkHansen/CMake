@@ -63,6 +63,18 @@ if (TARGET build)
 
   # Set C++ target version
   target_compile_features(build INTERFACE cxx_std_20)
+
+  # === Warnings as Errors ===
+  option(SPS_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" ON)
+  if(SPS_WARNINGS_AS_ERRORS)
+    if(MSVC)
+      target_compile_options(build INTERFACE /WX)
+      message(STATUS "Warnings as errors enabled (MSVC: /WX)")
+    else()
+      target_compile_options(build INTERFACE -Werror)
+      message(STATUS "Warnings as errors enabled (GCC/Clang: -Werror)")
+    endif()
+  endif()
 endif()
 
 function(sps_link_optimization target)
