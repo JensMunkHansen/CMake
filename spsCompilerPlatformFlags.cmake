@@ -17,7 +17,7 @@ if (TARGET build)
       /EHsc  # Enable C++ stack unwinding and assume extern "C" functions never throw
       $<$<CONFIG:Release>:/O2 /GL /fp:fast /Qpar /arch:AVX2>
       $<$<CONFIG:Debug>:/Od /Zi /arch:AVX2>
-      $<$<CONFIG:Asan>:/Od /GL /arch:AVX2>
+      $<$<CONFIG:Asan>:/Od /Zi /arch:AVX2>
       $<$<CONFIG:RelWithDebInfo>:/O1 /Zi /arch:AVX2>
       $<$<CXX_COMPILER_ID:MSVC>:/Zc:__cplusplus>
     )
