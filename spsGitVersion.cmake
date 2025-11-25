@@ -172,8 +172,12 @@ function(sps_extract_version_from_tag)
     message(FATAL_ERROR "extract_version_from_tag: TAG argument is required")
   endif()
 
-  # Strip leading 'v' or non-digit prefix
-  string(REGEX REPLACE "^[^0-9]*" "" _ver "${EVT_TAG}")
+  # Strip leading 'v' or non-digit prefix (only if present)
+  if(EVT_TAG MATCHES "^[^0-9]")
+    string(REGEX REPLACE "^[^0-9]+" "" _ver "${EVT_TAG}")
+  else()
+    set(_ver "${EVT_TAG}")
+  endif()
 
   # Split into components
   string(REPLACE "." ";" _parts "${_ver}")
