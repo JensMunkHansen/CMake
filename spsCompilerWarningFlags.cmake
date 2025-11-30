@@ -47,26 +47,30 @@ function(_sps_add_warning_flag flag)
   set(langs ${ARG_UNPARSED_ARGUMENTS})
 
   foreach (lang IN LISTS langs)
+    # MSVC Compier
     if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-      # Native MSVC: only MSVC-style flags, no checking needed
+      # Native MSVC: only MSVC-style flags, no checking is made (too slow)
       if (NOT ARG_CLANGCL_ONLY AND flag MATCHES "^(/|-wd)")
         target_compile_options(build INTERFACE
           "$<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:${lang}>:${flag}>>")
       endif()
-      # Skip all -W flags for native MSVC
-
     elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND MSVC)
-      # ClangCL: MSVC flags pass through, -W flags use /clang: prefix
+      # ClangCL Microsfts frontend to clang
+      # - MSVC flags are passed through
+      # - -W flags use /clang: prefix (needed)
       if (NOT ARG_CLANGCL_ONLY AND flag MATCHES "^(/|-wd)")
+        # Microsoft flags
         target_compile_options(build INTERFACE
           "$<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:${lang}>:${flag}>>")
       elseif (flag IN_LIST _SPS_CLANGCL_KNOWN_FLAGS)
+        # ClangCL specific flags
         target_compile_options(build INTERFACE
           "$<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:${lang}>:/clang:${flag}>>")
       endif()
 
     else()
-      # Linux GCC/Clang: use check_compiler_flag
+      # Linux GCC/Clang
+      # - use check_compiler_flag (testing existing of flags - slow on windows)
       if (NOT ARG_CLANGCL_ONLY)
         check_compiler_flag("${lang}" "${flag}" "sps_have_flag-${lang}-${flag}")
         if (sps_have_flag-${lang}-${flag})
