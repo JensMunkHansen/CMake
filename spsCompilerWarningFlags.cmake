@@ -1,187 +1,156 @@
 #[==[.rst:
 *********
-spsCompilerWarnings
+spsCompilerWarningFlags
 *********
-  Compiler warnings for cross-platform builds. Appends to the interface target sps_build (if present)
+  Compiler warnings for cross-platform builds. Appends to the interface target 'build' (if present).
+
+  Platforms:
+  - Linux GCC/Clang: Uses check_compiler_flag to validate flags
+  - Windows MSVC: Only MSVC-style flags (/W3, -wd4251), no -W flags
+  - Windows ClangCL: Uses known flag list with /clang: prefix, no runtime checking
 #]==]
-
-# TODO: Enforce synchronization
-
-# This module requires CMake 3.19 features (the `CheckCompilerFlag`
-# module). Just skip it for older CMake versions.
-if (CMAKE_VERSION VERSION_LESS "3.19")
-  return ()
-endif ()
 
 include(CheckCompilerFlag)
+include(CMakeDependentOption)
+include(spsClangCLWarnings)
 
-#[==[.rst:
-
-.. cmake:command:: _sps_add_flag
-
-#]==]
-function (_sps_add_flag flag)
-  foreach (lang IN LISTS ARGN)
-    # Skip GCC/Clang-style warning flags on native MSVC (they get misinterpreted)
-    # For example, -Wall becomes /Wall which enables ALL warnings including very noisy ones
-    # ClangCL is handled separately via _sps_add_clangcl_flag()
-    if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC" AND flag MATCHES "^-W")
-      # Skip this flag for native MSVC
-      continue()
-    endif()
-
-    check_compiler_flag("${lang}" "${flag}" "sps_have_compiler_flag-${lang}-${flag}")
-    if (sps_have_compiler_flag-${lang}-${flag})
-      if (TARGET build)
-	target_compile_options(build
-          INTERFACE
-          "$<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:${lang}>:${flag}>>")
-      endif ()
-    endif()
-  endforeach ()
-endfunction ()
-
-#[==[.rst:
-
-.. cmake:command:: _sps_add_clangcl_flag
-
-  Apply Clang-style warning flags to ClangCL using /clang: prefix.
-  ClangCL supports Clang warning flags but requires Microsoft command-line syntax.
-  This function bypasses check_compiler_flag since /clang: prefix doesn't work with it.
-
-#]==]
-function (_sps_add_clangcl_flag flag)
-  foreach (lang IN LISTS ARGN)
-    if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND MSVC)
-      if (TARGET build)
-        target_compile_options(build
-          INTERFACE
-          "$<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:${lang}>:/clang:${flag}>>")
-      endif ()
-    endif()
-  endforeach ()
-endfunction ()
-
-#[==[.rst:
-
-.. cmake:command:: _sps_add_msvc_flag
-
-  Apply warning flags to native MSVC only (not ClangCL).
-  This function allows MSVC-specific flags like /W3 to be applied without affecting ClangCL builds.
-
-#]==]
-function (_sps_add_msvc_flag flag)
-  foreach (lang IN LISTS ARGN)
-    # Only apply to native MSVC (not ClangCL)
-    if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-      if (TARGET build)
-        target_compile_options(build
-          INTERFACE
-          "$<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:${lang}>:${flag}>>")
-      endif ()
-    endif()
-  endforeach ()
-endfunction ()
-
-#[==[.rst:
-
-.. cmake:command:: _sps_add_flag_all
-
-  Apply warning flags to all platforms: Unix (GCC/Clang) and Windows (ClangCL).
-  This is a convenience wrapper that calls both _sps_add_flag() and _sps_add_clangcl_flag().
-
-#]==]
-function (_sps_add_flag_all flag)
-  _sps_add_flag(${flag} ${ARGN})
-  _sps_add_clangcl_flag(${flag} ${ARGN})
-endfunction ()
-
+# Options
 option(SPS_ENABLE_EXTRA_BUILD_WARNINGS "Enable extra build warnings" ON)
 mark_as_advanced(SPS_ENABLE_EXTRA_BUILD_WARNINGS)
 
 check_compiler_flag(C "-Weverything" sps_have_compiler_flag_Weverything)
-include(CMakeDependentOption)
 cmake_dependent_option(SPS_ENABLE_EXTRA_BUILD_WARNINGS_EVERYTHING "Enable *all* warnings (except known problems)" OFF
   "SPS_ENABLE_EXTRA_BUILD_WARNINGS;sps_have_compiler_flag_Weverything" OFF)
 mark_as_advanced(SPS_ENABLE_EXTRA_BUILD_WARNINGS_EVERYTHING)
 
+#[==[.rst:
+.. cmake:command:: _sps_add_warning_flag
+
+  Unified function for adding compiler warning flags across all platforms.
+
+  Usage: _sps_add_warning_flag(<flag> [CLANGCL_ONLY] <lang>...)
+
+  Options:
+  - CLANGCL_ONLY: Only apply this flag to ClangCL (skip Linux and native MSVC)
+
+  Platform behavior:
+  - MSVC native: Only accepts MSVC-style flags (starting with / or -wd)
+  - ClangCL: MSVC flags pass through, -W flags use /clang: prefix (from known list)
+  - Linux GCC/Clang: Uses check_compiler_flag for validation
+#]==]
+function(_sps_add_warning_flag flag)
+  if (NOT TARGET build)
+    return()
+  endif()
+
+  cmake_parse_arguments(ARG "CLANGCL_ONLY" "" "" ${ARGN})
+  set(langs ${ARG_UNPARSED_ARGUMENTS})
+
+  foreach (lang IN LISTS langs)
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+      # Native MSVC: only MSVC-style flags, no checking needed
+      if (NOT ARG_CLANGCL_ONLY AND flag MATCHES "^(/|-wd)")
+        target_compile_options(build INTERFACE
+          "$<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:${lang}>:${flag}>>")
+      endif()
+      # Skip all -W flags for native MSVC
+
+    elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND MSVC)
+      # ClangCL: MSVC flags pass through, -W flags use /clang: prefix
+      if (NOT ARG_CLANGCL_ONLY AND flag MATCHES "^(/|-wd)")
+        target_compile_options(build INTERFACE
+          "$<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:${lang}>:${flag}>>")
+      elseif (flag IN_LIST _SPS_CLANGCL_KNOWN_FLAGS)
+        target_compile_options(build INTERFACE
+          "$<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:${lang}>:/clang:${flag}>>")
+      endif()
+
+    else()
+      # Linux GCC/Clang: use check_compiler_flag
+      if (NOT ARG_CLANGCL_ONLY)
+        check_compiler_flag("${lang}" "${flag}" "sps_have_flag-${lang}-${flag}")
+        if (sps_have_flag-${lang}-${flag})
+          target_compile_options(build INTERFACE
+            "$<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:${lang}>:${flag}>>")
+        endif()
+      endif()
+    endif()
+  endforeach()
+endfunction()
+
 # MSVC: Disable warning about `dll-interface` of inherited classes
-_sps_add_flag(-wd4251 CXX)
+_sps_add_warning_flag(-wd4251 CXX)
 
 if (SPS_ENABLE_EXTRA_BUILD_WARNINGS_EVERYTHING)
   set(langs C CXX)
-  _sps_add_flag_all(-Weverything ${langs})
+  _sps_add_warning_flag(-Weverything ${langs})
 
-  # Instead of enabling warnings, this mode *disables* warnings.
-  _sps_add_flag_all(-Weverything ${langs})
-  _sps_add_flag_all(-Wno-c++98-compat-pedantic ${langs})
-  _sps_add_flag_all(-Wno-c++98-compat ${langs})
-  _sps_add_flag_all(-Wno-pre-c++17-compat ${langs})
-  _sps_add_flag_all(-Wno-reserved-macro-identifier ${langs})
-  _sps_add_flag_all(-Wno-reserved-identifier ${langs})       # Allow __ prefixed identifiers in macros
-  _sps_add_flag_all(-Wno-unsafe-buffer-usage ${langs})       # Allow raw pointer/array access (essential for SIMD)
-  _sps_add_flag_all(-Wno-missing-prototypes ${langs})        # Anonymous namespaces provide internal linkage
-  _sps_add_flag_all(-Wno-padded ${langs})
-  _sps_add_flag_all(-Wno-float-equal ${langs})
-  _sps_add_flag_all(-Wno-extra-semi ${langs})                # Semicolons after macros improve IDE behavior
+  # Suppressions for -Weverything mode
+  _sps_add_warning_flag(-Wno-c++98-compat-pedantic ${langs})
+  _sps_add_warning_flag(-Wno-c++98-compat ${langs})
+  _sps_add_warning_flag(-Wno-pre-c++17-compat ${langs})
+  _sps_add_warning_flag(-Wno-reserved-macro-identifier ${langs})
+  _sps_add_warning_flag(-Wno-reserved-identifier ${langs})
+  _sps_add_warning_flag(-Wno-unsafe-buffer-usage ${langs})
+  _sps_add_warning_flag(-Wno-missing-prototypes ${langs})
+  _sps_add_warning_flag(-Wno-padded ${langs})
+  _sps_add_warning_flag(-Wno-float-equal ${langs})
+  _sps_add_warning_flag(-Wno-extra-semi ${langs})
 
 elseif (SPS_ENABLE_EXTRA_BUILD_WARNINGS)
   # === C AND C++: Foundation warnings ===
   set(langs C CXX)
-  _sps_add_flag_all(-Wall ${langs})
-  _sps_add_flag_all(-Wextra ${langs})
-  _sps_add_flag_all(-Wshadow ${langs})                       # Critical for threading code - catches variable shadowing
-  # _sps_add_flag_all(-Wduplicated-cond ${langs})            # GCC-only: ClangCL doesn't support, bypasses check_compiler_flag
-  # _sps_add_flag_all(-Wduplicated-branches ${langs})        # GCC-only: ClangCL doesn't support, bypasses check_compiler_flag
-  # _sps_add_flag_all(-Wlogical-op ${langs})                 # GCC-only: ClangCL doesn't support, bypasses check_compiler_flag
-  _sps_add_flag_all(-Wnull-dereference ${langs})             # Potential null dereferences
-  _sps_add_flag_all(-Wabsolute-value ${langs})               # Clang-only
-  _sps_add_flag_all(-Wunreachable-code ${langs})             # Clang-only
-  _sps_add_flag_all(-Wunused-but-set-variable ${langs})
-  _sps_add_flag_all(-Wunused-function ${langs})
-  _sps_add_flag_all(-Wunused-local-typedef ${langs})         # Clang-only
-  _sps_add_flag_all(-Wunused-parameter ${langs})
-  _sps_add_flag_all(-Wunused-variable ${langs})
-  _sps_add_flag_all(-Wsign-compare ${langs})
-  _sps_add_flag_all(-Wmissing-field-initializers ${langs})   # Incomplete struct initialization
-  # Note: -Wconversion, -Wsign-conversion, and -Wfloat-conversion are too noisy for template/container code
+  _sps_add_warning_flag(-Wall ${langs})
+  _sps_add_warning_flag(-Wextra ${langs})
+  _sps_add_warning_flag(-Wshadow ${langs})
+  _sps_add_warning_flag(-Wnull-dereference ${langs})
+  _sps_add_warning_flag(-Wabsolute-value ${langs})
+  _sps_add_warning_flag(-Wunreachable-code ${langs})
+  _sps_add_warning_flag(-Wunused-but-set-variable ${langs})
+  _sps_add_warning_flag(-Wunused-function ${langs})
+  _sps_add_warning_flag(-Wunused-local-typedef ${langs})
+  _sps_add_warning_flag(-Wunused-parameter ${langs})
+  _sps_add_warning_flag(-Wunused-variable ${langs})
+  _sps_add_warning_flag(-Wsign-compare ${langs})
+  _sps_add_warning_flag(-Wmissing-field-initializers ${langs})
 
-  # === MSVC SPECIFIC: Warning level ===
+  # === MSVC: Warning level ===
+  _sps_add_warning_flag(/W3 CXX)
+
+  # === C++: Modern practices and type safety ===
   set(langs CXX)
-  _sps_add_msvc_flag(/W3 ${langs})                           # Higher warning level for native MSVC
+  _sps_add_warning_flag(-Wold-style-cast ${langs})
+  _sps_add_warning_flag(-Woverloaded-virtual ${langs})
+  _sps_add_warning_flag(-Wsuggest-override ${langs})
+  _sps_add_warning_flag(-Winconsistent-missing-destructor-override ${langs})
+  _sps_add_warning_flag(-Wnon-virtual-dtor ${langs})
+  _sps_add_warning_flag(-Wpessimizing-move ${langs})
+  _sps_add_warning_flag(-Wrange-loop-bind-reference ${langs})
+  _sps_add_warning_flag(-Wreorder-ctor ${langs})
+  _sps_add_warning_flag(-Wunused-lambda-capture ${langs})
+  _sps_add_warning_flag(-Wunused-private-field ${langs})
 
-  # === C++ SPECIFIC: Modern practices and type safety ===
-  set(langs CXX)
-  _sps_add_flag_all(-Wold-style-cast ${langs})               # Enforce C++ style casts
-  _sps_add_flag_all(-Woverloaded-virtual ${langs})           # Virtual function hiding
-  _sps_add_flag_all(-Wsuggest-override ${langs})             # Missing override keywords
-  _sps_add_flag_all(-Winconsistent-missing-destructor-override ${langs})  # Clang-only
-  _sps_add_flag_all(-Wnon-virtual-dtor ${langs})
-  _sps_add_flag_all(-Wpessimizing-move ${langs})             # Clang-only
-  _sps_add_flag_all(-Wrange-loop-bind-reference ${langs})    # Clang-only
-  _sps_add_flag_all(-Wreorder-ctor ${langs})                 # Clang-only
-  _sps_add_flag_all(-Wunused-lambda-capture ${langs})        # Clang-only
-  _sps_add_flag_all(-Wunused-private-field ${langs})         # Clang-only
-  # _sps_add_flag_all(-Wuseless-cast ${langs})               # GCC-only: Too strict for template/SIMD code with specific-width types
-  _sps_add_flag_all(-Wno-extra-semi ${langs})                # Semicolons after macros improve IDE behavior
-  # ClangCL-specific suppressions for compatibility warnings
-  _sps_add_clangcl_flag(-Wno-c++98-compat-pedantic ${langs}) # Suppress pedantic C++98 compatibility
-  _sps_add_clangcl_flag(-Wno-c++98-compat ${langs})          # Suppress C++98 compatibility warnings
-  _sps_add_clangcl_flag(-Wno-c++98-c++11-compat-binary-literal ${langs})  # Binary literals (0b...)
-  _sps_add_clangcl_flag(-Wno-c++98-compat-bind-to-temporary-copy ${langs})  # Catch2 compatibility
-  _sps_add_clangcl_flag(-Wno-pre-c++17-compat ${langs})      # Suppress pre-C++17 compatibility warnings
-  _sps_add_clangcl_flag(-Wno-reserved-macro-identifier ${langs})
-  _sps_add_clangcl_flag(-Wno-reserved-identifier ${langs})   # __prefixed identifiers
-  _sps_add_clangcl_flag(-Wno-undef ${langs})                 # HAS_CXXABI_H and other platform macros
-  _sps_add_clangcl_flag(-Wno-documentation ${langs})         # Pre-existing doxygen issues
-  _sps_add_clangcl_flag(-Wno-float-equal ${langs})           # Float comparison with ==
-  _sps_add_clangcl_flag(-Wno-header-hygiene ${langs})        # using namespace in headers
-  _sps_add_clangcl_flag(-Wno-missing-prototypes ${langs})    # Functions without prototypes
-  _sps_add_clangcl_flag(-Wno-nonportable-system-include-path ${langs})  # Windows include paths
-  _sps_add_clangcl_flag(-Wno-sign-conversion ${langs})       # int to size_t conversions
-  _sps_add_clangcl_flag(-Wno-unsafe-buffer-usage ${langs})   # Allow raw pointer/array access (essential for SIMD)
-  _sps_add_clangcl_flag(-Wno-shorten-64-to-32 ${langs})      # int64_t to int32_t truncation (intentional)
-  _sps_add_clangcl_flag(-Wno-switch-default ${langs})        # Switch without default case
-  _sps_add_clangcl_flag(-Wno-nan-infinity-disabled ${langs}) # Fast-math mode NaN/infinity
+  # === Suppressions ===
+  _sps_add_warning_flag(-Wno-extra-semi ${langs})
 
-endif ()
+  # === ClangCL-only suppressions ===
+  _sps_add_warning_flag(-Wno-c++98-compat-pedantic CLANGCL_ONLY ${langs})
+  _sps_add_warning_flag(-Wno-c++98-compat CLANGCL_ONLY ${langs})
+  _sps_add_warning_flag(-Wno-c++98-c++11-compat-binary-literal CLANGCL_ONLY ${langs})
+  _sps_add_warning_flag(-Wno-c++98-compat-bind-to-temporary-copy CLANGCL_ONLY ${langs})
+  _sps_add_warning_flag(-Wno-pre-c++17-compat CLANGCL_ONLY ${langs})
+  _sps_add_warning_flag(-Wno-reserved-macro-identifier CLANGCL_ONLY ${langs})
+  _sps_add_warning_flag(-Wno-reserved-identifier CLANGCL_ONLY ${langs})
+  _sps_add_warning_flag(-Wno-undef CLANGCL_ONLY ${langs})
+  _sps_add_warning_flag(-Wno-documentation CLANGCL_ONLY ${langs})
+  _sps_add_warning_flag(-Wno-float-equal CLANGCL_ONLY ${langs})
+  _sps_add_warning_flag(-Wno-header-hygiene CLANGCL_ONLY ${langs})
+  _sps_add_warning_flag(-Wno-missing-prototypes CLANGCL_ONLY ${langs})
+  _sps_add_warning_flag(-Wno-nonportable-system-include-path CLANGCL_ONLY ${langs})
+  _sps_add_warning_flag(-Wno-sign-conversion CLANGCL_ONLY ${langs})
+  _sps_add_warning_flag(-Wno-unsafe-buffer-usage CLANGCL_ONLY ${langs})
+  _sps_add_warning_flag(-Wno-shorten-64-to-32 CLANGCL_ONLY ${langs})
+  _sps_add_warning_flag(-Wno-switch-default CLANGCL_ONLY ${langs})
+  _sps_add_warning_flag(-Wno-nan-infinity-disabled CLANGCL_ONLY ${langs})
+
+endif()
