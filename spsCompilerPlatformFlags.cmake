@@ -77,7 +77,7 @@ function(sps_link_optimization target)
   )  
   target_compile_options(${target} PRIVATE
     $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Release>>:
-    -flto                                                # Link-time optimization
+    -flto=auto                                           # Link-time optimization (auto-parallelize)
     -fuse-linker-plugin>                                 # Compiler and linker communicated more efficenly
   )
   if (NOT MSVC)
