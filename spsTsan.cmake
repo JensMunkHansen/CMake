@@ -42,6 +42,12 @@ if(IS_WSL)
   return()
 endif()
 
+# ThreadSanitizer is only supported on Clang and GCC (not MSVC/ClangCL)
+if(NOT (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU" AND NOT MSVC))
+  message(STATUS "ThreadSanitizer (TSAN) not supported with ${CMAKE_CXX_COMPILER_ID} on this platform")
+  return()
+endif()
+
 get_property(isMultiConfig GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
 
 if(isMultiConfig)
@@ -57,38 +63,33 @@ else()
   endif()
 endif()
 
-# ThreadSanitizer is only supported on Clang and GCC (not MSVC)
-if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU" AND NOT MSVC)
-  set(_ts_sanitize_flags "thread")
-  set(_ts_sanitize_args "-fno-omit-frame-pointer -fsanitize=${_ts_sanitize_flags}")
-  set(_ts_linker_args "${_ts_sanitize_args}")
+set(_ts_sanitize_flags "thread")
+set(_ts_sanitize_args "-fno-omit-frame-pointer -fsanitize=${_ts_sanitize_flags}")
+set(_ts_linker_args "${_ts_sanitize_args}")
 
-  # Define config-specific flags
-  set(CMAKE_C_FLAGS_TSAN
-    "${CMAKE_C_FLAGS_DEBUG} ${_ts_sanitize_args}" CACHE STRING
-    "Flags used by the C compiler for Tsan build type or configuration." FORCE)
+# Define config-specific flags
+set(CMAKE_C_FLAGS_TSAN
+  "${CMAKE_C_FLAGS_DEBUG} ${_ts_sanitize_args}" CACHE STRING
+  "Flags used by the C compiler for Tsan build type or configuration." FORCE)
 
-  set(CMAKE_CXX_FLAGS_TSAN
-    "${CMAKE_CXX_FLAGS_DEBUG} ${_ts_sanitize_args}" CACHE STRING
-    "Flags used by the C++ compiler for Tsan build type or configuration." FORCE)
+set(CMAKE_CXX_FLAGS_TSAN
+  "${CMAKE_CXX_FLAGS_DEBUG} ${_ts_sanitize_args}" CACHE STRING
+  "Flags used by the C++ compiler for Tsan build type or configuration." FORCE)
 
-  set(CMAKE_EXE_LINKER_FLAGS_TSAN
-    "${CMAKE_SHARED_LINKER_FLAGS_DEBUG} ${_ts_linker_args}" CACHE STRING
-    "Linker flags to be used to create executables for Tsan build type." FORCE)
+set(CMAKE_EXE_LINKER_FLAGS_TSAN
+  "${CMAKE_SHARED_LINKER_FLAGS_DEBUG} ${_ts_linker_args}" CACHE STRING
+  "Linker flags to be used to create executables for Tsan build type." FORCE)
 
-  set(CMAKE_SHARED_LINKER_FLAGS_TSAN
-    "${CMAKE_SHARED_LINKER_FLAGS_DEBUG} ${_ts_linker_args}" CACHE STRING
-    "Linker flags to be used to create shared libraries for Tsan build type." FORCE)
+set(CMAKE_SHARED_LINKER_FLAGS_TSAN
+  "${CMAKE_SHARED_LINKER_FLAGS_DEBUG} ${_ts_linker_args}" CACHE STRING
+  "Linker flags to be used to create shared libraries for Tsan build type." FORCE)
 
-  # For single-config generators, apply the flags directly
-  if(NOT isMultiConfig AND CMAKE_BUILD_TYPE STREQUAL "Tsan")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS_TSAN}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_TSAN}")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS_TSAN}")
-    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS_TSAN}")
-  endif()
-
-  message(STATUS "ThreadSanitizer (TSAN) support enabled")
-else()
-  message(WARNING "ThreadSanitizer (TSAN) is not supported with this compiler (${CMAKE_CXX_COMPILER_ID}). Only Clang and GCC on native Linux are supported.")
+# For single-config generators, apply the flags directly
+if(NOT isMultiConfig AND CMAKE_BUILD_TYPE STREQUAL "Tsan")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS_TSAN}")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_TSAN}")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS_TSAN}")
+  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS_TSAN}")
 endif()
+
+message(STATUS "ThreadSanitizer (TSAN) support enabled")
