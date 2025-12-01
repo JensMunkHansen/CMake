@@ -158,3 +158,17 @@ elseif (SPS_ENABLE_EXTRA_BUILD_WARNINGS)
   _sps_add_warning_flag(-Wno-nan-infinity-disabled CLANGCL_ONLY ${langs})
 
 endif()
+
+if (TARGET build)
+  # === Warnings as Errors ===
+  option(SPS_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" ON)
+  if(SPS_WARNINGS_AS_ERRORS AND TARGET build)
+    if(MSVC)
+      target_compile_options(build INTERFACE /WX)
+      message(STATUS "Warnings as errors enabled (MSVC: /WX)")
+    else()
+      target_compile_options(build INTERFACE -Werror)
+      message(STATUS "Warnings as errors enabled (GCC/Clang: -Werror)")
+    endif()
+  endif()
+endif()
