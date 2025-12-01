@@ -37,6 +37,9 @@ if (BUILD_TESTING)
     set(SPS_BACKUP_BUILD_TESTING ${BUILD_TESTING})
     set(BUILD_TESTING OFF CACHE BOOL "Build tests (disabled for dependencies)" FORCE)
 
+    # Backup CMAKE_CXX_FLAGS to prevent Catch2 from modifying warning levels
+    set(SPS_BACKUP_CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+
     include(FetchContent)
 
     FetchContent_Declare(
@@ -46,6 +49,9 @@ if (BUILD_TESTING)
     )
     FetchContent_MakeAvailable(catch2)
     message(STATUS "✅ Catch2 downloaded via FetchContent")
+
+    # Restore original CMAKE_CXX_FLAGS (Catch2 may have added /W4)
+    set(CMAKE_CXX_FLAGS "${SPS_BACKUP_CMAKE_CXX_FLAGS}")
 
     # Restore original BUILD_TESTING value
     set(BUILD_TESTING ${SPS_BACKUP_BUILD_TESTING} CACHE BOOL "Build tests" FORCE)
