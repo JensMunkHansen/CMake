@@ -13,16 +13,24 @@ if (TARGET build)
 
   # MSVC or Microsofts Clang version
   if(IS_MSVC_OR_CLANG_CL)
+    # Architecture flags - propagate to consumers (needed for SIMD headers)
+    target_compile_options(build INTERFACE /arch:AVX2)
+
+    # Build-specific flags - do NOT propagate to consumers
     target_compile_options(build INTERFACE
-      /EHsc  # Enable C++ stack unwinding and assume extern "C" functions never throw
-      $<$<CONFIG:Release>:/O2 /GL /fp:fast /Qpar /arch:AVX2>
-      $<$<CONFIG:Debug>:/Od /Zi /arch:AVX2>
-      $<$<CONFIG:Asan>:/Od /Zi /arch:AVX2>
-      $<$<CONFIG:RelWithDebInfo>:/O1 /Zi /arch:AVX2>
+      $<BUILD_INTERFACE:/EHsc>  # Enable C++ stack unwinding and assume extern "C" functions never throw
+      $<BUILD_INTERFACE:$<$<CONFIG:Release>:/O2 /GL /fp:fast /Qpar>>
+      $<BUILD_INTERFACE:$<$<CONFIG:Debug>:/Od /Zi>>
+      $<BUILD_INTERFACE:$<$<CONFIG:Asan>:/Od /Zi>>
+      $<BUILD_INTERFACE:$<$<CONFIG:RelWithDebInfo>:/O1 /Zi>>
+    )
+
+    # Compatibility flags - propagate to consumers (needed for correct __cplusplus value)
+    target_compile_options(build INTERFACE
       $<$<CXX_COMPILER_ID:MSVC>:/Zc:__cplusplus>
     )
 
-    # Linker flags needed by Microsoft
+    # Linker flags needed by Microsoft (build-specific)
     set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} /LTCG")    
   else()
     # Determine architecture flags based on SPS_DISABLE_AVX512 option
@@ -35,29 +43,40 @@ if (TARGET build)
       set(_ARCH_FLAGS_CLANG "-march=native")
     endif()
     
-    # Linux build
-    target_compile_options(build
-      INTERFACE
+    # Architecture flags - propagate to consumers (needed for SIMD headers)
+    target_compile_options(build INTERFACE
+      $<$<CXX_COMPILER_ID:GNU>:${_ARCH_FLAGS}>
+      $<$<CXX_COMPILER_ID:Clang>:${_ARCH_FLAGS_CLANG}>
+    )
+
+    # Build-specific flags - do NOT propagate to consumers
+    target_compile_options(build INTERFACE
       # GNU flags
-      $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Release>>:-O3 ${_ARCH_FLAGS} -ffast-math>
-      $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Debug>>:-O0 -g ${_ARCH_FLAGS}>
-      $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:RelWithDebInfo>>:-Og -g ${_ARCH_FLAGS}>
-      $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Asan>>:-O3 ${_ARCH_FLAGS}>
-      
-      # Clang flags for Release
-      $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Release>>:-O3 ${_ARCH_FLAGS_CLANG} -ffast-math>
-      $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Debug>>:-O0 -g ${_ARCH_FLAGS_CLANG}>
-      $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:RelWithDebInfo>>: -Og ${_ARCH_FLAGS_CLANG} -g>
-      $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Asan>>:-O3 ${_ARCH_FLAGS_CLANG}>
+      $<BUILD_INTERFACE:$<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Release>>:-O3 -ffast-math>>
+      $<BUILD_INTERFACE:$<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Debug>>:-O0 -g>>
+      $<BUILD_INTERFACE:$<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:RelWithDebInfo>>:-Og -g>>
+      $<BUILD_INTERFACE:$<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Asan>>:-O3>>
+
+      # Clang flags
+      $<BUILD_INTERFACE:$<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Release>>:-O3 -ffast-math>>
+      $<BUILD_INTERFACE:$<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Debug>>:-O0 -g>>
+      $<BUILD_INTERFACE:$<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:RelWithDebInfo>>:-Og -g>>
+      $<BUILD_INTERFACE:$<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Asan>>:-O3>>
     )
     
-    # Add explicit AVX-512 disable flags if requested
+    # Add explicit AVX-512 disable flags if requested (GCC/Clang only, not MSVC)
     if(SPS_DISABLE_AVX512)
+      # Architecture flags - propagate to consumers
       target_compile_options(build INTERFACE
-        -mno-avx512f -mno-avx512dq -mno-avx512bw -mno-avx512vl -mno-avx512cd
-        # Use DWARF-4 debug format for better Valgrind compatibility
-        $<$<CONFIG:Debug>:-gdwarf-4>
-        $<$<CONFIG:RelWithDebInfo>:-gdwarf-4>
+        $<$<CXX_COMPILER_ID:GNU>:-mno-avx512f -mno-avx512dq -mno-avx512bw -mno-avx512vl -mno-avx512cd>
+        $<$<CXX_COMPILER_ID:Clang>:-mno-avx512f -mno-avx512dq -mno-avx512bw -mno-avx512vl -mno-avx512cd>
+      )
+      # Debug format flags - build-specific, do NOT propagate
+      target_compile_options(build INTERFACE
+        $<BUILD_INTERFACE:$<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Debug>>:-gdwarf-4>>
+        $<BUILD_INTERFACE:$<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:RelWithDebInfo>>:-gdwarf-4>>
+        $<BUILD_INTERFACE:$<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Debug>>:-gdwarf-4>>
+        $<BUILD_INTERFACE:$<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:RelWithDebInfo>>:-gdwarf-4>>
       )
     endif()      
   endif()
