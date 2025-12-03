@@ -81,8 +81,11 @@ else()
     endif()
 
     if(TBB_FOUND)
-      set(USE_INSTALLED_TBB TRUE)      
-      message(STATUS "✅ System TBB found at: ${TBB_LIBRARIES}")
+      set(USE_INSTALLED_TBB TRUE)
+      message(STATUS "✅ System TBB found")
+      message(STATUS "   TBB_DIR: ${TBB_DIR}")
+      message(STATUS "   TBB_INCLUDE_DIRS: ${TBB_INCLUDE_DIRS}")
+      message(STATUS "   TBB_LIBRARIES: ${TBB_LIBRARIES}")
       # Export canonical targets
       foreach(tgt tbb tbbmalloc tbbmalloc_proxy)
         if(NOT TARGET TBB::${tgt} AND TARGET ${tgt})
