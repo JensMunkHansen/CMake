@@ -161,13 +161,14 @@ endif()
 
 if (TARGET build)
   # === Warnings as Errors ===
+  # Only apply during build of this project, not when consumed by downstream projects
   option(SPS_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" ON)
   if(SPS_WARNINGS_AS_ERRORS AND TARGET build)
     if(MSVC)
-      target_compile_options(build INTERFACE /WX)
+      target_compile_options(build INTERFACE $<BUILD_INTERFACE:/WX>)
       message(STATUS "Warnings as errors enabled (MSVC: /WX)")
     else()
-      target_compile_options(build INTERFACE -Werror)
+      target_compile_options(build INTERFACE $<BUILD_INTERFACE:-Werror>)
       message(STATUS "Warnings as errors enabled (GCC/Clang: -Werror)")
     endif()
   endif()
