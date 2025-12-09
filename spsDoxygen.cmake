@@ -106,7 +106,7 @@ OUTPUT_DIRECTORY       = ${DOXY_OUTPUT_DIR}
 #---------------------------------------------------------------------------
 INPUT                  = ${DOXY_INPUT_STR}
 RECURSIVE              = YES
-FILE_PATTERNS          = *.h *.hpp *.cpp *.c *.md
+FILE_PATTERNS          = *.h *.hpp *.cpp *.c *.md *.py
 EXCLUDE_PATTERNS       = ${DOXY_EXCLUDE_STR}
 USE_MDFILE_AS_MAINPAGE = ${PROJECT_SOURCE_DIR}/README.md
 
