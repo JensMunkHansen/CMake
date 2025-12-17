@@ -13,6 +13,9 @@ if (TARGET build)
 
   # MSVC or Microsofts Clang version
   if(IS_MSVC_OR_CLANG_CL)
+    # Prevent Windows.h min/max macros from conflicting with std::min/max
+    target_compile_definitions(build INTERFACE NOMINMAX)
+
     # Architecture flags - propagate to consumers (needed for SIMD headers)
     target_compile_options(build INTERFACE /arch:AVX2)
 
@@ -100,9 +103,23 @@ function(sps_link_optimization target)
     -fuse-linker-plugin>                                 # Compiler and linker communicated more efficenly
   )
   if (NOT MSVC)
-    target_link_options(${target} PRIVATE
-      # This requires at least Clang17++
-      $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Release>>:-fuse-ld=lld -flto>) # Can tigger floating point NaN errors.
+    # Check if LLD is available for Clang
+    if(NOT DEFINED SPS_HAS_LLD)
+      find_program(SPS_LLD_EXECUTABLE NAMES lld ld.lld)
+      if(SPS_LLD_EXECUTABLE)
+        set(SPS_HAS_LLD TRUE CACHE INTERNAL "LLD linker available")
+      else()
+        set(SPS_HAS_LLD FALSE CACHE INTERNAL "LLD linker not available")
+      endif()
+    endif()
+
+    if(SPS_HAS_LLD)
+      target_link_options(${target} PRIVATE
+        $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Release>>:-fuse-ld=lld -flto>)
+    else()
+      target_link_options(${target} PRIVATE
+        $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Release>>:-flto>)
+    endif()
   else()
     target_link_options(${target} PRIVATE
       $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:Release>>:/LTCG>)
