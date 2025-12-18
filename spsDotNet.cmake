@@ -216,8 +216,15 @@ file(GET_RUNTIME_DEPENDENCIES
   RESOLVED_DEPENDENCIES_VAR RESOLVED_DEPS
   UNRESOLVED_DEPENDENCIES_VAR UNRESOLVED_DEPS
   POST_EXCLUDE_REGEXES
+    # Linux system libraries
     \"^/lib/\" \"^/usr/lib\" \"^/lib64/\" \"^/usr/lib64/\"
-    \"^C:/Windows/\" \"^api-ms-\" \"^ext-ms-\"
+    # Windows system libraries (handle both / and \\ path separators)
+    \"[Cc]:[/\\\\][Ww][Ii][Nn][Dd][Oo][Ww][Ss][/\\\\]\"
+    \"^api-ms-\" \"^ext-ms-\"
+    # Common Windows system DLLs by name
+    \"kernel32\\\\.dll$\" \"ntdll\\\\.dll$\" \"user32\\\\.dll$\" \"gdi32\\\\.dll$\"
+    \"advapi32\\\\.dll$\" \"shell32\\\\.dll$\" \"ole32\\\\.dll$\" \"oleaut32\\\\.dll$\"
+    \"msvcrt\\\\.dll$\" \"ws2_32\\\\.dll$\" \"crypt32\\\\.dll$\" \"secur32\\\\.dll$\"
 )
 
 # Copy main library and create P/Invoke symlink
@@ -239,6 +246,17 @@ if(NOT \"\${LIB_NAME}\" STREQUAL \"\${PINVOKE_FILE}\")
   message(STATUS \"Copied: \${LIB_NAME} -> \${PINVOKE_FILE}\")
 else()
   message(STATUS \"Copied: \${LIB_NAME}\")
+endif()
+
+# Copy PDB file if it exists (Windows only)
+if(CMAKE_HOST_SYSTEM_NAME STREQUAL \"Windows\")
+  get_filename_component(LIB_DIR \${NATIVE_LIB} DIRECTORY)
+  get_filename_component(LIB_NAME_WE \${NATIVE_LIB} NAME_WE)
+  set(PDB_FILE \"\${LIB_DIR}/\${LIB_NAME_WE}.pdb\")
+  if(EXISTS \${PDB_FILE})
+    file(COPY \${PDB_FILE} DESTINATION \${OUTPUT_DIR})
+    message(STATUS \"Copied PDB: \${LIB_NAME_WE}.pdb\")
+  endif()
 endif()
 
 # Copy resolved dependencies (project libraries only)
