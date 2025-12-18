@@ -468,3 +468,116 @@ function(sps_add_dotnet_test)
   message(STATUS "Configured .NET test: ${TEST_NAME}")
   message(STATUS "  Targets: ${TEST_NAME}_build, ${TEST_NAME}_run")
 endfunction()
+
+#[==[
+  sps_add_dotnet_executable - Create a .NET console executable
+
+  Creates a .NET console application that references a local NuGet package.
+  Unlike sps_add_dotnet_test, this does not register with CTest and supports
+  additional options like unsafe code.
+
+  Arguments:
+    NAME         - Name of the executable project (required)
+    SOURCES      - List of C# source files (required)
+    PACKAGE_REF  - Name of NuGet package to reference (required)
+    DEPENDS      - CMake target dependencies (typically ${PACKAGE_REF}_dotnet_pack)
+    TFM          - Target Framework Moniker (default: net8.0)
+    ALLOW_UNSAFE - Enable unsafe code blocks (default: OFF)
+
+  Creates targets:
+    ${NAME}_create - Create project and add package reference
+    ${NAME}_build  - Build the executable
+    ${NAME}_run    - Run the executable
+
+  Example:
+    sps_add_dotnet_executable(
+      NAME GridSearchBenchmark
+      SOURCES GridSearchBenchmark.cs
+      PACKAGE_REF GridSearch
+      DEPENDS GridSearch_dotnet_pack
+      ALLOW_UNSAFE
+    )
+#]==]
+function(sps_add_dotnet_executable)
+  cmake_parse_arguments(EXE
+    "ALLOW_UNSAFE"
+    "NAME;PACKAGE_REF;TFM"
+    "SOURCES;DEPENDS"
+    ${ARGN}
+  )
+
+  # Validate required arguments
+  if(NOT EXE_NAME)
+    message(FATAL_ERROR "sps_add_dotnet_executable: NAME is required")
+  endif()
+  if(NOT EXE_SOURCES)
+    message(FATAL_ERROR "sps_add_dotnet_executable: SOURCES is required")
+  endif()
+  if(NOT EXE_PACKAGE_REF)
+    message(FATAL_ERROR "sps_add_dotnet_executable: PACKAGE_REF is required")
+  endif()
+
+  # Set defaults
+  if(NOT EXE_TFM)
+    set(EXE_TFM "net8.0")
+  endif()
+
+  # Ensure dotnet is available
+  if(NOT SPS_DOTNET_FOUND)
+    sps_find_dotnet()
+    if(NOT SPS_DOTNET_FOUND)
+      message(WARNING "sps_add_dotnet_executable: .NET not found, skipping ${EXE_NAME}")
+      return()
+    endif()
+  endif()
+
+  # Output aligned with CMake multi-config structure
+  set(_CONFIG_DIR "${CMAKE_BINARY_DIR}/$<CONFIG>")
+  set(_EXE_DIR "${_CONFIG_DIR}/dotnet-src/executables/${EXE_NAME}")
+  set(_PACKAGES_DIR "${_CONFIG_DIR}/packages")
+
+  # Build options
+  set(_BUILD_OPTIONS "")
+  if(EXE_ALLOW_UNSAFE)
+    set(_BUILD_OPTIONS "-p:AllowUnsafeBlocks=true")
+  endif()
+
+  # Get first source file for Program.cs
+  list(GET EXE_SOURCES 0 _MAIN_SOURCE)
+  get_filename_component(_MAIN_SOURCE_ABS "${_MAIN_SOURCE}" ABSOLUTE
+    BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+
+  # Target to create and configure executable project
+  add_custom_target(${EXE_NAME}_create
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${_EXE_DIR}"
+    COMMAND ${SPS_DOTNET_EXECUTABLE} new console
+      --force
+      --framework ${EXE_TFM}
+      --output "${_EXE_DIR}"
+    COMMAND ${CMAKE_COMMAND} -E copy
+      "${_MAIN_SOURCE_ABS}"
+      "${_EXE_DIR}/Program.cs"
+    COMMAND ${SPS_DOTNET_EXECUTABLE} add "${_EXE_DIR}" package
+      ${EXE_PACKAGE_REF}
+      --source "${_PACKAGES_DIR}"
+    DEPENDS ${EXE_DEPENDS}
+    COMMENT "Creating executable project ${EXE_NAME}"
+  )
+
+  # Target to build executable
+  add_custom_target(${EXE_NAME}_build ALL
+    COMMAND ${SPS_DOTNET_EXECUTABLE} build "${_EXE_DIR}" -c $<CONFIG> ${_BUILD_OPTIONS}
+    DEPENDS ${EXE_NAME}_create
+    COMMENT "Building ${EXE_NAME}"
+  )
+
+  # Target to run executable
+  add_custom_target(${EXE_NAME}_run
+    COMMAND ${SPS_DOTNET_EXECUTABLE} run --project "${_EXE_DIR}" -c $<CONFIG>
+    DEPENDS ${EXE_NAME}_build
+    COMMENT "Running ${EXE_NAME}"
+  )
+
+  message(STATUS "Configured .NET executable: ${EXE_NAME}")
+  message(STATUS "  Targets: ${EXE_NAME}_build, ${EXE_NAME}_run")
+endfunction()
