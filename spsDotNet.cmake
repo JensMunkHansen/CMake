@@ -318,8 +318,8 @@ endif()
     COMMENT "Building ${DOTNET_NAME} .NET library"
   )
 
-  # Target to create NuGet package
-  add_custom_target(${DOTNET_NAME}_dotnet_pack
+  # Target to create NuGet package (ALL so it builds with regular build)
+  add_custom_target(${DOTNET_NAME}_dotnet_pack ALL
     COMMAND ${SPS_DOTNET_EXECUTABLE} pack -c $<CONFIG> --no-build ${DOTNET_NAME}.csproj
     DEPENDS ${DOTNET_NAME}_dotnet_build
     WORKING_DIRECTORY "${_PROJECT_DIR}/$<CONFIG>"
@@ -414,8 +414,8 @@ function(sps_add_dotnet_test)
     COMMENT "Creating test project ${TEST_NAME}"
   )
 
-  # Target to build test
-  add_custom_target(${TEST_NAME}_build
+  # Target to build test (ALL so it builds with regular build)
+  add_custom_target(${TEST_NAME}_build ALL
     COMMAND ${SPS_DOTNET_EXECUTABLE} build "${_TEST_DIR}" -c $<CONFIG>
     DEPENDS ${TEST_NAME}_create
     COMMENT "Building ${TEST_NAME}"
