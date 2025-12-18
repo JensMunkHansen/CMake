@@ -428,6 +428,20 @@ function(sps_add_dotnet_test)
   get_filename_component(_MAIN_SOURCE_ABS "${_MAIN_SOURCE}" ABSOLUTE
     BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 
+  # Generate Directory.Build.props to set BaseIntermediateOutputPath early
+  # This prevents MSB3539 warning about property being modified after use
+  set(_DIR_BUILD_PROPS
+"<Project>
+  <PropertyGroup>
+    <BaseIntermediateOutputPath>$(MSBuildProjectDirectory)/obj/</BaseIntermediateOutputPath>
+  </PropertyGroup>
+</Project>
+")
+  file(GENERATE
+    OUTPUT "${_TEST_DIR}/Directory.Build.props"
+    CONTENT "${_DIR_BUILD_PROPS}"
+  )
+
   # Target to create and configure test project
   add_custom_target(${TEST_NAME}_create
     COMMAND ${CMAKE_COMMAND} -E make_directory "${_TEST_DIR}"
@@ -546,6 +560,20 @@ function(sps_add_dotnet_executable)
   list(GET EXE_SOURCES 0 _MAIN_SOURCE)
   get_filename_component(_MAIN_SOURCE_ABS "${_MAIN_SOURCE}" ABSOLUTE
     BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+
+  # Generate Directory.Build.props to set BaseIntermediateOutputPath early
+  # This prevents MSB3539 warning about property being modified after use
+  set(_DIR_BUILD_PROPS
+"<Project>
+  <PropertyGroup>
+    <BaseIntermediateOutputPath>$(MSBuildProjectDirectory)/obj/</BaseIntermediateOutputPath>
+  </PropertyGroup>
+</Project>
+")
+  file(GENERATE
+    OUTPUT "${_EXE_DIR}/Directory.Build.props"
+    CONTENT "${_DIR_BUILD_PROPS}"
+  )
 
   # Target to create and configure executable project
   add_custom_target(${EXE_NAME}_create
