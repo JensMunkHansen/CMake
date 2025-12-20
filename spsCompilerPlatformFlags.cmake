@@ -4,8 +4,10 @@ set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "")
 if (TARGET build)
   if (MSVC)
     set(IS_MSVC_OR_CLANG_CL FALSE)
+    set(IS_REAL_MSVC FALSE)
     if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
       set(IS_MSVC_OR_CLANG_CL TRUE)
+      set(IS_REAL_MSVC TRUE)
     elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND MSVC)
       set(IS_MSVC_OR_CLANG_CL TRUE)
     endif()
@@ -19,22 +21,28 @@ if (TARGET build)
     # Architecture flags - propagate to consumers (needed for SIMD headers)
     target_compile_options(build INTERFACE /arch:AVX2)
 
-    # Build-specific flags - do NOT propagate to consumers
+    # Build-specific flags - do NOT propagate to consumers (common to MSVC and clang-cl)
     target_compile_options(build INTERFACE
       $<BUILD_INTERFACE:/EHsc>  # Enable C++ stack unwinding and assume extern "C" functions never throw
-      $<BUILD_INTERFACE:$<$<CONFIG:Release>:/O2 /GL /fp:fast /Qpar>>
+      $<BUILD_INTERFACE:$<$<CONFIG:Release>:/O2 /fp:fast>>
       $<BUILD_INTERFACE:$<$<CONFIG:Debug>:/Od /Zi>>
       $<BUILD_INTERFACE:$<$<CONFIG:Asan>:/Od /Zi>>
       $<BUILD_INTERFACE:$<$<CONFIG:RelWithDebInfo>:/O1 /Zi>>
     )
 
+    # MSVC-only flags (not supported by clang-cl)
+    if(IS_REAL_MSVC)
+      target_compile_options(build INTERFACE
+        $<BUILD_INTERFACE:$<$<CONFIG:Release>:/GL /Qpar>>
+      )
+      # Linker flags needed by Microsoft (build-specific)
+      set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} /LTCG")
+    endif()
+
     # Compatibility flags - propagate to consumers (needed for correct __cplusplus value)
     target_compile_options(build INTERFACE
       $<$<CXX_COMPILER_ID:MSVC>:/Zc:__cplusplus>
-    )
-
-    # Linker flags needed by Microsoft (build-specific)
-    set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} /LTCG")    
+    )    
   else()
     # Determine architecture flags based on SPS_DISABLE_AVX512 option
     if(SPS_DISABLE_AVX512)
