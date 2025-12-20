@@ -134,9 +134,16 @@ GENERATE_MAN           = NO
 # HTML settings
 #---------------------------------------------------------------------------
 HTML_OUTPUT            = html
-HTML_TIMESTAMP         = YES
 GENERATE_TREEVIEW      = YES
 TREEVIEW_WIDTH         = 280
+
+#---------------------------------------------------------------------------
+# Math formulas (MathJax for LaTeX rendering)
+#---------------------------------------------------------------------------
+USE_MATHJAX            = YES
+MATHJAX_VERSION        = MathJax_3
+MATHJAX_FORMAT         = HTML-CSS
+MATHJAX_RELPATH        = https://cdn.jsdelivr.net/npm/mathjax@3
 
 #---------------------------------------------------------------------------
 # Source browsing
