@@ -41,6 +41,13 @@ spsDotNet
 
 include_guard(GLOBAL)
 
+# Global property to track .NET projects for solution generation
+define_property(GLOBAL PROPERTY SPS_DOTNET_PROJECTS
+  BRIEF_DOCS "List of .NET projects for solution generation"
+  FULL_DOCS "Each entry is: NAME;CSPROJ_PATH;GUID"
+)
+set_property(GLOBAL PROPERTY SPS_DOTNET_PROJECTS "")
+
 #[==[
   sps_find_dotnet - Find .NET CLI and configure runtime identifier
 
@@ -353,6 +360,13 @@ endif()
     COMMENT "Creating ${DOTNET_NAME} NuGet package"
   )
 
+  # Register project for solution generation
+  string(UUID _PROJECT_GUID NAMESPACE "6BA7B810-9DAD-11D1-80B4-00C04FD430C8"
+    NAME "${DOTNET_NAME}" TYPE SHA1 UPPER)
+  set_property(GLOBAL APPEND PROPERTY SPS_DOTNET_PROJECTS
+    "${DOTNET_NAME}|${_PROJECT_DIR}/${DOTNET_NAME}.csproj|{${_PROJECT_GUID}}"
+  )
+
   message(STATUS "Configured .NET library: ${DOTNET_NAME}")
   message(STATUS "  Targets: ${DOTNET_NAME}_dotnet_build, ${DOTNET_NAME}_dotnet_pack")
   message(STATUS "  Output: \${CMAKE_BINARY_DIR}/\$<CONFIG>/bin/\$<DOTNET_CONFIG>/${DOTNET_TFM}/${SPS_DOTNET_RID}/")
@@ -479,6 +493,13 @@ function(sps_add_dotnet_test)
     COMMAND ${SPS_DOTNET_EXECUTABLE} run --project "${_TEST_DIR}" -c $<CONFIG>
   )
 
+  # Register project for solution generation
+  string(UUID _PROJECT_GUID NAMESPACE "6BA7B810-9DAD-11D1-80B4-00C04FD430C8"
+    NAME "${TEST_NAME}" TYPE SHA1 UPPER)
+  set_property(GLOBAL APPEND PROPERTY SPS_DOTNET_PROJECTS
+    "${TEST_NAME}|${_TEST_DIR}/${TEST_NAME}.csproj|{${_PROJECT_GUID}}"
+  )
+
   message(STATUS "Configured .NET test: ${TEST_NAME}")
   message(STATUS "  Targets: ${TEST_NAME}_build, ${TEST_NAME}_run")
 endfunction()
@@ -563,10 +584,15 @@ function(sps_add_dotnet_executable)
 
   # Generate Directory.Build.props to set BaseIntermediateOutputPath early
   # This prevents MSB3539 warning about property being modified after use
+  if(EXE_ALLOW_UNSAFE)
+    set(_UNSAFE_PROP "\n    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>")
+  else()
+    set(_UNSAFE_PROP "")
+  endif()
   set(_DIR_BUILD_PROPS
 "<Project>
   <PropertyGroup>
-    <BaseIntermediateOutputPath>$(MSBuildProjectDirectory)/obj/</BaseIntermediateOutputPath>
+    <BaseIntermediateOutputPath>$(MSBuildProjectDirectory)/obj/</BaseIntermediateOutputPath>${_UNSAFE_PROP}
   </PropertyGroup>
 </Project>
 ")
@@ -606,6 +632,165 @@ function(sps_add_dotnet_executable)
     COMMENT "Running ${EXE_NAME}"
   )
 
+  # Register project for solution generation
+  string(UUID _PROJECT_GUID NAMESPACE "6BA7B810-9DAD-11D1-80B4-00C04FD430C8"
+    NAME "${EXE_NAME}" TYPE SHA1 UPPER)
+  set_property(GLOBAL APPEND PROPERTY SPS_DOTNET_PROJECTS
+    "${EXE_NAME}|${_EXE_DIR}/${EXE_NAME}.csproj|{${_PROJECT_GUID}}"
+  )
+
   message(STATUS "Configured .NET executable: ${EXE_NAME}")
   message(STATUS "  Targets: ${EXE_NAME}_build, ${EXE_NAME}_run")
+endfunction()
+
+#[==[
+  sps_generate_dotnet_solution - Generate a Visual Studio solution for .NET projects
+
+  Creates a .sln file at build time that references all .NET projects added via
+  sps_add_dotnet_library, sps_add_dotnet_test, and sps_add_dotnet_executable.
+  The solution file is placed in ${CMAKE_BINARY_DIR}/$<CONFIG>/.
+
+  This function should be called AFTER all sps_add_dotnet_* calls, typically
+  at the end of the top-level CMakeLists.txt.
+
+  Arguments:
+    NAME    - Name of the solution file (default: ${PROJECT_NAME}DotNet)
+    DEPENDS - Additional target dependencies (optional)
+
+  Creates targets:
+    ${NAME}_sln - Generates the .sln file
+
+  Example:
+    sps_generate_dotnet_solution(NAME GridSearchDotNet)
+#]==]
+function(sps_generate_dotnet_solution)
+  cmake_parse_arguments(SLN
+    ""
+    "NAME"
+    "DEPENDS"
+    ${ARGN}
+  )
+
+  if(NOT SLN_NAME)
+    set(SLN_NAME "${PROJECT_NAME}DotNet")
+  endif()
+
+  # Ensure dotnet was found
+  if(NOT SPS_DOTNET_FOUND)
+    message(STATUS "sps_generate_dotnet_solution: .NET not found, skipping")
+    return()
+  endif()
+
+  # Get registered projects
+  get_property(_PROJECTS GLOBAL PROPERTY SPS_DOTNET_PROJECTS)
+  if(NOT _PROJECTS)
+    message(STATUS "sps_generate_dotnet_solution: No .NET projects registered, skipping")
+    return()
+  endif()
+
+  # Solution output path (config-specific)
+  set(_SLN_PATH "${CMAKE_BINARY_DIR}/$<CONFIG>/${SLN_NAME}.sln")
+
+  # Scripts directory
+  set(_SCRIPTS_DIR "${CMAKE_BINARY_DIR}/dotnet-scripts")
+  file(MAKE_DIRECTORY "${_SCRIPTS_DIR}")
+
+  # Build the project list - pass to script for runtime processing
+  # Use @@ as separator since paths may contain semicolons on Windows
+  set(_PROJECT_LIST "")
+  foreach(_PROJECT ${_PROJECTS})
+    string(REPLACE "|" ";" _PROJECT_PARTS "${_PROJECT}")
+    list(GET _PROJECT_PARTS 0 _NAME)
+    list(GET _PROJECT_PARTS 1 _CSPROJ)
+    list(GET _PROJECT_PARTS 2 _GUID)
+    list(APPEND _PROJECT_LIST "${_NAME}@@${_CSPROJ}@@${_GUID}")
+  endforeach()
+  # Join with ;; to preserve list structure
+  string(REPLACE ";" ";;" _PROJECT_LIST_STR "${_PROJECT_LIST}")
+
+  # Generate script that creates the .sln file
+  set(_GEN_SCRIPT "${_SCRIPTS_DIR}/${SLN_NAME}_gen_sln.cmake")
+  file(WRITE "${_GEN_SCRIPT}" [=[
+# Generate Visual Studio solution for .NET projects
+# Generated by spsDotNet.cmake - do not edit
+cmake_minimum_required(VERSION 3.16)
+
+# Inputs: SLN_PATH, BUILD_CONFIG, PROJECT_LIST_STR
+
+# Parse project list (separated by ;;)
+string(REPLACE ";;" ";" PROJECT_LIST "${PROJECT_LIST_STR}")
+
+# C# project type GUID
+set(TYPE_GUID "FAE04EC0-301F-11D3-BF4B-00C04F79EFBC")
+
+# Build project entries and config entries
+set(PROJECT_ENTRIES "")
+set(CONFIG_ENTRIES "")
+
+foreach(PROJECT ${PROJECT_LIST})
+  # Parse NAME@@CSPROJ@@GUID
+  string(REPLACE "@@" ";" PROJECT_PARTS "${PROJECT}")
+  list(GET PROJECT_PARTS 0 NAME)
+  list(GET PROJECT_PARTS 1 CSPROJ)
+  list(GET PROJECT_PARTS 2 GUID)
+
+  # Replace $<CONFIG> with actual config
+  string(REPLACE "$<CONFIG>" "${BUILD_CONFIG}" CSPROJ "${CSPROJ}")
+
+  # Build Project line
+  string(APPEND PROJECT_ENTRIES "Project(\"{${TYPE_GUID}}\") = \"${NAME}\", \"${CSPROJ}\", \"${GUID}\"\nEndProject\n")
+
+  # Build config entries
+  string(APPEND CONFIG_ENTRIES "\t\t${GUID}.Debug|Any CPU.ActiveCfg = Debug|Any CPU\n")
+  string(APPEND CONFIG_ENTRIES "\t\t${GUID}.Debug|Any CPU.Build.0 = Debug|Any CPU\n")
+  string(APPEND CONFIG_ENTRIES "\t\t${GUID}.Release|Any CPU.ActiveCfg = Release|Any CPU\n")
+  string(APPEND CONFIG_ENTRIES "\t\t${GUID}.Release|Any CPU.Build.0 = Release|Any CPU\n")
+endforeach()
+
+# Build complete solution content
+set(SLN_CONTENT "Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.0.0
+MinimumVisualStudioVersion = 10.0.40219.1
+${PROJECT_ENTRIES}Global
+\tGlobalSection(SolutionConfigurationPlatforms) = preSolution
+\t\tDebug|Any CPU = Debug|Any CPU
+\t\tRelease|Any CPU = Release|Any CPU
+\tEndGlobalSection
+\tGlobalSection(ProjectConfigurationPlatforms) = postSolution
+${CONFIG_ENTRIES}\tEndGlobalSection
+EndGlobal
+")
+
+file(WRITE "${SLN_PATH}" "${SLN_CONTENT}")
+message(STATUS "Generated: ${SLN_PATH}")
+]=])
+
+  # Collect dependencies - all _build targets for .NET projects
+  set(_ALL_DEPS ${SLN_DEPENDS})
+  foreach(_PROJECT ${_PROJECTS})
+    string(REPLACE "|" ";" _PROJECT_PARTS "${_PROJECT}")
+    list(GET _PROJECT_PARTS 0 _NAME)
+    # Check if it's a library (has _dotnet_build) or test/exe (has _build)
+    if(TARGET ${_NAME}_dotnet_build)
+      list(APPEND _ALL_DEPS ${_NAME}_dotnet_build)
+    elseif(TARGET ${_NAME}_build)
+      list(APPEND _ALL_DEPS ${_NAME}_build)
+    endif()
+  endforeach()
+
+  # Target to generate the solution file
+  add_custom_target(${SLN_NAME}_sln ALL
+    COMMAND ${CMAKE_COMMAND}
+      -DSLN_PATH=${_SLN_PATH}
+      -DBUILD_CONFIG=$<CONFIG>
+      "-DPROJECT_LIST_STR=${_PROJECT_LIST_STR}"
+      -P "${_GEN_SCRIPT}"
+    DEPENDS ${_ALL_DEPS}
+    COMMENT "Generating ${SLN_NAME}.sln"
+  )
+
+  message(STATUS "Configured .NET solution: ${SLN_NAME}")
+  message(STATUS "  Target: ${SLN_NAME}_sln")
+  message(STATUS "  Output: \${CMAKE_BINARY_DIR}/\$<CONFIG>/${SLN_NAME}.sln")
 endfunction()
