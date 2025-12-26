@@ -791,7 +791,15 @@ message(STATUS "Generated: ${SLN_PATH}")
     VERBATIM
   )
 
+  # Utility target to clear NuGet cache (useful when debugging cache issues)
+  add_custom_target(NuGetClearCache
+    COMMAND ${SPS_DOTNET_EXECUTABLE} nuget locals all --clear
+    COMMENT "Clearing NuGet local cache"
+    VERBATIM
+  )
+
   message(STATUS "Configured .NET solution: ${SLN_NAME}")
   message(STATUS "  Target: ${SLN_NAME}_sln")
+  message(STATUS "  Utility: NuGetClearCache (clears local NuGet cache)")
   message(STATUS "  Output: \${CMAKE_BINARY_DIR}/\$<CONFIG>/${SLN_NAME}.sln")
 endfunction()
