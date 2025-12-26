@@ -788,6 +788,7 @@ message(STATUS "Generated: ${SLN_PATH}")
       -P "${_GEN_SCRIPT}"
     DEPENDS ${_ALL_DEPS}
     COMMENT "Generating ${SLN_NAME}.sln"
+    VERBATIM
   )
 
   message(STATUS "Configured .NET solution: ${SLN_NAME}")
