@@ -341,6 +341,13 @@ endif()
     <Product>${DOTNET_PRODUCT}</Product>${_COPYRIGHT_XML}
   </PropertyGroup>
 
+  <!-- Debug configuration: enable native debugging -->
+  <PropertyGroup Condition=\"'$(Configuration)'=='Debug'\">
+    <DebugType>full</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+    <EnableNativeInteropDebugging>true</EnableNativeInteropDebugging>
+  </PropertyGroup>
+
   <ItemGroup>
     <!-- Native libraries (main target and all dependencies) -->
     <Content Include=\"${_NATIVE_DIR}/*\">
@@ -484,6 +491,12 @@ function(sps_add_dotnet_test)
 "<Project>
   <PropertyGroup>
     <BaseIntermediateOutputPath>$(MSBuildProjectDirectory)/obj/</BaseIntermediateOutputPath>
+  </PropertyGroup>
+  <!-- Debug configuration: enable native debugging -->
+  <PropertyGroup Condition=\"'$(Configuration)'=='Debug'\">
+    <DebugType>full</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+    <EnableNativeInteropDebugging>true</EnableNativeInteropDebugging>
   </PropertyGroup>
 </Project>
 ")
@@ -643,6 +656,12 @@ function(sps_add_dotnet_executable)
 "<Project>
   <PropertyGroup>
     <BaseIntermediateOutputPath>$(MSBuildProjectDirectory)/obj/</BaseIntermediateOutputPath>${_UNSAFE_PROP}
+  </PropertyGroup>
+  <!-- Debug configuration: enable native debugging -->
+  <PropertyGroup Condition=\"'$(Configuration)'=='Debug'\">
+    <DebugType>full</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+    <EnableNativeInteropDebugging>true</EnableNativeInteropDebugging>
   </PropertyGroup>
 </Project>
 ")
