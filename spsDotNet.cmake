@@ -126,6 +126,9 @@ endfunction()
     VERSION        - Package version (default: ${PROJECT_VERSION})
     AUTHORS        - Package authors (default: ${PROJECT_NAME} Authors)
     DESCRIPTION    - Package description (optional)
+    COMPANY        - Company name for DLL properties (default: AUTHORS)
+    PRODUCT        - Product name for DLL properties (default: NAME)
+    COPYRIGHT      - Copyright string for DLL properties (optional)
 
   Creates targets:
     ${NAME}_collect_deps  - Collect native dependencies
@@ -146,7 +149,7 @@ endfunction()
 function(sps_add_dotnet_library)
   cmake_parse_arguments(DOTNET
     ""
-    "NAME;TFM;VERSION;AUTHORS;DESCRIPTION"
+    "NAME;TFM;VERSION;AUTHORS;DESCRIPTION;COMPANY;PRODUCT;COPYRIGHT"
     "NATIVE_TARGETS;SOURCES"
     ${ARGN}
   )
@@ -175,6 +178,13 @@ function(sps_add_dotnet_library)
   if(NOT DOTNET_DESCRIPTION)
     set(DOTNET_DESCRIPTION "${DOTNET_NAME} native library bindings")
   endif()
+  if(NOT DOTNET_COMPANY)
+    set(DOTNET_COMPANY "${DOTNET_AUTHORS}")
+  endif()
+  if(NOT DOTNET_PRODUCT)
+    set(DOTNET_PRODUCT "${DOTNET_NAME}")
+  endif()
+  # COPYRIGHT is optional - only add to .csproj if provided
 
   # Ensure dotnet is available
   if(NOT SPS_DOTNET_FOUND)
@@ -295,6 +305,13 @@ if(UNRESOLVED_DEPS)
 endif()
 ")
 
+  # Build optional COPYRIGHT property XML
+  if(DOTNET_COPYRIGHT)
+    set(_COPYRIGHT_XML "\n    <Copyright>${DOTNET_COPYRIGHT}</Copyright>")
+  else()
+    set(_COPYRIGHT_XML "")
+  endif()
+
   # Generate .csproj file
   # BaseOutputPath controls where bin/ goes - .NET adds $<DOTNET_CONFIG>/${TFM}/${RID}/
   set(_CSPROJ_CONTENT
@@ -316,6 +333,12 @@ endif()
     <Authors>${DOTNET_AUTHORS}</Authors>
     <Description>${DOTNET_DESCRIPTION}</Description>
     <PackageOutputPath>${_PACKAGES_DIR}</PackageOutputPath>
+
+    <!-- DLL File Properties (Windows Explorer Details) -->
+    <FileVersion>${DOTNET_VERSION}</FileVersion>
+    <AssemblyVersion>${DOTNET_VERSION}</AssemblyVersion>
+    <Company>${DOTNET_COMPANY}</Company>
+    <Product>${DOTNET_PRODUCT}</Product>${_COPYRIGHT_XML}
   </PropertyGroup>
 
   <ItemGroup>
