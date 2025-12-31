@@ -66,9 +66,9 @@ function(sps_find_mkl)
         set(IOMP5_LIB_DIR "${_iomp5_dir}" CACHE PATH "Intel OpenMP library directory" FORCE)
         message(STATUS "  iomp5 dir: ${IOMP5_LIB_DIR}")
       else()
-        # Search for iomp5
+        # Search for iomp5 (two levels up from mkl/latest to reach compiler/latest)
         find_library(_iomp5_lib NAMES iomp5
-          PATHS "/opt/intel/oneapi/compiler/latest/lib" "$ENV{MKLROOT}/../compiler/latest/lib"
+          PATHS "/opt/intel/oneapi/compiler/latest/lib" "$ENV{MKLROOT}/../../compiler/latest/lib"
           NO_DEFAULT_PATH)
         if(_iomp5_lib)
           get_filename_component(_iomp5_dir "${_iomp5_lib}" DIRECTORY)
@@ -119,38 +119,47 @@ function(sps_find_mkl)
     return()
   endif()
 
-  # Find the MKL libraries (ILP64 - 64-bit integers)
-  find_library(MKL_INTEL_ILP64_LIB
-    NAMES mkl_intel_ilp64
-    PATHS "${_mklroot}/lib"
-    NO_DEFAULT_PATH
-  )
+  # Find MKL libraries (ILP64 - 64-bit integers)
+  # Windows uses lib/intel64, Linux uses lib
+  if(WIN32)
+    set(_mkl_lib_paths "${_mklroot}/lib/intel64" "${_mklroot}/lib")
+  else()
+    set(_mkl_lib_paths "${_mklroot}/lib")
+  endif()
 
-  find_library(MKL_CORE_LIB
-    NAMES mkl_core
-    PATHS "${_mklroot}/lib"
-    NO_DEFAULT_PATH
-  )
-
-  find_library(MKL_INTEL_THREAD_LIB
-    NAMES mkl_intel_thread
-    PATHS "${_mklroot}/lib"
-    NO_DEFAULT_PATH
-  )
-
-  find_library(MKL_SEQUENTIAL_LIB
-    NAMES mkl_sequential
-    PATHS "${_mklroot}/lib"
-    NO_DEFAULT_PATH
-  )
+  foreach(_pair
+      "INTEL_ILP64:mkl_intel_ilp64"
+      "CORE:mkl_core"
+      "INTEL_THREAD:mkl_intel_thread"
+      "SEQUENTIAL:mkl_sequential")
+    string(REPLACE ":" ";" _parts "${_pair}")
+    list(GET _parts 0 _suffix)
+    list(GET _parts 1 _name)
+    find_library(MKL_${_suffix}_LIB
+      NAMES ${_name}
+      PATHS ${_mkl_lib_paths}
+      NO_DEFAULT_PATH
+    )
+  endforeach()
 
   # Find Intel OpenMP (iomp5)
-  set(_compiler_paths
-    "${_mklroot}/../compiler/latest/lib"
-    "/opt/intel/oneapi/compiler/latest/lib"
-  )
+  # From MKLROOT=/opt/intel/oneapi/mkl/latest, compiler is at:
+  # /opt/intel/oneapi/compiler/latest/lib (two levels up from mkl/latest)
+  if(WIN32)
+    set(_compiler_paths
+      "${_mklroot}/../../compiler/latest/lib"
+      "${_mklroot}/../../compiler/latest/windows/compiler/lib/intel64_win"
+    )
+    set(_iomp5_names libiomp5md)
+  else()
+    set(_compiler_paths
+      "${_mklroot}/../../compiler/latest/lib"
+      "/opt/intel/oneapi/compiler/latest/lib"
+    )
+    set(_iomp5_names iomp5)
+  endif()
   find_library(IOMP5_LIB
-    NAMES iomp5
+    NAMES ${_iomp5_names}
     PATHS ${_compiler_paths}
     NO_DEFAULT_PATH
   )
@@ -183,11 +192,18 @@ function(sps_find_mkl)
     set(_use_threaded TRUE)
   endif()
 
+  # Platform-specific system libraries (m and dl don't exist on Windows)
+  if(WIN32)
+    set(_sys_libs "Threads::Threads")
+  else()
+    set(_sys_libs "Threads::Threads;m;dl")
+  endif()
+
   if(_use_threaded)
     message(STATUS "MKL: Using threaded MKL with Intel OpenMP")
     set(SPS_MKL_THREADED TRUE CACHE BOOL "MKL uses threaded backend" FORCE)
 
-    # Export iomp5 directory for Ceres FindBLAS
+    # Export iomp5 directory
     get_filename_component(_iomp5_dir "${IOMP5_LIB}" DIRECTORY)
     set(IOMP5_LIB_DIR "${_iomp5_dir}" CACHE PATH "Intel OpenMP library directory" FORCE)
     message(STATUS "  iomp5 dir: ${IOMP5_LIB_DIR}")
@@ -211,7 +227,7 @@ function(sps_find_mkl)
     set_target_properties(MKL::MKL PROPERTIES
       INTERFACE_INCLUDE_DIRECTORIES "${_mklroot}/include"
       INTERFACE_COMPILE_DEFINITIONS "MKL_ILP64"
-      INTERFACE_LINK_LIBRARIES "MKL::mkl_intel_ilp64;MKL::mkl_intel_thread;MKL::mkl_core;MKL::iomp5;Threads::Threads;m;dl"
+      INTERFACE_LINK_LIBRARIES "MKL::mkl_intel_ilp64;MKL::mkl_intel_thread;MKL::mkl_core;MKL::iomp5;${_sys_libs}"
     )
   else()
     message(STATUS "MKL: Using sequential MKL (Intel OpenMP not found)")
@@ -229,7 +245,7 @@ function(sps_find_mkl)
     set_target_properties(MKL::MKL PROPERTIES
       INTERFACE_INCLUDE_DIRECTORIES "${_mklroot}/include"
       INTERFACE_COMPILE_DEFINITIONS "MKL_ILP64"
-      INTERFACE_LINK_LIBRARIES "MKL::mkl_intel_ilp64;MKL::mkl_sequential;MKL::mkl_core;Threads::Threads;m;dl"
+      INTERFACE_LINK_LIBRARIES "MKL::mkl_intel_ilp64;MKL::mkl_sequential;MKL::mkl_core;${_sys_libs}"
     )
   endif()
 
