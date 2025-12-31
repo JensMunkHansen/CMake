@@ -100,7 +100,7 @@ PROJECT_NAME           = \"${DOXY_PROJECT_NAME}\"
 PROJECT_BRIEF          = \"${DOXY_PROJECT_BRIEF}\"
 PROJECT_NUMBER         = ${PROJECT_VERSION}
 OUTPUT_DIRECTORY       = ${DOXY_OUTPUT_DIR}
-
+MARKDOWN_SUPPORT       = YES
 #---------------------------------------------------------------------------
 # Input settings
 #---------------------------------------------------------------------------
