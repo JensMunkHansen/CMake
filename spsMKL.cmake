@@ -35,6 +35,46 @@ endif()
 set(_SPS_MKL_INCLUDED TRUE)
 
 #[==[
+_sps_find_iomp5(<mklroot>)
+
+Internal helper to find Intel OpenMP library.
+Sets IOMP5_LIB and IOMP5_LIB_DIR in parent scope.
+#]==]
+function(_sps_find_iomp5 mklroot)
+  # Determine platform-specific library name
+  if(WIN32)
+    if(BUILD_SHARED_LIBS)
+      set(_iomp5_names libiomp5md)
+    else()
+      set(_iomp5_names libiomp5mt)
+    endif()
+    set(_compiler_paths
+      "${mklroot}/../../compiler/latest/lib"
+      "${mklroot}/../../compiler/latest/windows/compiler/lib/intel64_win"
+    )
+  else()
+    set(_iomp5_names iomp5)
+    set(_compiler_paths
+      "${mklroot}/../../compiler/latest/lib"
+      "/opt/intel/oneapi/compiler/latest/lib"
+    )
+  endif()
+
+  find_library(_iomp5_lib NAMES ${_iomp5_names}
+    PATHS ${_compiler_paths}
+    NO_DEFAULT_PATH)
+
+  if(_iomp5_lib)
+    get_filename_component(_iomp5_dir "${_iomp5_lib}" DIRECTORY)
+    set(IOMP5_LIB "${_iomp5_lib}" CACHE FILEPATH "Intel OpenMP library" FORCE)
+    set(IOMP5_LIB_DIR "${_iomp5_dir}" CACHE PATH "Intel OpenMP library directory" FORCE)
+    message(STATUS "  iomp5: ${IOMP5_LIB}")
+  endif()
+
+  unset(_iomp5_lib CACHE)
+endfunction()
+
+#[==[
 sps_find_mkl()
 
 Finds Intel MKL and creates MKL::MKL imported target.
@@ -62,19 +102,14 @@ function(sps_find_mkl)
 
       # Find iomp5 location for Ceres FindBLAS
       if(OMP_LIBRARY)
+        set(IOMP5_LIB "${OMP_LIBRARY}" CACHE FILEPATH "Intel OpenMP library" FORCE)
         get_filename_component(_iomp5_dir "${OMP_LIBRARY}" DIRECTORY)
         set(IOMP5_LIB_DIR "${_iomp5_dir}" CACHE PATH "Intel OpenMP library directory" FORCE)
-        message(STATUS "  iomp5 dir: ${IOMP5_LIB_DIR}")
-      else()
-        # Search for iomp5 (two levels up from mkl/latest to reach compiler/latest)
-        find_library(_iomp5_lib NAMES iomp5
-          PATHS "/opt/intel/oneapi/compiler/latest/lib" "$ENV{MKLROOT}/../../compiler/latest/lib"
-          NO_DEFAULT_PATH)
-        if(_iomp5_lib)
-          get_filename_component(_iomp5_dir "${_iomp5_lib}" DIRECTORY)
-          set(IOMP5_LIB_DIR "${_iomp5_dir}" CACHE PATH "Intel OpenMP library directory" FORCE)
-          message(STATUS "  iomp5 dir: ${IOMP5_LIB_DIR}")
-        endif()
+        message(STATUS "  iomp5: ${IOMP5_LIB}")
+      elseif(MKL_ROOT)
+        _sps_find_iomp5("${MKL_ROOT}")
+      elseif(DEFINED ENV{MKLROOT})
+        _sps_find_iomp5("$ENV{MKLROOT}")
       endif()
     else()
       set(SPS_MKL_THREADED FALSE CACHE BOOL "MKL uses threaded backend" FORCE)
@@ -91,11 +126,18 @@ function(sps_find_mkl)
     set(_mklroot "$ENV{MKLROOT}")
   else()
     # Search common installation paths
-    set(_mkl_search_paths
-      /opt/intel/oneapi/mkl/latest
-      /opt/intel/mkl
-      $ENV{HOME}/intel/oneapi/mkl/latest
-    )
+    if(WIN32)
+      set(_mkl_search_paths
+        "$ENV{ONEAPI_ROOT}/mkl/latest"
+        "C:/Program Files (x86)/Intel/oneAPI/mkl/latest"
+      )
+    else()
+      set(_mkl_search_paths
+        /opt/intel/oneapi/mkl/latest
+        /opt/intel/mkl
+        $ENV{HOME}/intel/oneapi/mkl/latest
+      )
+    endif()
     foreach(_path ${_mkl_search_paths})
       if(EXISTS "${_path}/include/mkl.h")
         set(_mklroot "${_path}")
@@ -143,26 +185,7 @@ function(sps_find_mkl)
   endforeach()
 
   # Find Intel OpenMP (iomp5)
-  # From MKLROOT=/opt/intel/oneapi/mkl/latest, compiler is at:
-  # /opt/intel/oneapi/compiler/latest/lib (two levels up from mkl/latest)
-  if(WIN32)
-    set(_compiler_paths
-      "${_mklroot}/../../compiler/latest/lib"
-      "${_mklroot}/../../compiler/latest/windows/compiler/lib/intel64_win"
-    )
-    set(_iomp5_names libiomp5md)
-  else()
-    set(_compiler_paths
-      "${_mklroot}/../../compiler/latest/lib"
-      "/opt/intel/oneapi/compiler/latest/lib"
-    )
-    set(_iomp5_names iomp5)
-  endif()
-  find_library(IOMP5_LIB
-    NAMES ${_iomp5_names}
-    PATHS ${_compiler_paths}
-    NO_DEFAULT_PATH
-  )
+  _sps_find_iomp5("${_mklroot}")
 
   if(NOT MKL_INTEL_ILP64_LIB OR NOT MKL_CORE_LIB)
     message(WARNING "MKL: Could not find required libraries in ${_mklroot}/lib")
@@ -170,20 +193,41 @@ function(sps_find_mkl)
     return()
   endif()
 
+  # Windows: use mkl_rt.dll (single runtime DLL) for all MKL components
+  if(WIN32)
+    set(_mkl_dll_dir "${_mklroot}/redist/intel64")
+    set(_mkl_rt_dll "${_mkl_dll_dir}/mkl_rt.dll")
+  endif()
+
   # Create imported targets for individual libraries (ILP64)
   if(NOT TARGET MKL::mkl_intel_ilp64)
     add_library(MKL::mkl_intel_ilp64 SHARED IMPORTED)
-    set_target_properties(MKL::mkl_intel_ilp64 PROPERTIES
-      IMPORTED_LOCATION "${MKL_INTEL_ILP64_LIB}"
-      INTERFACE_COMPILE_DEFINITIONS "MKL_ILP64"
-    )
+    if(WIN32)
+      set_target_properties(MKL::mkl_intel_ilp64 PROPERTIES
+        IMPORTED_IMPLIB "${MKL_INTEL_ILP64_LIB}"
+        IMPORTED_LOCATION "${_mkl_rt_dll}"
+        INTERFACE_COMPILE_DEFINITIONS "MKL_ILP64"
+      )
+    else()
+      set_target_properties(MKL::mkl_intel_ilp64 PROPERTIES
+        IMPORTED_LOCATION "${MKL_INTEL_ILP64_LIB}"
+        INTERFACE_COMPILE_DEFINITIONS "MKL_ILP64"
+      )
+    endif()
   endif()
 
   if(NOT TARGET MKL::mkl_core)
     add_library(MKL::mkl_core SHARED IMPORTED)
-    set_target_properties(MKL::mkl_core PROPERTIES
-      IMPORTED_LOCATION "${MKL_CORE_LIB}"
-    )
+    if(WIN32)
+      set_target_properties(MKL::mkl_core PROPERTIES
+        IMPORTED_IMPLIB "${MKL_CORE_LIB}"
+        IMPORTED_LOCATION "${_mkl_rt_dll}"
+      )
+    else()
+      set_target_properties(MKL::mkl_core PROPERTIES
+        IMPORTED_LOCATION "${MKL_CORE_LIB}"
+      )
+    endif()
   endif()
 
   # Decide threading: use Intel OpenMP if available, else sequential
@@ -210,16 +254,37 @@ function(sps_find_mkl)
 
     if(NOT TARGET MKL::mkl_intel_thread)
       add_library(MKL::mkl_intel_thread SHARED IMPORTED)
-      set_target_properties(MKL::mkl_intel_thread PROPERTIES
-        IMPORTED_LOCATION "${MKL_INTEL_THREAD_LIB}"
-      )
+      if(WIN32)
+        set_target_properties(MKL::mkl_intel_thread PROPERTIES
+          IMPORTED_IMPLIB "${MKL_INTEL_THREAD_LIB}"
+          IMPORTED_LOCATION "${_mkl_rt_dll}"
+        )
+      else()
+        set_target_properties(MKL::mkl_intel_thread PROPERTIES
+          IMPORTED_LOCATION "${MKL_INTEL_THREAD_LIB}"
+        )
+      endif()
     endif()
 
     if(NOT TARGET MKL::iomp5)
       add_library(MKL::iomp5 SHARED IMPORTED)
-      set_target_properties(MKL::iomp5 PROPERTIES
-        IMPORTED_LOCATION "${IOMP5_LIB}"
-      )
+      if(WIN32)
+        # lib is in: compiler/latest/windows/compiler/lib/intel64_win/
+        # dll is in: compiler/latest/windows/redist/intel64_win/compiler/
+        get_filename_component(_compiler_base "${IOMP5_LIB}" DIRECTORY)  # .../lib/intel64_win
+        get_filename_component(_compiler_base "${_compiler_base}" DIRECTORY)  # .../lib
+        get_filename_component(_compiler_base "${_compiler_base}" DIRECTORY)  # .../compiler
+        get_filename_component(_compiler_base "${_compiler_base}" DIRECTORY)  # .../windows
+        set(_iomp5_dll_dir "${_compiler_base}/redist/intel64_win/compiler")
+        set_target_properties(MKL::iomp5 PROPERTIES
+          IMPORTED_IMPLIB "${IOMP5_LIB}"
+          IMPORTED_LOCATION "${_iomp5_dll_dir}/libiomp5md.dll"
+        )
+      else()
+        set_target_properties(MKL::iomp5 PROPERTIES
+          IMPORTED_LOCATION "${IOMP5_LIB}"
+        )
+      endif()
     endif()
 
     # Create the main MKL::MKL interface target (ILP64)
@@ -235,9 +300,16 @@ function(sps_find_mkl)
 
     if(NOT TARGET MKL::mkl_sequential)
       add_library(MKL::mkl_sequential SHARED IMPORTED)
-      set_target_properties(MKL::mkl_sequential PROPERTIES
-        IMPORTED_LOCATION "${MKL_SEQUENTIAL_LIB}"
-      )
+      if(WIN32)
+        set_target_properties(MKL::mkl_sequential PROPERTIES
+          IMPORTED_IMPLIB "${MKL_SEQUENTIAL_LIB}"
+          IMPORTED_LOCATION "${_mkl_rt_dll}"
+        )
+      else()
+        set_target_properties(MKL::mkl_sequential PROPERTIES
+          IMPORTED_LOCATION "${MKL_SEQUENTIAL_LIB}"
+        )
+      endif()
     endif()
 
     # Create the main MKL::MKL interface target (ILP64)
