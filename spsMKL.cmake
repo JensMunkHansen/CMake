@@ -53,6 +53,34 @@ function(sps_find_mkl)
   find_package(MKL CONFIG QUIET)
   if(MKL_FOUND)
     message(STATUS "MKL: found via oneAPI CMake config")
+    message(STATUS "  MKL_THREADING: ${MKL_THREADING}")
+
+    # Check if threaded MKL is configured
+    if(MKL_THREADING STREQUAL "intel_thread" OR MKL_THREADING STREQUAL "tbb_thread" OR MKL_THREADING STREQUAL "gnu_thread")
+      set(SPS_MKL_THREADED TRUE CACHE BOOL "MKL uses threaded backend" FORCE)
+      message(STATUS "  MKL mode: threaded")
+
+      # Find iomp5 location for Ceres FindBLAS
+      if(OMP_LIBRARY)
+        get_filename_component(_iomp5_dir "${OMP_LIBRARY}" DIRECTORY)
+        set(IOMP5_LIB_DIR "${_iomp5_dir}" CACHE PATH "Intel OpenMP library directory" FORCE)
+        message(STATUS "  iomp5 dir: ${IOMP5_LIB_DIR}")
+      else()
+        # Search for iomp5
+        find_library(_iomp5_lib NAMES iomp5
+          PATHS "/opt/intel/oneapi/compiler/latest/lib" "$ENV{MKLROOT}/../compiler/latest/lib"
+          NO_DEFAULT_PATH)
+        if(_iomp5_lib)
+          get_filename_component(_iomp5_dir "${_iomp5_lib}" DIRECTORY)
+          set(IOMP5_LIB_DIR "${_iomp5_dir}" CACHE PATH "Intel OpenMP library directory" FORCE)
+          message(STATUS "  iomp5 dir: ${IOMP5_LIB_DIR}")
+        endif()
+      endif()
+    else()
+      set(SPS_MKL_THREADED FALSE CACHE BOOL "MKL uses threaded backend" FORCE)
+      message(STATUS "  MKL mode: sequential")
+    endif()
+
     set(SPS_MKL_FOUND TRUE PARENT_SCOPE)
     return()
   endif()
@@ -156,6 +184,12 @@ function(sps_find_mkl)
 
   if(_use_threaded)
     message(STATUS "MKL: Using threaded MKL with Intel OpenMP")
+    set(SPS_MKL_THREADED TRUE CACHE BOOL "MKL uses threaded backend" FORCE)
+
+    # Export iomp5 directory for Ceres FindBLAS
+    get_filename_component(_iomp5_dir "${IOMP5_LIB}" DIRECTORY)
+    set(IOMP5_LIB_DIR "${_iomp5_dir}" CACHE PATH "Intel OpenMP library directory" FORCE)
+    message(STATUS "  iomp5 dir: ${IOMP5_LIB_DIR}")
 
     if(NOT TARGET MKL::mkl_intel_thread)
       add_library(MKL::mkl_intel_thread SHARED IMPORTED)
@@ -179,6 +213,7 @@ function(sps_find_mkl)
     )
   else()
     message(STATUS "MKL: Using sequential MKL (Intel OpenMP not found)")
+    set(SPS_MKL_THREADED FALSE CACHE BOOL "MKL uses threaded backend" FORCE)
 
     if(NOT TARGET MKL::mkl_sequential)
       add_library(MKL::mkl_sequential SHARED IMPORTED)

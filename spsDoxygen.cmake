@@ -32,7 +32,7 @@ function(sps_setup_doxygen)
   cmake_parse_arguments(DOXY
     ""
     "TARGET;OUTPUT_DIR;PROJECT_NAME;PROJECT_BRIEF"
-    "INPUT_DIRS;EXCLUDE_PATTERNS"
+    "INPUT_DIRS;EXCLUDE_PATTERNS;EXAMPLE_PATH"
     ${ARGN}
   )
 
@@ -83,7 +83,7 @@ function(sps_setup_doxygen)
     list(APPEND DOXY_EXCLUDE_LIST ${DOXY_EXCLUDE_PATTERNS})
   endif()
   string(REPLACE ";" " " DOXY_EXCLUDE_STR "${DOXY_EXCLUDE_LIST}")
-
+  
   # Create output directory
   file(MAKE_DIRECTORY "${DOXY_OUTPUT_DIR}")
 
@@ -109,6 +109,7 @@ RECURSIVE              = YES
 FILE_PATTERNS          = *.h *.hpp *.cpp *.c *.md *.py
 EXCLUDE_PATTERNS       = ${DOXY_EXCLUDE_STR}
 USE_MDFILE_AS_MAINPAGE = ${PROJECT_SOURCE_DIR}/README.md
+EXAMPLE_PATH           = ${DOXY_EXAMPLE_PATH}
 
 #---------------------------------------------------------------------------
 # Documentation scope
