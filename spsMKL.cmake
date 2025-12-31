@@ -119,9 +119,9 @@ function(sps_find_mkl)
     return()
   endif()
 
-  # Find the MKL libraries
-  find_library(MKL_INTEL_LP64_LIB
-    NAMES mkl_intel_lp64
+  # Find the MKL libraries (ILP64 - 64-bit integers)
+  find_library(MKL_INTEL_ILP64_LIB
+    NAMES mkl_intel_ilp64
     PATHS "${_mklroot}/lib"
     NO_DEFAULT_PATH
   )
@@ -155,17 +155,18 @@ function(sps_find_mkl)
     NO_DEFAULT_PATH
   )
 
-  if(NOT MKL_INTEL_LP64_LIB OR NOT MKL_CORE_LIB)
+  if(NOT MKL_INTEL_ILP64_LIB OR NOT MKL_CORE_LIB)
     message(WARNING "MKL: Could not find required libraries in ${_mklroot}/lib")
     set(SPS_MKL_FOUND FALSE PARENT_SCOPE)
     return()
   endif()
 
-  # Create imported targets for individual libraries
-  if(NOT TARGET MKL::mkl_intel_lp64)
-    add_library(MKL::mkl_intel_lp64 SHARED IMPORTED)
-    set_target_properties(MKL::mkl_intel_lp64 PROPERTIES
-      IMPORTED_LOCATION "${MKL_INTEL_LP64_LIB}"
+  # Create imported targets for individual libraries (ILP64)
+  if(NOT TARGET MKL::mkl_intel_ilp64)
+    add_library(MKL::mkl_intel_ilp64 SHARED IMPORTED)
+    set_target_properties(MKL::mkl_intel_ilp64 PROPERTIES
+      IMPORTED_LOCATION "${MKL_INTEL_ILP64_LIB}"
+      INTERFACE_COMPILE_DEFINITIONS "MKL_ILP64"
     )
   endif()
 
@@ -205,11 +206,12 @@ function(sps_find_mkl)
       )
     endif()
 
-    # Create the main MKL::MKL interface target
+    # Create the main MKL::MKL interface target (ILP64)
     add_library(MKL::MKL INTERFACE IMPORTED)
     set_target_properties(MKL::MKL PROPERTIES
       INTERFACE_INCLUDE_DIRECTORIES "${_mklroot}/include"
-      INTERFACE_LINK_LIBRARIES "MKL::mkl_intel_lp64;MKL::mkl_intel_thread;MKL::mkl_core;MKL::iomp5;Threads::Threads;m;dl"
+      INTERFACE_COMPILE_DEFINITIONS "MKL_ILP64"
+      INTERFACE_LINK_LIBRARIES "MKL::mkl_intel_ilp64;MKL::mkl_intel_thread;MKL::mkl_core;MKL::iomp5;Threads::Threads;m;dl"
     )
   else()
     message(STATUS "MKL: Using sequential MKL (Intel OpenMP not found)")
@@ -222,11 +224,12 @@ function(sps_find_mkl)
       )
     endif()
 
-    # Create the main MKL::MKL interface target
+    # Create the main MKL::MKL interface target (ILP64)
     add_library(MKL::MKL INTERFACE IMPORTED)
     set_target_properties(MKL::MKL PROPERTIES
       INTERFACE_INCLUDE_DIRECTORIES "${_mklroot}/include"
-      INTERFACE_LINK_LIBRARIES "MKL::mkl_intel_lp64;MKL::mkl_sequential;MKL::mkl_core;Threads::Threads;m;dl"
+      INTERFACE_COMPILE_DEFINITIONS "MKL_ILP64"
+      INTERFACE_LINK_LIBRARIES "MKL::mkl_intel_ilp64;MKL::mkl_sequential;MKL::mkl_core;Threads::Threads;m;dl"
     )
   endif()
 
@@ -234,7 +237,7 @@ function(sps_find_mkl)
   find_package(Threads QUIET)
 
   # Export canonical targets
-  foreach(tgt mkl_intel_lp64 mkl_core mkl_intel_thread mkl_sequential iomp5)
+  foreach(tgt mkl_intel_ilp64 mkl_core mkl_intel_thread mkl_sequential iomp5)
     if(TARGET MKL::${tgt})
       message(STATUS "MKL target: MKL::${tgt}")
     endif()
