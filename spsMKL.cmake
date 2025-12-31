@@ -8,6 +8,10 @@ Intel MKL setup with multiple detection methods:
  - Creates MKL::MKL imported target if not already defined
  - Provides sps_target_link_mkl() for easy Eigen+MKL integration
 
+Threading:
+ - Uses threaded MKL (mkl_intel_thread + iomp5) if Intel OpenMP is available
+ - Falls back to sequential MKL if Intel OpenMP is not found
+
 Usage::
 
   include(spsMKL)
@@ -20,7 +24,7 @@ Usage::
   sps_target_link_mkl(myapp)
 
 Requirements:
-  source /opt/intel/oneapi/setvars.sh  (before running cmake)
+  export MKLROOT=/opt/intel/oneapi/mkl/latest  (in .bashrc)
 
 #]==]
 
@@ -45,113 +49,163 @@ function(sps_find_mkl)
 
   message(STATUS "=== MKL SEARCH ===")
 
-  # Method 1: MKLROOT environment variable (if setvars.sh was sourced)
-  if(DEFINED ENV{MKLROOT})
-    set(MKLROOT "$ENV{MKLROOT}")
-    message(STATUS "✅ MKL found via MKLROOT environment")
-    message(STATUS "   MKLROOT: ${MKLROOT}")
-
-    # Verify key files exist
-    if(NOT EXISTS "${MKLROOT}/include/mkl.h")
-      message(WARNING "MKLROOT set but mkl.h not found at ${MKLROOT}/include")
-      set(SPS_MKL_FOUND FALSE PARENT_SCOPE)
-      return()
-    endif()
-
-    # Create imported target
-    add_library(MKL::MKL INTERFACE IMPORTED)
-
-    set_target_properties(MKL::MKL PROPERTIES
-      INTERFACE_INCLUDE_DIRECTORIES "${MKLROOT}/include"
-    )
-
-    # Determine library names based on platform and threading
-    # Using LP64 interface with Intel OpenMP threading (most common)
-    if(WIN32)
-      set(_mkl_libs
-        "${MKLROOT}/lib/mkl_intel_lp64.lib"
-        "${MKLROOT}/lib/mkl_intel_thread.lib"
-        "${MKLROOT}/lib/mkl_core.lib"
-      )
-    else()
-      set(_mkl_libs
-        "${MKLROOT}/lib/libmkl_intel_lp64.so"
-        "${MKLROOT}/lib/libmkl_intel_thread.so"
-        "${MKLROOT}/lib/libmkl_core.so"
-      )
-    endif()
-
-    # Add OpenMP runtime and system libs
-    set_target_properties(MKL::MKL PROPERTIES
-      INTERFACE_LINK_LIBRARIES "${_mkl_libs};iomp5;pthread;m;dl"
-    )
-
+  # Method 1: Try Intel oneAPI CMake config first (preferred)
+  find_package(MKL CONFIG QUIET)
+  if(MKL_FOUND)
+    message(STATUS "MKL: found via oneAPI CMake config")
     set(SPS_MKL_FOUND TRUE PARENT_SCOPE)
     return()
   endif()
 
-  # Method 2: Search common installation paths
-  set(_mkl_search_paths
-    /opt/intel/oneapi/mkl/latest
-    /opt/intel/mkl
-    $ENV{HOME}/intel/oneapi/mkl/latest
-    "C:/Program Files (x86)/Intel/oneAPI/mkl/latest"
+  # Method 2: MKLROOT environment variable or common paths
+  set(_mklroot "")
+  if(DEFINED ENV{MKLROOT})
+    set(_mklroot "$ENV{MKLROOT}")
+  else()
+    # Search common installation paths
+    set(_mkl_search_paths
+      /opt/intel/oneapi/mkl/latest
+      /opt/intel/mkl
+      $ENV{HOME}/intel/oneapi/mkl/latest
+    )
+    foreach(_path ${_mkl_search_paths})
+      if(EXISTS "${_path}/include/mkl.h")
+        set(_mklroot "${_path}")
+        break()
+      endif()
+    endforeach()
+  endif()
+
+  if(_mklroot STREQUAL "")
+    message(STATUS "MKL: NOT FOUND - set MKLROOT environment variable")
+    set(SPS_MKL_FOUND FALSE PARENT_SCOPE)
+    return()
+  endif()
+
+  message(STATUS "MKL: MKLROOT=${_mklroot}")
+
+  # Verify key files exist
+  if(NOT EXISTS "${_mklroot}/include/mkl.h")
+    message(WARNING "MKLROOT set but mkl.h not found at ${_mklroot}/include")
+    set(SPS_MKL_FOUND FALSE PARENT_SCOPE)
+    return()
+  endif()
+
+  # Find the MKL libraries
+  find_library(MKL_INTEL_LP64_LIB
+    NAMES mkl_intel_lp64
+    PATHS "${_mklroot}/lib"
+    NO_DEFAULT_PATH
   )
 
-  foreach(_path ${_mkl_search_paths})
-    if(EXISTS "${_path}/include/mkl.h")
-      set(MKLROOT "${_path}")
-      message(STATUS "✅ MKL found at common path")
-      message(STATUS "   MKLROOT: ${MKLROOT}")
+  find_library(MKL_CORE_LIB
+    NAMES mkl_core
+    PATHS "${_mklroot}/lib"
+    NO_DEFAULT_PATH
+  )
 
-      # Create imported target
-      add_library(MKL::MKL INTERFACE IMPORTED)
-      set_target_properties(MKL::MKL PROPERTIES
-        INTERFACE_INCLUDE_DIRECTORIES "${MKLROOT}/include"
+  find_library(MKL_INTEL_THREAD_LIB
+    NAMES mkl_intel_thread
+    PATHS "${_mklroot}/lib"
+    NO_DEFAULT_PATH
+  )
+
+  find_library(MKL_SEQUENTIAL_LIB
+    NAMES mkl_sequential
+    PATHS "${_mklroot}/lib"
+    NO_DEFAULT_PATH
+  )
+
+  # Find Intel OpenMP (iomp5)
+  set(_compiler_paths
+    "${_mklroot}/../compiler/latest/lib"
+    "/opt/intel/oneapi/compiler/latest/lib"
+  )
+  find_library(IOMP5_LIB
+    NAMES iomp5
+    PATHS ${_compiler_paths}
+    NO_DEFAULT_PATH
+  )
+
+  if(NOT MKL_INTEL_LP64_LIB OR NOT MKL_CORE_LIB)
+    message(WARNING "MKL: Could not find required libraries in ${_mklroot}/lib")
+    set(SPS_MKL_FOUND FALSE PARENT_SCOPE)
+    return()
+  endif()
+
+  # Create imported targets for individual libraries
+  if(NOT TARGET MKL::mkl_intel_lp64)
+    add_library(MKL::mkl_intel_lp64 SHARED IMPORTED)
+    set_target_properties(MKL::mkl_intel_lp64 PROPERTIES
+      IMPORTED_LOCATION "${MKL_INTEL_LP64_LIB}"
+    )
+  endif()
+
+  if(NOT TARGET MKL::mkl_core)
+    add_library(MKL::mkl_core SHARED IMPORTED)
+    set_target_properties(MKL::mkl_core PROPERTIES
+      IMPORTED_LOCATION "${MKL_CORE_LIB}"
+    )
+  endif()
+
+  # Decide threading: use Intel OpenMP if available, else sequential
+  set(_use_threaded FALSE)
+  if(MKL_INTEL_THREAD_LIB AND IOMP5_LIB)
+    set(_use_threaded TRUE)
+  endif()
+
+  if(_use_threaded)
+    message(STATUS "MKL: Using threaded MKL with Intel OpenMP")
+
+    if(NOT TARGET MKL::mkl_intel_thread)
+      add_library(MKL::mkl_intel_thread SHARED IMPORTED)
+      set_target_properties(MKL::mkl_intel_thread PROPERTIES
+        IMPORTED_LOCATION "${MKL_INTEL_THREAD_LIB}"
       )
+    endif()
 
-      if(WIN32)
-        set(_mkl_libs
-          "${MKLROOT}/lib/mkl_intel_lp64.lib"
-          "${MKLROOT}/lib/mkl_intel_thread.lib"
-          "${MKLROOT}/lib/mkl_core.lib"
-        )
-      else()
-        set(_mkl_libs
-          "${MKLROOT}/lib/libmkl_intel_lp64.so"
-          "${MKLROOT}/lib/libmkl_intel_thread.so"
-          "${MKLROOT}/lib/libmkl_core.so"
-        )
-        # Find OpenMP runtime - check oneAPI compiler location
-        if(EXISTS "/opt/intel/oneapi/compiler/latest/lib/libiomp5.so")
-          list(APPEND _mkl_libs "/opt/intel/oneapi/compiler/latest/lib/libiomp5.so")
-        else()
-          list(APPEND _mkl_libs "iomp5")
-        endif()
-      endif()
-
-      set_target_properties(MKL::MKL PROPERTIES
-        INTERFACE_LINK_LIBRARIES "${_mkl_libs};pthread;m;dl"
+    if(NOT TARGET MKL::iomp5)
+      add_library(MKL::iomp5 SHARED IMPORTED)
+      set_target_properties(MKL::iomp5 PROPERTIES
+        IMPORTED_LOCATION "${IOMP5_LIB}"
       )
+    endif()
 
-      set(SPS_MKL_FOUND TRUE PARENT_SCOPE)
-      return()
+    # Create the main MKL::MKL interface target
+    add_library(MKL::MKL INTERFACE IMPORTED)
+    set_target_properties(MKL::MKL PROPERTIES
+      INTERFACE_INCLUDE_DIRECTORIES "${_mklroot}/include"
+      INTERFACE_LINK_LIBRARIES "MKL::mkl_intel_lp64;MKL::mkl_intel_thread;MKL::mkl_core;MKL::iomp5;Threads::Threads;m;dl"
+    )
+  else()
+    message(STATUS "MKL: Using sequential MKL (Intel OpenMP not found)")
+
+    if(NOT TARGET MKL::mkl_sequential)
+      add_library(MKL::mkl_sequential SHARED IMPORTED)
+      set_target_properties(MKL::mkl_sequential PROPERTIES
+        IMPORTED_LOCATION "${MKL_SEQUENTIAL_LIB}"
+      )
+    endif()
+
+    # Create the main MKL::MKL interface target
+    add_library(MKL::MKL INTERFACE IMPORTED)
+    set_target_properties(MKL::MKL PROPERTIES
+      INTERFACE_INCLUDE_DIRECTORIES "${_mklroot}/include"
+      INTERFACE_LINK_LIBRARIES "MKL::mkl_intel_lp64;MKL::mkl_sequential;MKL::mkl_core;Threads::Threads;m;dl"
+    )
+  endif()
+
+  # Need Threads
+  find_package(Threads QUIET)
+
+  # Export canonical targets
+  foreach(tgt mkl_intel_lp64 mkl_core mkl_intel_thread mkl_sequential iomp5)
+    if(TARGET MKL::${tgt})
+      message(STATUS "MKL target: MKL::${tgt}")
     endif()
   endforeach()
 
-  # Method 3: Intel oneAPI CMake config (fallback - often broken)
-  find_package(MKL CONFIG QUIET)
-  if(MKL_FOUND)
-    message(STATUS "✅ MKL found via oneAPI CMake config")
-    message(STATUS "   MKL_ROOT: ${MKL_ROOT}")
-    set(SPS_MKL_FOUND TRUE PARENT_SCOPE)
-    return()
-  endif()
-
-  # Not found
-  message(STATUS "❌ MKL NOT FOUND")
-  message(STATUS "   Install Intel oneAPI MKL or set MKLROOT environment variable")
-  set(SPS_MKL_FOUND FALSE PARENT_SCOPE)
+  set(SPS_MKL_FOUND TRUE PARENT_SCOPE)
 endfunction()
 
 #[==[
@@ -165,7 +219,7 @@ function(sps_target_link_mkl target)
   sps_find_mkl()
 
   if(NOT TARGET MKL::MKL)
-    message(FATAL_ERROR "sps_target_link_mkl: MKL not found. Run: source /opt/intel/oneapi/setvars.sh")
+    message(FATAL_ERROR "sps_target_link_mkl: MKL not found. Set MKLROOT environment variable.")
   endif()
 
   target_link_libraries(${target} PRIVATE MKL::MKL)
