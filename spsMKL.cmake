@@ -147,6 +147,12 @@ function(_sps_find_iomp5_dll mklroot)
   unset(_iomp5_dll CACHE)
 endfunction()
 
+function(_sps_export_iomp5_for_consumers target)
+    target_link_libraries(${target} INTERFACE ${IOMP5_LIBRARY})
+    target_compile_definitions(${target} INTERFACE KMP_DUPLICATE_LIB_OK=TRUE)
+endfunction()
+
+
 #[==[
 sps_find_mkl()
 
