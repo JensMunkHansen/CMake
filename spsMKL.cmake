@@ -468,36 +468,7 @@ function(sps_mkl_verify_no_mixed_openmp_ldd target)
 
   add_custom_command(TARGET ${target} POST_BUILD
     COMMAND /bin/sh -c
-      "set -eu;
-       f=\"$<TARGET_FILE:${target}>\";
-       out=\"\$(ldd \"$f\" 2>/dev/null || true)\";
-
-       # Pull out resolved paths from ldd lines like:
-       #   libiomp5.so => /opt/intel/.../libiomp5.so (0x...)
-       #   libgomp.so.1 => /lib/.../libgomp.so.1 (0x...)
-       # Also handle direct paths lines like:
-       #   /lib64/ld-linux-x86-64.so.2 (0x...)
-       paths=\"\$(printf '%s\n' \"$out\" | awk '
-         /=>/ { print $3; next }
-         $1 ~ /^\\// { print $1; next }
-       ' | sort -u)\";
-
-       has_iomp=0; has_gomp=0;
-
-       # Check the main ldd output (names) and also resolved paths.
-       printf '%s\n' \"$out\"   | grep -q 'libiomp5\\.so' && has_iomp=1 || true;
-       printf '%s\n' \"$out\"   | grep -q 'libgomp\\.so'  && has_gomp=1 || true;
-       printf '%s\n' \"$paths\" | grep -q 'libiomp5\\.so' && has_iomp=1 || true;
-       printf '%s\n' \"$paths\" | grep -q 'libgomp\\.so'  && has_gomp=1 || true;
-
-       if [ \"\$has_iomp\" -eq 1 ] && [ \"\$has_gomp\" -eq 1 ]; then
-         echo 'ERROR: Mixed OpenMP runtimes detected (libiomp5 + libgomp) for:' \"$f\" 1>&2;
-         echo '--- ldd ---' 1>&2;
-         echo \"$out\" 1>&2;
-         echo '--- resolved deps ---' 1>&2;
-         echo \"$paths\" 1>&2;
-         exit 1;
-       fi"
+      "set -eu; f=\"$<TARGET_FILE:${target}>\"; out=\"\$(ldd \"$f\" 2>/dev/null || true)\"; paths=\"\$(echo \"$out\" | awk '/=>/ { print $3; next } $1 ~ /^\\//' | sort -u)\"; has_iomp=0; has_gomp=0; echo \"$out\" | grep -q 'libiomp5\\.so' && has_iomp=1 || true; echo \"$out\" | grep -q 'libgomp\\.so' && has_gomp=1 || true; echo \"$paths\" | grep -q 'libiomp5\\.so' && has_iomp=1 || true; echo \"$paths\" | grep -q 'libgomp\\.so' && has_gomp=1 || true; if [ \"\$has_iomp\" -eq 1 ] && [ \"\$has_gomp\" -eq 1 ]; then echo 'ERROR: Mixed OpenMP runtimes (libiomp5 + libgomp) for:' \"$f\" 1>&2; echo \"$out\" 1>&2; exit 1; fi"
     VERBATIM
   )
 endfunction()
@@ -509,18 +480,7 @@ function(sps_mkl_verify_no_mixed_openmp_for_dir dir)
 
   add_custom_target(verify_openmp_plugins ALL
     COMMAND /bin/sh -c
-      "set -eu;
-       for f in ${dir}/*.so; do
-         [ -e \"$f\" ] || continue;
-         out=\"\$(ldd \"$f\" 2>/dev/null || true)\";
-         echo \"$out\" | grep -q 'libiomp5\\.so' && has_iomp=1 || has_iomp=0;
-         echo \"$out\" | grep -q 'libgomp\\.so'  && has_gomp=1 || has_gomp=0;
-         if [ \$has_iomp -eq 1 ] && [ \$has_gomp -eq 1 ]; then
-           echo \"ERROR: Mixed OpenMP runtimes in plugin: $f\" 1>&2;
-           echo \"$out\" 1>&2;
-           exit 1;
-         fi;
-       done"
+      "set -eu; for f in ${dir}/*.so; do [ -e \"$f\" ] || continue; out=\"\$(ldd \"$f\" 2>/dev/null || true)\"; echo \"$out\" | grep -q 'libiomp5\\.so' && has_iomp=1 || has_iomp=0; echo \"$out\" | grep -q 'libgomp\\.so' && has_gomp=1 || has_gomp=0; if [ \$has_iomp -eq 1 ] && [ \$has_gomp -eq 1 ]; then echo \"ERROR: Mixed OpenMP runtimes in plugin: $f\" 1>&2; echo \"$out\" 1>&2; exit 1; fi; done"
     VERBATIM
   )
 endfunction()
