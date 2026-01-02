@@ -187,15 +187,16 @@ function(sps_find_mkl)
       set(SPS_MKL_THREADED TRUE CACHE BOOL "MKL uses threaded backend" FORCE)
       message(STATUS "  MKL mode: threaded")
 
-      # IMPORTANT: export iomp5 paths for consumers (esp. Ceres) when using intel_thread.
+      # Export iomp5 paths for consumers (esp. Ceres) when using intel_thread.
+      # Intel's MKL config handles threading internally, so we just need to
+      # populate cache variables for external projects that need IOMP5_LIB.
       if(MKL_THREADING STREQUAL "intel_thread")
         if(MKL_ROOT)
-          _sps_export_iomp5_for_consumers("${MKL_ROOT}")
+          _sps_find_iomp5("${MKL_ROOT}")
         elseif(DEFINED ENV{MKLROOT})
-          _sps_export_iomp5_for_consumers("$ENV{MKLROOT}")
+          _sps_find_iomp5("$ENV{MKLROOT}")
         else()
-          # best-effort: try a typical location
-          _sps_export_iomp5_for_consumers("/opt/intel/oneapi/mkl/latest")
+          _sps_find_iomp5("/opt/intel/oneapi/mkl/latest")
         endif()
       endif()
     else()
