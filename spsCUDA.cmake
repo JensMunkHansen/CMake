@@ -1,16 +1,33 @@
 option(SPS_USE_CUDA "Enable CUDA support" OFF)
 
 if(SPS_USE_CUDA)
-  message(STATUS "CUDA language enabled")
-  # CUDA configuration
-  # Auto-detect CUDA toolkit root from nvcc location, fallback to /usr/local/cuda
+  message(STATUS "CUDA support enabled")
+
+  # Auto-detect CUDA toolkit root from nvcc location
   find_program(NVCC_EXECUTABLE nvcc)
   if(NVCC_EXECUTABLE)
     get_filename_component(_nvcc_dir "${NVCC_EXECUTABLE}" DIRECTORY)
     get_filename_component(_cuda_root "${_nvcc_dir}" DIRECTORY)
     set(CUDA_TOOLKIT_ROOT "${_cuda_root}" CACHE PATH "CUDA toolkit root")
+    # Set CMAKE_CUDA_COMPILER to the actual found path (includes .exe on Windows)
+    set(CMAKE_CUDA_COMPILER "${NVCC_EXECUTABLE}" CACHE FILEPATH "CUDA compiler")
   else()
-    set(CUDA_TOOLKIT_ROOT "/usr/local/cuda" CACHE PATH "CUDA toolkit root")
+    # Fallback paths
+    if(WIN32)
+      file(GLOB _cuda_dirs "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v*")
+      if(_cuda_dirs)
+        list(SORT _cuda_dirs ORDER DESCENDING)
+        list(GET _cuda_dirs 0 _cuda_root)
+        set(CUDA_TOOLKIT_ROOT "${_cuda_root}" CACHE PATH "CUDA toolkit root")
+        set(CMAKE_CUDA_COMPILER "${_cuda_root}/bin/nvcc.exe" CACHE FILEPATH "CUDA compiler")
+      endif()
+    else()
+      set(CUDA_TOOLKIT_ROOT "/usr/local/cuda" CACHE PATH "CUDA toolkit root")
+      set(CMAKE_CUDA_COMPILER "/usr/local/cuda/bin/nvcc" CACHE FILEPATH "CUDA compiler")
+    endif()
   endif()
+
+  message(STATUS "  CUDA toolkit: ${CUDA_TOOLKIT_ROOT}")
+  message(STATUS "  CUDA compiler: ${CMAKE_CUDA_COMPILER}")
   set(CMAKE_CUDA_ARCHITECTURES "86" CACHE STRING "CUDA architectures" FORCE)
 endif()
