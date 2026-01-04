@@ -104,16 +104,18 @@ function(sps_args_completion target)
 
     set(SYMLINK_PATH "${ARG_SYMLINK_DIR}/${target}")
 
-    # Create symlink
-    add_custom_command(TARGET ${target} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E make_directory "${ARG_SYMLINK_DIR}"
-        COMMAND ${CMAKE_COMMAND} -E create_symlink
-            "$<TARGET_FILE:${target}>"
-            "${SYMLINK_PATH}"
-        COMMENT "Creating symlink: ${ARG_SYMLINK_DIR}/${target}"
-    )
+    # Create symlink (Unix only - Windows requires admin/developer mode)
+    if(UNIX)
+        add_custom_command(TARGET ${target} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E make_directory "${ARG_SYMLINK_DIR}"
+            COMMAND ${CMAKE_COMMAND} -E create_symlink
+                "$<TARGET_FILE:${target}>"
+                "${SYMLINK_PATH}"
+            COMMENT "Creating symlink: ${ARG_SYMLINK_DIR}/${target}"
+        )
+    endif()
 
-    # Bash completion (Linux/macOS/Git Bash on Windows)
+    # Bash completion (Linux/macOS)
     if(ARG_BASH AND UNIX)
         set(COMPLETION_SCRIPT "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/spsArgsCompletion.bash")
         add_custom_command(TARGET ${target} POST_BUILD

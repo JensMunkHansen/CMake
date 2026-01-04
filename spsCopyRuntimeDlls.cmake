@@ -1,0 +1,42 @@
+#[==[.rst:
+*******************
+spsCopyRuntimeDlls
+*******************
+
+Copy runtime DLLs to executable directory on Windows (shared library builds).
+
+Usage::
+
+  include(spsCopyRuntimeDlls)
+
+  add_executable(myapp main.cpp)
+  target_link_libraries(myapp PRIVATE mylib)
+
+  sps_copy_runtime_dlls(myapp)
+
+Requires CMake 3.21+ for TARGET_RUNTIME_DLLS generator expression.
+
+#]==]
+
+#[==[.rst:
+.. cmake:command:: sps_copy_runtime_dlls
+
+  Copy all runtime DLLs for a target to its output directory::
+
+    sps_copy_runtime_dlls(<target>)
+
+  On Windows with shared libraries, this adds a post-build command to copy
+  all dependent DLLs next to the executable. Does nothing on other platforms.
+
+#]==]
+function(sps_copy_runtime_dlls target)
+    if(WIN32)
+        add_custom_command(TARGET ${target} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                $<TARGET_RUNTIME_DLLS:${target}>
+                $<TARGET_FILE_DIR:${target}>
+            COMMAND_EXPAND_LISTS
+            COMMENT "Copying runtime DLLs for ${target}"
+        )
+    endif()
+endfunction()
