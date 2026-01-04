@@ -58,5 +58,42 @@ if (BUILD_TESTING)
   endif()
   include(Catch)
   enable_testing()
+
+  #[==[.rst:
+  sps_catch_discover_tests
+  ------------------------
+  Wrapper around catch_discover_tests that also registers tests with specific
+  Catch2 tags as ctest labels.
+
+  Usage::
+
+      sps_catch_discover_tests(<target> [LABELS tag1 tag2 ...])
+
+  Example::
+
+      sps_catch_discover_tests(MyTest LABELS python cuda backends)
+
+  This will:
+  1. Discover all tests normally
+  2. For each label, discover tests matching [tag] and add the ctest label
+  #]==]
+  macro(sps_catch_discover_tests target)
+    cmake_parse_arguments(ARG "" "" "LABELS" ${ARGN})
+
+    # Discover all tests (without labels)
+    catch_discover_tests(${target})
+
+    # For each requested label, discover tests with that tag and add label
+    if(ARG_LABELS)
+      foreach(label ${ARG_LABELS})
+        catch_discover_tests(${target}
+          TEST_SPEC "[${label}]"
+          TEST_PREFIX "${label}::"
+          TEST_SUFFIX ""
+          PROPERTIES LABELS "${label}"
+        )
+      endforeach()
+    endif()
+  endmacro()
 endif()
 
