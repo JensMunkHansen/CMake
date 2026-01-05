@@ -27,12 +27,13 @@ spsDoxygen
     PROJECT_NAME  - Project name shown in documentation
     PROJECT_BRIEF - Brief project description
     EXCLUDE_PATTERNS - Additional patterns to exclude (optional)
+    IMAGE_PATH    - Directories containing images for markdown (optional)
 #]==]
 function(sps_setup_doxygen)
   cmake_parse_arguments(DOXY
     ""
     "TARGET;OUTPUT_DIR;PROJECT_NAME;PROJECT_BRIEF"
-    "INPUT_DIRS;EXCLUDE_PATTERNS;EXAMPLE_PATH"
+    "INPUT_DIRS;EXCLUDE_PATTERNS;EXAMPLE_PATH;IMAGE_PATH"
     ${ARGN}
   )
 
@@ -110,6 +111,7 @@ FILE_PATTERNS          = *.h *.hpp *.cpp *.c *.md *.py
 EXCLUDE_PATTERNS       = ${DOXY_EXCLUDE_STR}
 USE_MDFILE_AS_MAINPAGE = ${PROJECT_SOURCE_DIR}/README.md
 EXAMPLE_PATH           = ${DOXY_EXAMPLE_PATH}
+IMAGE_PATH             = ${DOXY_IMAGE_PATH}
 
 #---------------------------------------------------------------------------
 # Documentation scope
