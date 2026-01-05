@@ -31,10 +31,13 @@ Requires CMake 3.21+ for TARGET_RUNTIME_DLLS generator expression.
 #]==]
 function(sps_copy_runtime_dlls target)
     if(WIN32)
+        # Use $<IF:...> to run 'cmake -E true' (no-op) when DLL list is empty,
+        # avoiding errors from copy_if_different with no source files
         add_custom_command(TARGET ${target} POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            COMMAND ${CMAKE_COMMAND} -E
+                "$<IF:$<BOOL:$<TARGET_RUNTIME_DLLS:${target}>>,copy_if_different,true>"
                 $<TARGET_RUNTIME_DLLS:${target}>
-                $<TARGET_FILE_DIR:${target}>
+                "$<$<BOOL:$<TARGET_RUNTIME_DLLS:${target}>>:$<TARGET_FILE_DIR:${target}>>"
             COMMAND_EXPAND_LISTS
             COMMENT "Copying runtime DLLs for ${target}"
         )

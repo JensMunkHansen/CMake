@@ -29,5 +29,19 @@ if(SPS_USE_CUDA)
 
   message(STATUS "  CUDA toolkit: ${CUDA_TOOLKIT_ROOT}")
   message(STATUS "  CUDA compiler: ${CMAKE_CUDA_COMPILER}")
-  set(CMAKE_CUDA_ARCHITECTURES "86" CACHE STRING "CUDA architectures" FORCE)
+
+  # Auto-detect CUDA architecture if not specified
+  # - "native": detect GPU at configure time (CMake 3.24+, requires GPU present)
+  # - "all-major": build for all major architectures (larger binary, portable)
+  # - Specific arch like "86" or "89" for targeted builds
+  if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES OR CMAKE_CUDA_ARCHITECTURES STREQUAL "")
+    if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.24")
+      # Try native detection first; fall back to all-major if no GPU present
+      set(CMAKE_CUDA_ARCHITECTURES "native" CACHE STRING "CUDA architectures")
+    else()
+      # Older CMake: use a reasonable default
+      set(CMAKE_CUDA_ARCHITECTURES "70;75;80;86;89;90" CACHE STRING "CUDA architectures")
+    endif()
+  endif()
+  message(STATUS "  CUDA architectures: ${CMAKE_CUDA_ARCHITECTURES}")
 endif()
