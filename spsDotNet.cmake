@@ -340,19 +340,14 @@ endif()
     <!-- Output aligned with CMake multi-config structure -->
     <BaseOutputPath>${_BIN_DIR}/</BaseOutputPath>
 
-    <!-- NuGet Package Properties (semver for package version) -->
+    <!-- NuGet Package Properties -->
     <PackageId>${DOTNET_NAME}</PackageId>
-    <Version>${DOTNET_SEMVER}</Version>
     <Authors>${DOTNET_AUTHORS}</Authors>
     <Description>${DOTNET_DESCRIPTION}</Description>
     <PackageOutputPath>${_PACKAGES_DIR}</PackageOutputPath>
 
-    <!-- DLL File Properties (numeric version required) -->
-    <FileVersion>${DOTNET_VERSION}</FileVersion>
-    <AssemblyVersion>${DOTNET_VERSION}</AssemblyVersion>
-    <InformationalVersion>${DOTNET_SEMVER}</InformationalVersion>
-    <!-- Disable .NET SDK appending its own git hash (we control version via CMake) -->
-    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <!-- Version is set by MinVer from git tags (must match CMake spsProjectVersion.cmake) -->
+    <MinVerTagPrefix>v</MinVerTagPrefix>
     <Company>${DOTNET_COMPANY}</Company>
     <Product>${DOTNET_PRODUCT}</Product>${_COPYRIGHT_XML}
   </PropertyGroup>
@@ -363,6 +358,11 @@ endif()
     <DebugSymbols>true</DebugSymbols>
     <EnableNativeInteropDebugging>true</EnableNativeInteropDebugging>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- MinVer for git-based versioning (must match CMake spsProjectVersion.cmake) -->
+    <PackageReference Include=\"MinVer\" Version=\"6.0.0\" PrivateAssets=\"All\" />
+  </ItemGroup>
 
   <ItemGroup>
     <!-- Native libraries (main target and all dependencies) -->
