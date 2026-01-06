@@ -31,12 +31,15 @@ Then build documentation with: ``cmake --build build --target doc``
     PROJECT_BRIEF - Brief project description
     EXCLUDE_PATTERNS - Additional patterns to exclude (optional)
     IMAGE_PATH    - Directories containing images for markdown (optional)
+    PREDEFINED    - Preprocessor macro definitions (optional)
+    EXPAND_AS_DEFINED - Macros to expand (optional)
+    USE_DOT       - Enable Graphviz DOT graphs (optional, default OFF)
 #]==]
 function(sps_setup_doxygen)
   cmake_parse_arguments(DOXY
-    ""
+    "USE_DOT"
     "TARGET;OUTPUT_DIR;PROJECT_NAME;PROJECT_BRIEF"
-    "INPUT_DIRS;EXCLUDE_PATTERNS;EXAMPLE_PATH;IMAGE_PATH"
+    "INPUT_DIRS;EXCLUDE_PATTERNS;EXAMPLE_PATH;IMAGE_PATH;PREDEFINED;EXPAND_AS_DEFINED"
     ${ARGN}
   )
 
@@ -78,7 +81,6 @@ function(sps_setup_doxygen)
   # Build exclude patterns (always exclude external dependencies)
   set(DOXY_EXCLUDE_LIST
     "*/Eigen/*"
-    "*/SIMDMath/*"
     "*/build/*"
     "*/cmake-build-*/*"
     "*/_deps/*"
@@ -87,6 +89,33 @@ function(sps_setup_doxygen)
     list(APPEND DOXY_EXCLUDE_LIST ${DOXY_EXCLUDE_PATTERNS})
   endif()
   string(REPLACE ";" " " DOXY_EXCLUDE_STR "${DOXY_EXCLUDE_LIST}")
+
+  # Handle PREDEFINED macros
+  if(DOXY_PREDEFINED)
+    string(REPLACE ";" " \\\n                         " DOXY_PREDEFINED_STR "${DOXY_PREDEFINED}")
+  else()
+    set(DOXY_PREDEFINED_STR "")
+  endif()
+
+  # Handle EXPAND_AS_DEFINED macros
+  if(DOXY_EXPAND_AS_DEFINED)
+    string(REPLACE ";" " \\\n                         " DOXY_EXPAND_AS_DEFINED_STR "${DOXY_EXPAND_AS_DEFINED}")
+  else()
+    set(DOXY_EXPAND_AS_DEFINED_STR "")
+  endif()
+
+  # Handle DOT settings
+  if(DOXY_USE_DOT)
+    find_program(DOT_EXECUTABLE dot)
+    if(DOT_EXECUTABLE)
+      set(DOXY_HAVE_DOT "YES")
+    else()
+      message(STATUS "Graphviz dot not found - disabling DOT graphs")
+      set(DOXY_HAVE_DOT "NO")
+    endif()
+  else()
+    set(DOXY_HAVE_DOT "NO")
+  endif()
 
   # Create output directory
   file(MAKE_DIRECTORY "${DOXY_OUTPUT_DIR}")
@@ -167,11 +196,18 @@ ENABLE_PREPROCESSING   = YES
 MACRO_EXPANSION        = YES
 EXPAND_ONLY_PREDEF     = NO
 SEARCH_INCLUDES        = YES
+PREDEFINED             = ${DOXY_PREDEFINED_STR}
+EXPAND_AS_DEFINED      = ${DOXY_EXPAND_AS_DEFINED_STR}
 
 #---------------------------------------------------------------------------
-# Graph settings
+# Graph settings (requires Graphviz)
 #---------------------------------------------------------------------------
-HAVE_DOT               = NO
+HAVE_DOT               = ${DOXY_HAVE_DOT}
+COLLABORATION_GRAPH    = ${DOXY_HAVE_DOT}
+INCLUDE_GRAPH          = ${DOXY_HAVE_DOT}
+INCLUDED_BY_GRAPH      = ${DOXY_HAVE_DOT}
+CALL_GRAPH             = NO
+CALLER_GRAPH           = NO
 
 #---------------------------------------------------------------------------
 # Warning settings
