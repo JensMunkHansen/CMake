@@ -1,7 +1,7 @@
 #[==[.rst:
-******
+*******
 spsSBOM
-******
+*******
 
 Software Bill of Materials (SBOM) management for dependency versions.
 

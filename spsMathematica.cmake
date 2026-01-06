@@ -1,22 +1,27 @@
 #[==[.rst:
-***************
+**************
 spsMathematica
-***************
-  Module for finding and configuring Wolfram Mathematica.
-  Wraps the FindMathematica module with platform-specific installation detection.
+**************
 
-  Usage:
+Module for finding and configuring Wolfram Mathematica.
+Wraps the FindMathematica module with platform-specific installation detection.
+
+Usage::
+
     include(spsMathematica)
 
-  This will:
-  - Check common installation paths for Mathematica on each platform
-  - Only call find_package(Mathematica) if installation is likely present
-  - Set MATHEMATICA_FOUND to TRUE or FALSE
+This will:
 
-  After including:
+- Check common installation paths for Mathematica on each platform
+- Only call find_package(Mathematica) if installation is likely present
+- Set MATHEMATICA_FOUND to TRUE or FALSE
+
+After including::
+
     if(MATHEMATICA_FOUND)
       # Mathematica is available
     endif()
+
 #]==]
 
 set(MATHEMATICA_FOUND FALSE)

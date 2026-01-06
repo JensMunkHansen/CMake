@@ -1,7 +1,7 @@
 #[==[.rst:
-*********
+*********************
 spsEmscriptenSettings
-*********
+*********************
 #
 #]==]
 
@@ -71,22 +71,19 @@ function(sps_set_emscripten_debug_flags debug_level debug_options)
 endfunction()
 
 #[==[.rst:
-
 .. cmake:command:: sps_target_compile_flags
 
-  Conditionally output debug statements
-  |module-internal|
+  Compile flags helper for WASM targets. |module-internal|
 
-  The :cmake:command:`sps_target_compile_flags` function is provided to assist in compiling WASM
+  The :cmake:command:`sps_target_compile_flags` function is provided to assist in compiling WASM.
 
   .. code-block:: cmake
-    sps_target_compile_flags(TARGET
-      TRHEADING_ENABLED             <ON|OFF> (default: OFF)
-      OPTIMIZATION                  <NONE, LITTLE, MORE, BEST, SMALL,
-                                     SMALLEST, SMALLEST_WITH_CLOSURE> (default: NONE)
-      DEBUG                         <NONE, READABLE_JS, PROFILE,
-                                     DEBUG_NATIVE> (default: READABLE_JS)
-    )
+
+      sps_target_compile_flags(TARGET
+        TRHEADING_ENABLED             <ON|OFF>
+        OPTIMIZATION                  <NONE|LITTLE|MORE|BEST|SMALL|SMALLEST|SMALLEST_WITH_CLOSURE>
+        DEBUG                         <NONE|READABLE_JS|PROFILE|DEBUG_NATIVE>)
+
 #]==]
 
 # Ensure at least one argument (the target) is passed. This is stupid!!!
@@ -262,20 +259,22 @@ endfunction()
 
 #[==[.rst:
 .. cmake:command:: _sps_emscripten_settings
-Set various variables for Emscripten
-.. code-block:: cmake
-_sps_emscripten_settings(
-  EMBIND                        <ON|OFF> (default: OFF)
-  ES6_MODULE                    <ON|OFF> (default: ON)
-  EXPORT_NAME                   <variable>
-  ENVIRONMENT                   <default: qualified guess>
-  OPTIMIZATION                  <NONE, LITTLE, MORE, BEST, SMALL,
-                                 SMALLEST, SMALLEST_WITH_CLOSURE> (default: NONE)
-  DEBUG                         <NONE, READABLE_JS, PROFILE,
-                                 DEBUG_NATIVE> (default: READABLE_JS)
-  EMSCRIPTEN_DEBUG_INFO         <variable>
-  EMSCRIPTEN_LINK_OPTIONS       <variable>
-  EMSCRIPTEN_OPTIMIZATION_FLAGS <variable>)
+
+  Set various variables for Emscripten.
+
+  .. code-block:: cmake
+
+      _sps_emscripten_settings(
+        EMBIND                        <ON|OFF>
+        ES6_MODULE                    <ON|OFF>
+        EXPORT_NAME                   <variable>
+        ENVIRONMENT                   <default: qualified guess>
+        OPTIMIZATION                  <NONE|LITTLE|MORE|BEST|SMALL|SMALLEST|SMALLEST_WITH_CLOSURE>
+        DEBUG                         <NONE|READABLE_JS|PROFILE|DEBUG_NATIVE>
+        EMSCRIPTEN_DEBUG_INFO         <variable>
+        EMSCRIPTEN_LINK_OPTIONS       <variable>
+        EMSCRIPTEN_OPTIMIZATION_FLAGS <variable>)
+
 #]==]
 function(_sps_emscripten_settings)
 
@@ -460,45 +459,47 @@ endfunction()
 
 #[==[.rst:
 .. cmake:command:: sps_emscripten_module
-Create a WASM Emscripten module
-.. code-block:: cmake
-sps_emscripten_module(
-  SIDE_MODULE
-  MAIN_MODULE
-  SDL2
-  IMPORTED_MEMORY
-  ASYNCIFY_DEBUG
-  DEBUG_VALIDATION              (check if binaryen modifies debug information)
-  64_BIT                        <ON|OFF> (default: OFF)
-  ENABLE_EXCEPTIONS             <ON|OFF> (default: ON)
-  TARGET_NAME                   <variable>
-  SOURCE_FILES                  <list>     (.cxx, .c)
-  INCLUDE_DIRS                  <list>
-  JAVASCRIPT_FILES              <list>     (copied to outdir)
-  DISABLE_NODE
-  PRE_JS                        --pre-js
-  ENVIRONMENT                   (default: AUTO)
-  INITIAL_MEMORY                (default: 1GB) May crash if too low
-  MAXIMUM_MEMORY                (default: 4GB)
-  TRHEADING_ENABLED             <ON|OFF>   (default: OFF)
-  THREAD_POOL_SIZE              (default: 4)
-  MAX_NUMBER_OF_THREADS         (default: 4)
-  EMBIND                        <ON|OFF>   (default: OFF)
-  OPTIMIZATION                  <variable> (default: NONE)
-  DEBUG                         <variable> (default: READABLE_JS)
-  ES6_MODULE                    <ON|OFF>   (default: OFF)
-  SIDE_MODULES                  <list> (modules (.wasm) to use)
-  LIBRARIES                     <list> (libraries (.a) to link to)
-  EXPORTED_FUNCTIONS            <list> (without '_' prefix)
-  EXPORT_NAME                   <variable>
-  SHARED_MEMORY                 <ON|OFF>
-  COMPILE_DEFINITIONS           <list>  
-  OPTIMIZATION                  <NONE, LITTLE, MORE, BEST, SMALL, SMALLEST, SMALLEST_WITH_CLOSURE>
-  COMPILE_OPTIMIZATION                  <NONE, LITTLE, MORE, BEST, SMALL, SMALLEST, SMALLEST_WITH_CLOSURE>
-  DEBUG                         <NONE, READABLE_JS, PROFILE, DEBUG_NATIVE>
-  VERBOSE                       Show stuff)
 
-# Responsible for platform, exported functions, filesystem, threads, stack-size, memory layout etc.
+  Create a WASM Emscripten module.
+
+  Responsible for platform, exported functions, filesystem, threads, stack-size, memory layout etc.
+
+  .. code-block:: cmake
+
+      sps_emscripten_module(
+        SIDE_MODULE
+        MAIN_MODULE
+        SDL2
+        IMPORTED_MEMORY
+        ASYNCIFY_DEBUG
+        DEBUG_VALIDATION
+        64_BIT                        <ON|OFF>
+        ENABLE_EXCEPTIONS             <ON|OFF>
+        TARGET_NAME                   <variable>
+        SOURCE_FILES                  <list>
+        INCLUDE_DIRS                  <list>
+        JAVASCRIPT_FILES              <list>
+        DISABLE_NODE
+        PRE_JS                        --pre-js
+        ENVIRONMENT                   (default: AUTO)
+        INITIAL_MEMORY                (default: 1GB)
+        MAXIMUM_MEMORY                (default: 4GB)
+        TRHEADING_ENABLED             <ON|OFF>
+        THREAD_POOL_SIZE              (default: 4)
+        MAX_NUMBER_OF_THREADS         (default: 4)
+        EMBIND                        <ON|OFF>
+        OPTIMIZATION                  <NONE|LITTLE|MORE|BEST|SMALL|SMALLEST|SMALLEST_WITH_CLOSURE>
+        COMPILE_OPTIMIZATION          <NONE|LITTLE|MORE|BEST|SMALL|SMALLEST|SMALLEST_WITH_CLOSURE>
+        DEBUG                         <NONE|READABLE_JS|PROFILE|DEBUG_NATIVE>
+        ES6_MODULE                    <ON|OFF>
+        SIDE_MODULES                  <list>
+        LIBRARIES                     <list>
+        EXPORTED_FUNCTIONS            <list>
+        EXPORT_NAME                   <variable>
+        SHARED_MEMORY                 <ON|OFF>
+        COMPILE_DEFINITIONS           <list>
+        VERBOSE)
+
 #]==]
 function(sps_emscripten_module)
   # Define the arguments that the function accepts

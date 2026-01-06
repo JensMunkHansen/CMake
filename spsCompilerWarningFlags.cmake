@@ -1,7 +1,7 @@
 #[==[.rst:
-*********
+***********************
 spsCompilerWarningFlags
-*********
+***********************
   Compiler warnings for cross-platform builds. Appends to the interface target 'build' (if present).
 
   Platforms:

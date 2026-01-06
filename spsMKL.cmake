@@ -1,28 +1,43 @@
 #[==[.rst:
-********
+******
 spsMKL
-********
-Intel MKL setup with multiple detection methods:
- - Uses Intel oneAPI CMake config if available (preferred)
- - Falls back to MKLROOT environment variable / common install paths
- - Creates imported targets that model Windows runtime DLLs correctly:
-     - MKL::mkl_rt   (mkl_rt.lib + mkl_rt.dll)    [Windows, dynamic MKL]
-     - MKL::iomp5    (libiomp5md.lib + libiomp5md.dll) [Windows, threaded]
-   so consumers can copy runtimes elsewhere using named targets.
+******
 
- - Creates MKL::MKL umbrella INTERFACE target for linking.
+Intel MKL setup with multiple detection methods.
 
-Threading:
- - Uses threaded MKL if Intel OpenMP is found
- - Falls back to sequential MKL if Intel OpenMP is not found
+Detection Methods
+-----------------
+
+- Uses Intel oneAPI CMake config if available (preferred)
+- Falls back to MKLROOT environment variable / common install paths
+
+Imported Targets
+----------------
+
+Creates imported targets that model Windows runtime DLLs correctly:
+
+- ``MKL::mkl_rt`` - mkl_rt.lib + mkl_rt.dll (Windows, dynamic MKL)
+- ``MKL::iomp5`` - libiomp5md.lib + libiomp5md.dll (Windows, threaded)
+- ``MKL::MKL`` - umbrella INTERFACE target for linking
+
+Threading
+---------
+
+- Uses threaded MKL if Intel OpenMP is found
+- Falls back to sequential MKL if Intel OpenMP is not found
+
+Exports
+-------
 
 Exports (kept for external use):
- - IOMP5_LIB       (import library path)
- - IOMP5_LIB_DIR   (directory of import library)
+
+- ``IOMP5_LIB`` - import library path
+- ``IOMP5_LIB_DIR`` - directory of import library
 
 Optional exports (for convenience):
- - IOMP5_DLL / IOMP5_DLL_DIR (Windows runtime DLL)
- - MKL_DLL / MKL_DLL_DIR     (Windows runtime DLL)
+
+- ``IOMP5_DLL`` / ``IOMP5_DLL_DIR`` - Windows runtime DLL
+- ``MKL_DLL`` / ``MKL_DLL_DIR`` - Windows runtime DLL
 
 #]==]
 

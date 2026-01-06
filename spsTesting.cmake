@@ -1,8 +1,10 @@
 #[==[.rst:
-*********
+**********
 spsTesting
-*********
-  Include this for enabling the Catch2 test framework.
+**********
+
+Include this for enabling the Catch2 test framework.
+
 #]==]
 
 include(spsSBOM)
@@ -60,22 +62,24 @@ if (BUILD_TESTING)
   enable_testing()
 
   #[==[.rst:
-  sps_catch_discover_tests
-  ------------------------
-  Wrapper around catch_discover_tests that also registers tests with specific
-  Catch2 tags as ctest labels.
+  .. cmake:command:: sps_catch_discover_tests
 
-  Usage::
+    Wrapper around catch_discover_tests that also registers tests with specific
+    Catch2 tags as ctest labels.
 
-      sps_catch_discover_tests(<target> [LABELS tag1 tag2 ...])
+    Usage::
 
-  Example::
+        sps_catch_discover_tests(<target> [LABELS tag1 tag2 ...])
 
-      sps_catch_discover_tests(MyTest LABELS python cuda backends)
+    Example::
 
-  This will:
-  1. Discover all tests normally
-  2. For each label, discover tests matching [tag] and add the ctest label
+        sps_catch_discover_tests(MyTest LABELS python cuda backends)
+
+    This will:
+
+    1. Discover all tests normally
+    2. For each label, discover tests matching [tag] and add the ctest label
+
   #]==]
   macro(sps_catch_discover_tests target)
     cmake_parse_arguments(ARG "" "" "LABELS" ${ARGN})

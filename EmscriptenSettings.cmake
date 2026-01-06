@@ -3,9 +3,9 @@ get_filename_component(_EmscriptenSetting_dir "${CMAKE_CURRENT_LIST_FILE}" DIREC
 include(Hardware)
 
 #[==[.rst:
-*********
+******************
 EmscriptenSettings
-*********
+******************
 #
 #]==]
 #[==[.rst:
@@ -106,25 +106,27 @@ endfunction()
 
 #[==[.rst:
 .. cmake:command:: _sps_emscripten_settings
-Set various variables for Emscripten
-.. code-block:: cmake
-_sps_emscripten_settings(
-  TRHEADING_ENABLED             <ON|OFF> (default: OFF)
-  THREAD_POOL_SIZE              (default: 4)
-  MAX_NUMBER_OF_THREADS         (default: 4, hard limit for runtime threads)
-  EMBIND                        <ON|OFF> (default: OFF)
-  ES6_MODULE                    <ON|OFF> (default: ON)
-  EXPORT_NAME                   <variable>
-  OPTIMIZATION                  <NONE, LITTLE, MORE, BEST, SMALL,
-                                 SMALLEST, SMALLEST_WITH_CLOSURE> (default: NONE)
-  DEBUG                         <NONE, READABLE_JS, PROFILE,
-                                 DEBUG_NATIVE> (default: READABLE_JS)
-  INITIAL_MEMORY                (default: 1GB) May crash if too low
-  MAXIMUM_MEMORY                (default: 4GB)
-  EMSCRIPTEN_EXPORTED_FUNCTIONS <variable>
-  EMSCRIPTEN_DEBUG_INFO         <variable>
-  EMSCRIPTEN_LINK_OPTIONS       <variable>
-  EMSCRIPTEN_OPTIMIZATION_FLAGS <variable>)
+
+  Set various variables for Emscripten.
+
+  .. code-block:: cmake
+
+      _sps_emscripten_settings(
+        TRHEADING_ENABLED             <ON|OFF> (default: OFF)
+        THREAD_POOL_SIZE              (default: 4)
+        MAX_NUMBER_OF_THREADS         (default: 4, hard limit for runtime threads)
+        EMBIND                        <ON|OFF> (default: OFF)
+        ES6_MODULE                    <ON|OFF> (default: ON)
+        EXPORT_NAME                   <variable>
+        OPTIMIZATION                  <NONE|LITTLE|MORE|BEST|SMALL|SMALLEST|SMALLEST_WITH_CLOSURE>
+        DEBUG                         <NONE|READABLE_JS|PROFILE|DEBUG_NATIVE>
+        INITIAL_MEMORY                (default: 1GB) May crash if too low
+        MAXIMUM_MEMORY                (default: 4GB)
+        EMSCRIPTEN_EXPORTED_FUNCTIONS <variable>
+        EMSCRIPTEN_DEBUG_INFO         <variable>
+        EMSCRIPTEN_LINK_OPTIONS       <variable>
+        EMSCRIPTEN_OPTIMIZATION_FLAGS <variable>)
+
 #]==]
 function(_sps_emscripten_settings)
   # Define the arguments that the function accepts
@@ -376,31 +378,32 @@ endfunction()
 
 #[==[.rst:
 .. cmake:command:: sps_emscripten_module
-Create a WASM Emscripten module
-.. code-block:: cmake
-sps_emscripten_module(
-  SIDE_MODULE
-  MAIN_MODULE
-  TARGET_NAME                   <variable>
-  SOURCE_FILES                  <list>     (.cxx, .c)
-  INCLUDE_DIRS                  <list>
-  JAVASCRIPT_FILES              <list>     (copied to outdir)
-  DISABLE_NODE
-  PRE_JS                        --pre-js
-  TRHEADING_ENABLED             <ON|OFF>   (default: OFF)
-  THREAD_POOL_SIZE              (default: 4)
-  MAX_NUMBER_OF_THREADS         (default: 4)
-  EMBIND                        <ON|OFF>   (default: OFF)
-  OPTIMIZATION                  <variable> (default: NONE)
-  DEBUG                         <variable> (default: READABLE_JS) 
-  ES6_MODULE                    <ON|OFF>   (default: OFF)
-  SIDE_MODULES                  <list> (modules (.wasm) to use)
-  LIBRARIES                     <list> (libraries (.a) to link to)
-  EXPORTED_FUNCTIONS            <list> (without '_' prefix)
-  EXPORT_NAME                   <variable>
-  OPTIMIZATION                  <NONE, LITTLE, MORE, BEST, SMALL, SMALLEST, SMALLEST_WITH_CLOSURE>
-  DEBUG                         <NONE, READABLE_JS, PROFILE, DEBUG_NATIVE>
-  VERBOSE                       Show stuff)
+
+  Create a WASM Emscripten module.
+
+  .. code-block:: cmake
+
+      sps_emscripten_module(
+        SIDE_MODULE
+        MAIN_MODULE
+        TARGET_NAME                   <variable>
+        SOURCE_FILES                  <list>
+        INCLUDE_DIRS                  <list>
+        JAVASCRIPT_FILES              <list>
+        DISABLE_NODE
+        PRE_JS                        --pre-js
+        TRHEADING_ENABLED             <ON|OFF>
+        THREAD_POOL_SIZE              (default: 4)
+        MAX_NUMBER_OF_THREADS         (default: 4)
+        EMBIND                        <ON|OFF>
+        OPTIMIZATION                  <NONE|LITTLE|MORE|BEST|SMALL|SMALLEST|SMALLEST_WITH_CLOSURE>
+        DEBUG                         <NONE|READABLE_JS|PROFILE|DEBUG_NATIVE>
+        ES6_MODULE                    <ON|OFF>
+        SIDE_MODULES                  <list>
+        LIBRARIES                     <list>
+        EXPORTED_FUNCTIONS            <list>
+        EXPORT_NAME                   <variable>
+        VERBOSE)
 
 #]==]
 function(sps_emscripten_module)

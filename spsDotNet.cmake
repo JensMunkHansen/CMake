@@ -3,23 +3,32 @@
 spsDotNet
 **********
 
-  Provides functions for building .NET/NuGet packages from native C/C++ libraries
-  and creating .NET test projects that consume them.
+Provides functions for building .NET/NuGet packages from native C/C++ libraries
+and creating .NET test projects that consume them.
 
-  Overview:
-    This module enables CMake projects to create NuGet packages containing native
-    libraries with P/Invoke bindings, using CMake's ``file(GET_RUNTIME_DEPENDENCIES)``
-    to automatically discover and include shared library dependencies.
+Overview
+--------
 
-  Output Structure (aligned with CMake multi-config):
-    For a Release CMake build with Release .NET config:
-      build/Release/bin/              - Native libraries
-      build/Release/bin/Release/      - .NET config
-        net8.0/linux-x64/             - TFM and RID
-          GridSearch.dll              - Managed assembly + native deps
-      build/Release/packages/         - NuGet packages
+This module enables CMake projects to create NuGet packages containing native
+libraries with P/Invoke bindings, using CMake's ``file(GET_RUNTIME_DEPENDENCIES)``
+to automatically discover and include shared library dependencies.
 
-  Usage:
+Output Structure (aligned with CMake multi-config)
+--------------------------------------------------
+
+For a Release CMake build with Release .NET config::
+
+    build/Release/bin/              - Native libraries
+    build/Release/bin/Release/      - .NET config
+      net8.0/linux-x64/             - TFM and RID
+        GridSearch.dll              - Managed assembly + native deps
+    build/Release/packages/         - NuGet packages
+
+Usage
+-----
+
+::
+
     include(spsDotNet)
 
     sps_add_dotnet_library(
@@ -35,7 +44,7 @@ spsDotNet
       DEPENDS GridSearch_dotnet_pack
     )
 
-  Then build with: cmake --build build --target GridSearchTest_build
+Then build with: ``cmake --build build --target GridSearchTest_build``
 
 #]==]
 

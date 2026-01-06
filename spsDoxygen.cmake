@@ -1,10 +1,12 @@
 #[==[.rst:
-***********
+**********
 spsDoxygen
-***********
-  Provides a simple function to set up Doxygen documentation generation.
+**********
 
-  Usage:
+Provides a simple function to set up Doxygen documentation generation.
+
+Usage::
+
     include(spsDoxygen)
     sps_setup_doxygen(
       TARGET doc                          # Custom target name
@@ -14,7 +16,8 @@ spsDoxygen
       PROJECT_BRIEF "Ray-grid intersection library"  # Brief description
     )
 
-  Then build documentation with: cmake --build build --target doc
+Then build documentation with: ``cmake --build build --target doc``
+
 #]==]
 
 #[==[

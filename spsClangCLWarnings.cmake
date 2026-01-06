@@ -1,7 +1,7 @@
 #[==[.rst:
-*********
+******************
 spsClangCLWarnings
-*********
+******************
   Known ClangCL warning flags (no runtime checking needed).
   ClangCL uses Clang frontend with MSVC backend, requiring /clang: prefix for Clang-style flags.
 #]==]
