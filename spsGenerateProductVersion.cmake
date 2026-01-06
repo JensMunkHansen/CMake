@@ -100,8 +100,10 @@ function(sps_generate_product_version output_var)
     endif()
 
     # Generate the .rc file content
+    # Use code_page(65001) to tell rc.exe the file is UTF-8 (for © symbol)
     file(WRITE "${VERSION_RC_FILE}"
-"// Auto-generated version resource file
+"#pragma code_page(65001)
+// Auto-generated version resource file
 #include <winver.h>
 
 ${ICON_RC_CONTENT}
