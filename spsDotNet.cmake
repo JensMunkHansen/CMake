@@ -132,7 +132,8 @@ endfunction()
     NATIVE_TARGETS - List of native library targets to include (required)
     SOURCES        - List of C# source files (required)
     TFM            - Target Framework Moniker (default: net8.0)
-    VERSION        - Package version (default: ${PROJECT_VERSION})
+    VERSION        - Assembly/File version, must be numeric (default: ${PROJECT_VERSION})
+    SEMVER         - NuGet package version, supports semver (default: VERSION)
     AUTHORS        - Package authors (default: ${PROJECT_NAME} Authors)
     DESCRIPTION    - Package description (optional)
     COMPANY        - Company name for DLL properties (default: AUTHORS)
@@ -158,7 +159,7 @@ endfunction()
 function(sps_add_dotnet_library)
   cmake_parse_arguments(DOTNET
     ""
-    "NAME;TFM;VERSION;AUTHORS;DESCRIPTION;COMPANY;PRODUCT;COPYRIGHT"
+    "NAME;TFM;VERSION;SEMVER;AUTHORS;DESCRIPTION;COMPANY;PRODUCT;COPYRIGHT"
     "NATIVE_TARGETS;SOURCES"
     ${ARGN}
   )
@@ -180,6 +181,9 @@ function(sps_add_dotnet_library)
   endif()
   if(NOT DOTNET_VERSION)
     set(DOTNET_VERSION "${PROJECT_VERSION}")
+  endif()
+  if(NOT DOTNET_SEMVER)
+    set(DOTNET_SEMVER "${DOTNET_VERSION}")
   endif()
   if(NOT DOTNET_AUTHORS)
     set(DOTNET_AUTHORS "${PROJECT_NAME} Authors")
@@ -336,16 +340,17 @@ endif()
     <!-- Output aligned with CMake multi-config structure -->
     <BaseOutputPath>${_BIN_DIR}/</BaseOutputPath>
 
-    <!-- NuGet Package Properties -->
+    <!-- NuGet Package Properties (semver for package version) -->
     <PackageId>${DOTNET_NAME}</PackageId>
-    <Version>${DOTNET_VERSION}</Version>
+    <Version>${DOTNET_SEMVER}</Version>
     <Authors>${DOTNET_AUTHORS}</Authors>
     <Description>${DOTNET_DESCRIPTION}</Description>
     <PackageOutputPath>${_PACKAGES_DIR}</PackageOutputPath>
 
-    <!-- DLL File Properties (Windows Explorer Details) -->
+    <!-- DLL File Properties (numeric version required) -->
     <FileVersion>${DOTNET_VERSION}</FileVersion>
     <AssemblyVersion>${DOTNET_VERSION}</AssemblyVersion>
+    <InformationalVersion>${DOTNET_SEMVER}</InformationalVersion>
     <Company>${DOTNET_COMPANY}</Company>
     <Product>${DOTNET_PRODUCT}</Product>${_COPYRIGHT_XML}
   </PropertyGroup>
@@ -541,6 +546,7 @@ file(WRITE \"\${CSPROJ}\" \"\${content}\")
     COMMAND ${SPS_DOTNET_EXECUTABLE} add "${_TEST_DIR}" package
       ${TEST_PACKAGE_REF}
       --source "${_PACKAGES_DIR}"
+      --prerelease
     DEPENDS ${TEST_DEPENDS}
     COMMENT "Creating test project ${TEST_NAME}"
   )
@@ -706,6 +712,7 @@ file(WRITE \"\${CSPROJ}\" \"\${content}\")
     COMMAND ${SPS_DOTNET_EXECUTABLE} add "${_EXE_DIR}" package
       ${EXE_PACKAGE_REF}
       --source "${_PACKAGES_DIR}"
+      --prerelease
     DEPENDS ${EXE_DEPENDS}
     COMMENT "Creating executable project ${EXE_NAME}"
   )
