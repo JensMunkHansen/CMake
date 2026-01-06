@@ -351,7 +351,7 @@ endif()
     <FileVersion>${DOTNET_VERSION}</FileVersion>
     <AssemblyVersion>${DOTNET_VERSION}</AssemblyVersion>
     <InformationalVersion>${DOTNET_SEMVER}</InformationalVersion>
-    <!-- Disable .NET SDK appending its own git hash (we already include it) -->
+    <!-- Disable .NET SDK appending its own git hash (we control version via CMake) -->
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <Company>${DOTNET_COMPANY}</Company>
     <Product>${DOTNET_PRODUCT}</Product>${_COPYRIGHT_XML}
