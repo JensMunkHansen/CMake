@@ -13,7 +13,7 @@ spsGitVersion
   extract version information from git using a keyword-style API:
 
     sps_get_git_version(
-      OUT_HASH <var>            # short hash (12)
+      OUT_HASH <var>            # full commit hash (40 chars)
       OUT_DATETIME <var>        # commit datetime (formatted)
       OUT_COUNT_TOTAL <var>     # total commits on HEAD
       OUT_TAG <var>             # latest tag (empty if none)
@@ -63,9 +63,9 @@ function(sps_get_git_version)
     set(_DESCRIBE "")
     set(_DIRTY "0")
   else()
-    # Short hash
+    # Full commit hash (40 chars, matches MinVer format)
     execute_process(
-      COMMAND "${GIT_EXECUTABLE}" -C "${GGV_SOURCE_DIR}" rev-parse --short=12 HEAD
+      COMMAND "${GIT_EXECUTABLE}" -C "${GGV_SOURCE_DIR}" rev-parse HEAD
       OUTPUT_VARIABLE _HASH OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_VARIABLE _ig
     )
     # Commit datetime (stable per commit)
