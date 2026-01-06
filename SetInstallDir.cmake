@@ -1,4 +1,4 @@
-# Setup installation directories and make relative paths absolute 
+# Setup installation directories and make relative paths absolute
 macro(setup_installation_directories)
 
   # Offer the user the choice of overriding the installation directories
@@ -15,7 +15,7 @@ macro(setup_installation_directories)
   endif()
   set(INSTALL_CMAKE_DIR ${DEF_INSTALL_CMAKE_DIR} CACHE PATH
     "Installation directory for CMake files")
-  
+
   # Make relative paths absolute
   # ============================
   foreach(p LIB BIN INCLUDE DOC CMAKE)

@@ -42,7 +42,7 @@ if (TARGET build)
     # Compatibility flags - propagate to consumers (needed for correct __cplusplus value)
     target_compile_options(build INTERFACE
       $<$<CXX_COMPILER_ID:MSVC>:/Zc:__cplusplus>
-    )    
+    )
   else()
     # Determine architecture flags based on SPS_DISABLE_AVX512 option
     if(SPS_DISABLE_AVX512)
@@ -53,7 +53,7 @@ if (TARGET build)
       set(_ARCH_FLAGS "-march=native;-mtune=native")
       set(_ARCH_FLAGS_CLANG "-march=native")
     endif()
-    
+
     # Architecture flags - propagate to consumers (needed for SIMD headers)
     target_compile_options(build INTERFACE
       $<$<CXX_COMPILER_ID:GNU>:${_ARCH_FLAGS}>
@@ -74,7 +74,7 @@ if (TARGET build)
       $<BUILD_INTERFACE:$<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:RelWithDebInfo>>:-Og -g>>
       $<BUILD_INTERFACE:$<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Asan>>:-O3>>
     )
-    
+
     # Add explicit AVX-512 disable flags if requested (GCC/Clang only, not MSVC)
     if(SPS_DISABLE_AVX512)
       # Architecture flags - propagate to consumers
@@ -89,7 +89,7 @@ if (TARGET build)
         $<BUILD_INTERFACE:$<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Debug>>:-gdwarf-4>>
         $<BUILD_INTERFACE:$<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:RelWithDebInfo>>:-gdwarf-4>>
       )
-    endif()      
+    endif()
   endif()
 
   # Set C++ target version
@@ -104,7 +104,7 @@ function(sps_link_optimization target)
   # We add this again in case the flag is not set transitively
   target_compile_options(${target} INTERFACE
     $<$<CXX_COMPILER_ID:MSVC>:/Zc:__cplusplus>
-  )  
+  )
   target_compile_options(${target} PRIVATE
     $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Release>>:
     -flto=auto                                           # Link-time optimization (auto-parallelize)

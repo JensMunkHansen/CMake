@@ -30,7 +30,7 @@ function(_sps_generate_initialize_node_script target_name output_file)
      )\n")
     endif()
   endforeach()
-  
+
   if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/package-lock.json")
     file(APPEND "${output_file}"
       "execute_process(\n
@@ -38,7 +38,7 @@ function(_sps_generate_initialize_node_script target_name output_file)
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${CONFIG}\n
       )\n")
   elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/package.json")
-    file(APPEND "${output_file}" 
+    file(APPEND "${output_file}"
       "execute_process(\n
         COMMAND npm install\n
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${CONFIG}\n

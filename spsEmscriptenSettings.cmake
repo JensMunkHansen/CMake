@@ -4,8 +4,6 @@ spsEmscriptenSettings
 *********************
 #
 #]==]
-
-
 get_filename_component(_EmscriptenSetting_dir "${CMAKE_CURRENT_LIST_FILE}" DIRECTORY)
 
 include(spsHardware)
@@ -105,12 +103,12 @@ function(sps_target_compile_flags target)
     # Apply the THREADING option, if specified
     if (ARGS_THREADING_ENABLED)
       if (ARGS_THREADING_ENABLED STREQUAL "ON")
-    	#target_link_libraries(${target} PRIVATE Threads::Threads)
-    	target_compile_options(${target} PUBLIC
+      #target_link_libraries(${target} PRIVATE Threads::Threads)
+      target_compile_options(${target} PUBLIC
           -Wno-pthreads-mem-growth # Do not allow worker threads to grow memory
           -pthread                 # Needed if accessed by pthread
-    	  -matomics                # Needed through compilation unit
-    	  -mbulk-memory            # Threads and shared memory must go hand-in-hand
+        -matomics                # Needed through compilation unit
+        -mbulk-memory            # Threads and shared memory must go hand-in-hand
         )
       endif()
     endif()
@@ -120,7 +118,7 @@ function(sps_target_compile_flags target)
       set(emscripten_link_options)
       sps_set_emscripten_optimization_flags(${ARGS_OPTIMIZATION} emscripten_optimization_flags emscripten_link_options)
       target_compile_options(${target} PRIVATE
-    	${emscripten_optimization_flags})
+      ${emscripten_optimization_flags})
     endif()
   else()
     message(FATAL_ERROR "This needs an Emscripten build environment")
@@ -544,7 +542,7 @@ function(sps_emscripten_module)
     sps_get_processor_count(MAX_CONCURRENCY_VAR)
     set(ARGS_MAX_NUMBER_OF_THREADS ${MAX_CONCURRENCY_VAR})
   endif()
-  
+
   # Validate required arguments
   if (NOT ARGS_TARGET_NAME)
     message(FATAL_ERROR "TARGET_NAME must be specified.")
@@ -635,8 +633,6 @@ function(sps_emscripten_module)
         "-sPTHREAD_POOL_SIZE_STRICT=${ARGS_MAX_NUMBER_OF_THREADS}")
     endif()
   endif()
-  
-
   if (ARGS_ES6_MODULE STREQUAL ON)
     list(APPEND emscripten_exported_functions "free")
     list(APPEND emscripten_exported_functions "malloc")
@@ -645,8 +641,6 @@ function(sps_emscripten_module)
   endif()
   # Is it okay always to export this???
   list(APPEND emscripten_exported_runtime_methods "ccall;cwrap;stringToNewUTF8;UTF8ToString;setValue")
-
-
   if (ARGS_THREADING_ENABLED STREQUAL "ON")
     list(APPEND emscripten_exported_runtime_methods "spawnThread")
   endif()
@@ -686,7 +680,7 @@ function(sps_emscripten_module)
     list(APPEND emscripten_link_options
       "-sUSE_SDL_MIXER=2"
     )
-  endif()      
+  endif()
 
   if (ARGS_SDL_TTF)
     list(APPEND emscripten_link_options
@@ -750,7 +744,7 @@ function(sps_emscripten_module)
     list(APPEND emscripten_link_options
       "-SHARED_MEMORY=1")
   endif()
-  
+
   if (ARGS_IMPORTED_MEMORY)
     list(APPEND emscripten_link_options
       "-sIMPORTED_MEMORY"
@@ -762,7 +756,7 @@ function(sps_emscripten_module)
     THREADING_ENABLED ${ARGS_THREADING_ENABLED}
     OPTIMIZATION ${ARGS_COMPILE_OPTIMIZATION}
     DEBUG ${ARGS_DEBUG})
-  
+
   # 64-bit support (experimental)
   if (ARGS_64_BIT STREQUAL "ON")
     list(APPEND emscripten_compile_options
@@ -770,8 +764,6 @@ function(sps_emscripten_module)
 #      "-sWASM_BIGINT=1" # Issues if not ES6
 #      "-sMEMORY64=1") # Issues if not ES6
   endif()
-
-
 #  list(APPEND emscripten_link_options
 #    "-sWASM_BIGINT=1"
 #    "--separate-dwarf=${ARGS_TARGET_NAME}.debug.wasm"
@@ -847,8 +839,6 @@ function(sps_emscripten_module)
     list(APPEND emscripten_compile_options "-mbulk-memory")
   endif()
 
-
-  
   # Support extra link args (if provided)
   if (ARGS_EXTRA_LINK_ARGS)
     list(APPEND emscripten_link_options

@@ -11,8 +11,8 @@ function(sps_generate_custom_export_header TARGET_NAME)
     set(visibility PUBLIC)
     if(TARGET_TYPE STREQUAL "INTERFACE_LIBRARY")
       set(visibility INTERFACE)
-    endif()    
-    
+    endif()
+
     # Determine if we're building a WASM side module
     if(TARGET_TYPE STREQUAL "EXECUTABLE")
         set(IS_WASM TRUE)
@@ -40,7 +40,7 @@ function(sps_generate_custom_export_header TARGET_NAME)
     string(TOLOWER "${TARGET_NAME}" TARGET_NAME_LOWER)
 
     # Handle Multi-Configuration Generators (e.g., Visual Studio, Ninja Multi-Config)
-    if(CMAKE_CONFIGURATION_TYPES) 
+    if(CMAKE_CONFIGURATION_TYPES)
         # Multi-config generators: generate header per configuration
         foreach(CONFIG ${CMAKE_CONFIGURATION_TYPES})
             set(EXPORT_HEADER "${CMAKE_CURRENT_BINARY_DIR}/${CONFIG}/${TARGET_NAME_LOWER}_exports.h")

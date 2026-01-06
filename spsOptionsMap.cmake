@@ -58,8 +58,6 @@ add_options_mapping(
     ""                 # Link Options
     "-gsource-map"     # Debug Options
 )
-
-
 add_options_mapping(
     "Release" "Emscripten"
     "-O3;-matomics"

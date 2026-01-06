@@ -18,8 +18,8 @@ function(sps_configure_file target input_file output_file)
     get_target_property(TARGET_TYPE ${TARGET_NAME} TYPE)
     if(TARGET_TYPE STREQUAL "INTERFACE_LIBRARY")
       set(visibility INTERFACE)
-    endif()    
-    
+    endif()
+
     # Detect whether @ONLY was passed
     set(USE_AT_ONLY OFF)
     foreach(arg ${ARGN})

@@ -37,12 +37,12 @@ if(WIN32)
         IMPORTED_LOCATION_RELEASE "${_tbb_bin_dir}/tbb12.dll"
         IMPORTED_IMPLIB_DEBUG     "${_tbb_lib_dir}/tbb12_debug.lib"
         IMPORTED_LOCATION_DEBUG   "${_tbb_bin_dir}/tbb12_debug.dll"
-      )      
+      )
     else()
       message(STATUS "❌ TBB NOT found - will use FetchContent")
       message(STATUS "   Searched in: ${CMAKE_PREFIX_PATH}")
       message(STATUS "   Looking for: TBBConfig.cmake or TBB-config.cmake")
-      
+
       # Disable tests and examples
       set(TBB_TEST OFF CACHE BOOL "" FORCE)
       set(TBB_EXAMPLES OFF CACHE BOOL "" FORCE)
@@ -57,9 +57,9 @@ if(WIN32)
               -DTBB_TEST=OFF
               -DTBB_EXAMPLES=OFF
       )
-      
+
       FetchContent_MakeAvailable(oneTBB)
-      
+
       # The targets exported by oneTBB
       foreach(tgt tbb tbbmalloc tbbmalloc_proxy)
           if(NOT TARGET TBB::${tgt} AND TARGET ${tgt})

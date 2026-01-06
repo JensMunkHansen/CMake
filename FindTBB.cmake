@@ -194,8 +194,6 @@ macro(make_library_set PREFIX)
     set(${PREFIX} ${${PREFIX}_DEBUG})
   endif ()
 endmacro()
-
-
 #=============================================================================
 #  Now to actually find TBB
 #
@@ -207,8 +205,6 @@ getenv_path(TBB_ROOT)
 set(TBB_PREFIX_PATH ${TBB_ROOT} ${ENV_TBB_ROOT})
 set(TBB_INC_SEARCH_PATH "")
 set(TBB_LIB_SEARCH_PATH "")
-
-
 # If user built from sources
 set(TBB_BUILD_PREFIX $ENV{TBB_BUILD_PREFIX})
 if (TBB_BUILD_PREFIX AND ENV_TBB_ROOT)
@@ -222,8 +218,6 @@ if (TBB_BUILD_PREFIX AND ENV_TBB_ROOT)
     ${ENV_TBB_BUILD_DIR}/${TBB_BUILD_PREFIX}_release
     ${ENV_TBB_BUILD_DIR}/${TBB_BUILD_PREFIX}_debug)
 endif ()
-
-
 # For Windows, let's assume that the user might be using the precompiled
 # TBB packages from the main website. These use a rather awkward directory
 # structure (at least for automatically finding the right files) depending
@@ -349,8 +343,6 @@ endforeach ()
 
 set(TBB_LIBRARY_NAMES tbb)
 get_debug_names(TBB_LIBRARY_NAMES)
-
-
 find_path(TBB_INCLUDE_DIR
           NAMES tbb/tbb.h
           PATHS ${TBB_INC_SEARCH_PATH})
@@ -407,8 +399,6 @@ find_library(TBB_MALLOC_PROXY_LIBRARY_DEBUG
 make_library_set(TBB_MALLOC_PROXY_LIBRARY)
 
 findpkg_finish(TBB_MALLOC_PROXY tbbmalloc_proxy)
-
-
 #=============================================================================
 #parse all the version numbers from tbb
 if(NOT TBB_VERSION)

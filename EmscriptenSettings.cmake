@@ -86,19 +86,19 @@ function(_sps_target_info target)
   # Compile options
   get_target_property(COMPILE_OPTIONS ${target} COMPILE_OPTIONS)
   message("Compile options for target ${target}: ${COMPILE_OPTIONS}")
-  
+
   # Compile definitions
   get_target_property(COMPILE_DEFINITIONS ${target} COMPILE_DEFINITIONS)
   message("Compile definitions for target ${target}: ${COMPILE_DEFINITIONS}")
-  
+
   # Include directories
   get_target_property(INCLUDE_DIRECTORIES ${target} INCLUDE_DIRECTORIES)
   message("Include directories for target ${target}: ${INCLUDE_DIRECTORIES}")
-  
+
   # Link libraries
   get_target_property(LINK_LIBRARIES ${target} LINK_LIBRARIES)
   message("Link libraries for target ${target}: ${LINK_LIBRARIES}")
-  
+
   # Link options
   get_target_property(LINK_OPTIONS ${target} LINK_OPTIONS)
   message("Link options for target ${target}: ${LINK_OPTIONS}")
@@ -166,10 +166,10 @@ function(_sps_emscripten_settings)
   if (NOT ARGS_EMSCRIPTEN_EXPORTED_FUNCTIONS)
     message(FATAL_ERROR "EMSCRIPTEN_EXPORTED_FUNCTIONS must be specified.")
   endif()
-  
-  # Default values  
+
+  # Default values
   if (NOT DEFINED ARGS_THREADING_ENABLED)
-    set(ARGS_THREADING_ENABLED OFF) 
+    set(ARGS_THREADING_ENABLED OFF)
   endif()
   if (NOT DEFINED ARGS_ES6_MODULE)
     set(ARGS_ES6_MODULE ON)
@@ -195,10 +195,10 @@ function(_sps_emscripten_settings)
     sps_get_processor_count(MAX_CONCURRENCY_VAR)
     set(ARGS_MAX_NUMBER_OF_THREADS ${MAX_CONCURRENCY_VAR})
   endif()
-  
+
   # Define valid options for OPTIMIZATION
   set(valid_optimization_levels NONE LITTLE MORE BEST SMALL SMALLEST SMALLEST_WITH_CLOSURE)
-  
+
   # Validate OPTIMIZATION argument
   list(FIND valid_optimization_levels "${ARGS_OPTIMIZATION}" opt_index)
   if (opt_index EQUAL -1)
@@ -207,7 +207,7 @@ function(_sps_emscripten_settings)
 
   # Define valid options for DEBUG
   set(valid_debug_levels NONE READABLE_JS PROFILE DEBUG_NATIVE SOURCE_MAPS)
-  
+
   # Validate DEBUG argument
   list(FIND valid_debug_levels "${ARGS_DEBUG}" opt_index)
   if (opt_index EQUAL -1)
@@ -276,7 +276,7 @@ function(_sps_emscripten_settings)
 #    list(APPEND emscripten_link_options
 #      "-sSAFE_HEAP=1")
   endif()
-  
+
   # Link to embind
   if (ARGS_EMBIND STREQUAL "ON")
     list(APPEND emscripten_link_options
@@ -301,7 +301,7 @@ function(_sps_emscripten_settings)
     )
 
     if (ARGS_THREADING_ENABLED STREQUAL "ON")
-      if ("${ARGS_DISABLE_NODE}" STREQUAL "ON")      
+      if ("${ARGS_DISABLE_NODE}" STREQUAL "ON")
         list(APPEND emscripten_link_options
           "-sENVIRONMENT=web,worker"
         )
@@ -468,7 +468,7 @@ function(sps_emscripten_module)
   if (ARGS_EXPORTED_FUNCTIONS)
     list(APPEND emscripten_exported_functions ${ARGS_EXPORTED_FUNCTIONS})
   endif()
-  
+
   if (ARGS_SIDE_MODULE)
     list(APPEND emscripten_link_options
       "-sSIDE_MODULE=2")
@@ -492,7 +492,7 @@ function(sps_emscripten_module)
 
   # Prefix and format the exports
   _sps_prefix_and_format_exports(emscripten_exported_functions exported_functions_str)
-  
+
   # Here add the exports
   list(APPEND emscripten_link_options
     "-sEXPORTED_FUNCTIONS=${exported_functions_str}")
@@ -521,25 +521,25 @@ function(sps_emscripten_module)
   target_compile_options(${ARGS_TARGET_NAME}
     PRIVATE
       ${emscripten_compile_options}
-      ${emscripten_optimization_flags} 
+      ${emscripten_optimization_flags}
       ${emscripten_debug_options}
   )
   target_link_options(${ARGS_TARGET_NAME}
     PRIVATE
       ${emscripten_link_options}
-      ${emscripten_optimization_flags} 
+      ${emscripten_optimization_flags}
       ${emscripten_debug_options}
   )
-  
+
   if (ARGS_SIDE_MODULE)
     # Side modules must be renamed
     set_target_properties(${ARGS_TARGET_NAME} PROPERTIES
       SUFFIX ".wasm")
     # Definition used in source files
-    target_compile_definitions(${ARGS_TARGET_NAME} PRIVATE IS_SIDE_MODULE)    
+    target_compile_definitions(${ARGS_TARGET_NAME} PRIVATE IS_SIDE_MODULE)
   elseif(ARGS_MAIN_MODULE)
     # Definition used in source files
-    target_compile_definitions(${ARGS_TARGET_NAME} PRIVATE IS_MAIN_MODULE)    
+    target_compile_definitions(${ARGS_TARGET_NAME} PRIVATE IS_MAIN_MODULE)
   endif()
 
   # Initialization JavaScript file
@@ -548,7 +548,7 @@ function(sps_emscripten_module)
       PRIVATE
       "--pre-js" "${ARGS_PRE_JS}")
   endif()
-  
+
   # Copy any JavaScript files
   foreach(javascript_file ${ARGS_JAVASCRIPT_FILES})
     set(copyTarget ${ARGS_TARGET_NAME}_copy_${javascript_file})
@@ -584,7 +584,7 @@ function(emscripten_default_debug_and_optimization debuginfo optimize)
       PROFILE           # -g2
       DEBUG_NATIVE      # -g3
   )
-  
+
   set(OPTIMIZE "BEST" CACHE STRING "Emscripten optimization")
   set_property(CACHE OPTIMIZE PROPERTY
     STRINGS

@@ -166,8 +166,6 @@ function(_sps_export_iomp5_for_consumers target)
     target_link_libraries(${target} INTERFACE ${IOMP5_LIBRARY})
     target_compile_definitions(${target} INTERFACE KMP_DUPLICATE_LIB_OK=TRUE)
 endfunction()
-
-
 #[==[
 sps_find_mkl()
 
@@ -465,8 +463,6 @@ function(sps_ep_args_disable_openmp out_var)
   endif()
   set(${out_var} "${_args}" PARENT_SCOPE)
 endfunction()
-
-
 function(sps_mkl_verify_no_mixed_openmp_ldd target)
   if(NOT UNIX OR APPLE)
     return()

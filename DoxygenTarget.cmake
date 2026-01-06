@@ -6,8 +6,8 @@ macro (ADD_DOXYGEN_TARGET Target)
   # Figure this out to specify doxy file
   file(MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/.tmp")
 
-  # Consider replacing DOXYGEN_EXECUTABLE with unbuffer sh -c "doxygen configfile 2>/proc/$$/fd/2" | animation 
-  
+  # Consider replacing DOXYGEN_EXECUTABLE with unbuffer sh -c "doxygen configfile 2>/proc/$$/fd/2" | animation
+
   add_custom_command(
     OUTPUT ${PROJECT_BINARY_DIR}/${CMAKE_DOXYGEN_OUT}/doxygen.stamp  # Was ${PROJECT_BINARY_DIR}/${CMAKE_DOXYGEN_OUT}/html/index.html
     COMMAND ${DOXYGEN_EXECUTABLE} -b ${PROJECT_BINARY_DIR}/Doxyfile

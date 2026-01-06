@@ -43,7 +43,7 @@ function(find_embinding_modules top_folder out_var)
     endif()
 
     string(REPLACE "/" "" module_name "${dir_path}")
-    # string(REPLACE "/" "_" module_name "${dir_path}")	
+    # string(REPLACE "/" "_" module_name "${dir_path}")
     get_filename_component(abs_path "${top_folder}/${rel_path}" ABSOLUTE)
 
     if(FEM_VERBOSE)
@@ -52,11 +52,9 @@ function(find_embinding_modules top_folder out_var)
     endif()
     list(APPEND result "${binding_name}" "${module_name}")
   endforeach()
-  
+
   set(${out_var} "${result}" PARENT_SCOPE)
 endfunction()
-
-
 function(list_classes embindings module_name out_var)
     set(info "${${embindings}}")
     set(classes "")
@@ -82,8 +80,6 @@ function(list_classes embindings module_name out_var)
 
     set(${out_var} "${classes}" PARENT_SCOPE)
 endfunction()
-
-
 function(class_module_lookup embindings class_name out_module_var)
     set(info "${${embindings}}")
     string(REGEX REPLACE "^vtk" "" class_key "${class_name}")

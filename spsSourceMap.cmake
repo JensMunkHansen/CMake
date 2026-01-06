@@ -14,7 +14,7 @@ function(_sps_update_source_map_script target_name output_file)
   set(MAP_FILE "${CMAKE_CURRENT_BINARY_DIR}/${CONFIG}/${target_name}.wasm.map")
   file(APPEND "${output_file}"
       "execute_process(\n"
-      "  COMMAND ${CMAKE_COMMAND} -E env python3 ${SCRIPT_PATH} ${MAP_FILE}\n" 
+      "  COMMAND ${CMAKE_COMMAND} -E env python3 ${SCRIPT_PATH} ${MAP_FILE}\n"
       "  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${CONFIG}\n"
       ")\n")
   message(STATUS "Generated script: ${output_file}")

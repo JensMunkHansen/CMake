@@ -1,4 +1,4 @@
-# Threat warnings as errors 
+# Threat warnings as errors
 option(WARNING_TREAT_AS_ERRORS "Warnings as errors" OFF)
 
 if (MSVC)

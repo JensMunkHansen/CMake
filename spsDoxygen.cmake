@@ -87,7 +87,7 @@ function(sps_setup_doxygen)
     list(APPEND DOXY_EXCLUDE_LIST ${DOXY_EXCLUDE_PATTERNS})
   endif()
   string(REPLACE ";" " " DOXY_EXCLUDE_STR "${DOXY_EXCLUDE_LIST}")
-  
+
   # Create output directory
   file(MAKE_DIRECTORY "${DOXY_OUTPUT_DIR}")
 

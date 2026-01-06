@@ -9,7 +9,7 @@ function(sps_get_processor_count MAX_CONCURRENCY_VAR)
       message(WARNING "Processor count could not be determined. Defaulting to 1.")
       set(PROCESSOR_COUNT 1)
     endif()
-    
+
     message(STATUS "Detected ${PROCESSOR_COUNT} processors.")
   else()
     include(ProcessorCount)

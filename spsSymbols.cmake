@@ -14,7 +14,7 @@ function(_sps_replace_symbols_script target_name output_file)
   set(MAP_FILE "${CMAKE_CURRENT_BINARY_DIR}/${CONFIG}/${target_name}.wasm.map")
   file(APPEND "${output_file}"
       "execute_process(\n"
-      "  COMMAND ${CMAKE_COMMAND} -E env python3 ${SCRIPT_PATH} ${MAP_FILE}\n" 
+      "  COMMAND ${CMAKE_COMMAND} -E env python3 ${SCRIPT_PATH} ${MAP_FILE}\n"
       "  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${CONFIG}\n"
       ")\n")
   message(STATUS "Generated script: ${output_file}")
@@ -29,7 +29,7 @@ function(sps_update_symbols target)
 
   # Ensure UpdateSourceMap depends on the target
   add_dependencies(${target}UpdateSourceMap ${target})
-  
+
   # Optionally, make sure `UpdateSourceMap` runs whenever `target` is built
   add_custom_command(
     TARGET ${target}
@@ -38,6 +38,6 @@ function(sps_update_symbols target)
     COMMENT "Running UpdateSourceMap after building ${target}"
   )
 
-  
+
 endfunction()
 

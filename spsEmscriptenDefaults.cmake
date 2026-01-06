@@ -18,7 +18,7 @@
 
   ${PROJECT}_TEST_DEBUGINFO
   ${PROJECT}_TEST_OPTIMIZATION (link optimization, which is the most important)
-  
+
   They are only used for Emscripten.
 
 #]==]
@@ -84,25 +84,25 @@ function(sps_set_emscripten_defaults project_name)
 
   # Set project-level optimization and debug options
   set_project_option(${project_name}_OPTIMIZATION
-    ${_DEFAULT_RELEASE_OPTIMIZATION} 
-    "Link optimization level for ${project_name}" 
+    ${_DEFAULT_RELEASE_OPTIMIZATION}
+    "Link optimization level for ${project_name}"
     "${_OPTIMIZATION_LEVELS}"
   )
   set_project_option(${project_name}_DEBUGINFO
-    ${_DEFAULT_RELEASE_DEBUGINFO} 
-    "Debug level for ${project_name}" 
+    ${_DEFAULT_RELEASE_DEBUGINFO}
+    "Debug level for ${project_name}"
     "${_DEBUG_LEVELS}"
   )
 
   # Set test-specific optimization and debug options
   set_project_option(${project_name}_TEST_OPTIMIZATION
-    ${_DEFAULT_TEST_RELEASE_OPTIMIZATION} 
-    "Link optimization level for ${project_name} (test)" 
+    ${_DEFAULT_TEST_RELEASE_OPTIMIZATION}
+    "Link optimization level for ${project_name} (test)"
     "${_OPTIMIZATION_LEVELS}"
   )
   set_project_option(${project_name}_TEST_DEBUGINFO
-    ${_DEFAULT_TEST_RELEASE_DEBUGINFO} 
-    "Debug level for ${project_name} (test)" 
+    ${_DEFAULT_TEST_RELEASE_DEBUGINFO}
+    "Debug level for ${project_name} (test)"
     "${_DEBUG_LEVELS}"
   )
 
