@@ -90,7 +90,11 @@ function(sps_get_git_version)
       set(_TAG "")
       set(_HAS_TAG "0")
     endif()
-    # Commits since tag (use --first-parent to match MinVer behavior on merge commits)
+    # Commits since tag
+    # NOTE: --first-parent is required to match MinVer's counting behavior.
+    # Without it, merge commits (e.g., GitHub Actions PR merge) cause rev-list
+    # to count commits from both parents, resulting in count=N+1 while MinVer
+    # reports count=N. This mismatch breaks version consistency tests.
     if (_HAS_TAG STREQUAL "1")
       execute_process(
         COMMAND "${GIT_EXECUTABLE}" -C "${GGV_SOURCE_DIR}" rev-list --count --first-parent "${_TAG}..HEAD"
