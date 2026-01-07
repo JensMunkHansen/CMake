@@ -16,10 +16,16 @@ spsGenerateProductVersion
     [VERSION_MINOR <minor>]
     [VERSION_PATCH <patch>]
     [VERSION_REVISION <revision>]
+    [VERSION_STRING <display_string>]
     [COMPANY_NAME <company>]
     [FILE_DESCRIPTION <description>]
     [COPYRIGHT <copyright>]
   )
+
+  VERSION_STRING is used for the FileVersion and ProductVersion string fields
+  in the DLL properties dialog. This can include semver pre-release tags and
+  git hashes (e.g., "1.2.3-alpha.0.5+abc1234"). If not provided, defaults to
+  the numeric version "MAJOR.MINOR.PATCH.REVISION".
 
   The function sets <output_variable> to the list of generated files
   that should be added to the target's sources.
@@ -50,6 +56,7 @@ function(sps_generate_product_version output_var)
     VERSION_MINOR
     VERSION_PATCH
     VERSION_REVISION
+    VERSION_STRING
     COMPANY_NAME
     FILE_DESCRIPTION
     COPYRIGHT
@@ -86,8 +93,15 @@ function(sps_generate_product_version output_var)
 
   # Only generate version resources on Windows
   if(WIN32)
-    # Create version string
-    set(PRODUCT_VERSION_STRING "${PRODUCT_VERSION_MAJOR}.${PRODUCT_VERSION_MINOR}.${PRODUCT_VERSION_PATCH}.${PRODUCT_VERSION_REVISION}")
+    # Create numeric version string (for fallback)
+    set(_NUMERIC_VERSION "${PRODUCT_VERSION_MAJOR}.${PRODUCT_VERSION_MINOR}.${PRODUCT_VERSION_PATCH}.${PRODUCT_VERSION_REVISION}")
+
+    # Use VERSION_STRING for display if provided, otherwise use numeric
+    if(DEFINED PRODUCT_VERSION_STRING)
+      set(PRODUCT_VERSION_DISPLAY "${PRODUCT_VERSION_STRING}")
+    else()
+      set(PRODUCT_VERSION_DISPLAY "${_NUMERIC_VERSION}")
+    endif()
 
     # Generate a unique filename based on product name
     string(MAKE_C_IDENTIFIER "${PRODUCT_NAME}" PRODUCT_NAME_ID)
@@ -127,12 +141,12 @@ BEGIN
     BEGIN
       VALUE \"CompanyName\", \"${PRODUCT_COMPANY_NAME}\"
       VALUE \"FileDescription\", \"${PRODUCT_FILE_DESCRIPTION}\"
-      VALUE \"FileVersion\", \"${PRODUCT_VERSION_STRING}\"
+      VALUE \"FileVersion\", \"${PRODUCT_VERSION_DISPLAY}\"
       VALUE \"InternalName\", \"${PRODUCT_NAME}\"
       VALUE \"LegalCopyright\", \"${PRODUCT_COPYRIGHT}\"
       VALUE \"OriginalFilename\", \"${PRODUCT_NAME}\"
       VALUE \"ProductName\", \"${PRODUCT_NAME}\"
-      VALUE \"ProductVersion\", \"${PRODUCT_VERSION_STRING}\"
+      VALUE \"ProductVersion\", \"${PRODUCT_VERSION_DISPLAY}\"
     END
   END
   BLOCK \"VarFileInfo\"
