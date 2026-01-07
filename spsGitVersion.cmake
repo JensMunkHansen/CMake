@@ -90,10 +90,10 @@ function(sps_get_git_version)
       set(_TAG "")
       set(_HAS_TAG "0")
     endif()
-    # Commits since tag
+    # Commits since tag (use --first-parent to match MinVer behavior on merge commits)
     if (_HAS_TAG STREQUAL "1")
       execute_process(
-        COMMAND "${GIT_EXECUTABLE}" -C "${GGV_SOURCE_DIR}" rev-list --count "${_TAG}..HEAD"
+        COMMAND "${GIT_EXECUTABLE}" -C "${GGV_SOURCE_DIR}" rev-list --count --first-parent "${_TAG}..HEAD"
         OUTPUT_VARIABLE _SINCE_TAG OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_VARIABLE _ig
       )
     else()
