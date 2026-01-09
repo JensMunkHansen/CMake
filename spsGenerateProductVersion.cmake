@@ -22,10 +22,11 @@ spsGenerateProductVersion
     [COPYRIGHT <copyright>]
   )
 
-  VERSION_STRING is used for the FileVersion and ProductVersion string fields
-  in the DLL properties dialog. This can include semver pre-release tags and
-  git hashes (e.g., "1.2.3-alpha.0.5+abc1234"). If not provided, defaults to
-  the numeric version "MAJOR.MINOR.PATCH.REVISION".
+  VERSION_STRING is appended to the FileDescription for visibility in Explorer's
+  Details tab. This can include semver pre-release tags and git hashes
+  (e.g., "1.2.3-alpha.0.5+abc1234"). ProductVersion uses the short numeric
+  format "MAJOR.MINOR.PATCH.REVISION". The binary FILEVERSION shown by Explorer
+  is always the 4-part numeric version.
 
   The function sets <output_variable> to the list of generated files
   that should be added to the target's sources.
@@ -96,12 +97,13 @@ function(sps_generate_product_version output_var)
     # Create numeric version string (for fallback)
     set(_NUMERIC_VERSION "${PRODUCT_VERSION_MAJOR}.${PRODUCT_VERSION_MINOR}.${PRODUCT_VERSION_PATCH}.${PRODUCT_VERSION_REVISION}")
 
-    # Use VERSION_STRING for display if provided, otherwise use numeric
+    # Append version string to description for visibility in Explorer
     if(DEFINED PRODUCT_VERSION_STRING)
-      set(PRODUCT_VERSION_DISPLAY "${PRODUCT_VERSION_STRING}")
-    else()
-      set(PRODUCT_VERSION_DISPLAY "${_NUMERIC_VERSION}")
+      set(PRODUCT_FILE_DESCRIPTION "${PRODUCT_FILE_DESCRIPTION} (${PRODUCT_VERSION_STRING})")
     endif()
+
+    # ProductVersion uses short numeric version (no SHA)
+    set(PRODUCT_VERSION_DISPLAY "${_NUMERIC_VERSION}")
 
     # Generate a unique filename based on product name
     string(MAKE_C_IDENTIFIER "${PRODUCT_NAME}" PRODUCT_NAME_ID)
@@ -141,7 +143,6 @@ BEGIN
     BEGIN
       VALUE \"CompanyName\", \"${PRODUCT_COMPANY_NAME}\"
       VALUE \"FileDescription\", \"${PRODUCT_FILE_DESCRIPTION}\"
-      VALUE \"FileVersion\", \"${PRODUCT_VERSION_DISPLAY}\"
       VALUE \"InternalName\", \"${PRODUCT_NAME}\"
       VALUE \"LegalCopyright\", \"${PRODUCT_COPYRIGHT}\"
       VALUE \"OriginalFilename\", \"${PRODUCT_NAME}\"
