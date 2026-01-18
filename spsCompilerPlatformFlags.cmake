@@ -63,7 +63,7 @@ if (TARGET build)
     # Build-specific flags - do NOT propagate to consumers
     target_compile_options(build INTERFACE
       # GNU flags
-      $<BUILD_INTERFACE:$<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Release>>:-O3 -ffast-math>>
+      $<BUILD_INTERFACE:$<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Release>>:-O3 -ffast-math -funroll-loops -fopt-info-vec -fuse-linker-plugin>>
       $<BUILD_INTERFACE:$<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Debug>>:-O0 -g>>
       $<BUILD_INTERFACE:$<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:RelWithDebInfo>>:-Og -g>>
       $<BUILD_INTERFACE:$<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Asan>>:-O3>>
@@ -121,12 +121,17 @@ function(sps_link_optimization target)
       endif()
     endif()
 
+    # GCC link options (must match compile options)
+    target_link_options(${target} PRIVATE
+      $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Release>>:-flto=auto -fuse-linker-plugin>)
+
+    # Clang link options
     if(SPS_HAS_LLD)
       target_link_options(${target} PRIVATE
-        $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Release>>:-fuse-ld=lld -flto>)
+        $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Release>>:-fuse-ld=lld -flto=full>)
     else()
       target_link_options(${target} PRIVATE
-        $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Release>>:-flto>)
+        $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Release>>:-flto=full>)
     endif()
   else()
     target_link_options(${target} PRIVATE
