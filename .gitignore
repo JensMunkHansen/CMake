@@ -1,1 +1,57 @@
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+compile_commands.json
+*.s
+build/
+build-*/
+.cache/
+
+# Temporary files
 *~
+*#
+/**/.#*
+*.tmp*
+
+# Coverage reports (HTML)
+coverage/
+*.gcda
+*.gcno
+*.gcov
+*.info
+*.profraw
+*.profdata
+
+# Catch2-specific generated coverage files (optional, usually in build dirs)
+coverage.*.htmlTesting/
+Testing/
+/**/*.log
