@@ -43,6 +43,9 @@ if (TARGET build)
     target_compile_options(build INTERFACE
       $<$<CXX_COMPILER_ID:MSVC>:/Zc:__cplusplus>
     )
+  elseif(EMSCRIPTEN)
+    # Emscripten/WASM: No architecture-specific flags
+    message(STATUS "Emscripten detected - skipping architecture-specific flags")
   else()
     # Determine architecture flags based on SPS_DISABLE_AVX512 option
     if(SPS_DISABLE_AVX512)
