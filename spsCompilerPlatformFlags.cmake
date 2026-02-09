@@ -1,3 +1,5 @@
+option(SPS_COMPILER_OPTIMIZATION_INFO "Show compiler optimization info (e.g. vectorization remarks)" OFF)
+
 # Clear flags for RelWithDebInfo
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "")
 
@@ -66,7 +68,7 @@ if (TARGET build)
     # Build-specific flags - do NOT propagate to consumers
     target_compile_options(build INTERFACE
       # GNU flags
-      $<BUILD_INTERFACE:$<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Release>>:-O3 -ffast-math -funroll-loops -fopt-info-vec -fuse-linker-plugin>>
+      $<BUILD_INTERFACE:$<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Release>>:-O3 -ffast-math -funroll-loops $<$<BOOL:${SPS_COMPILER_OPTIMIZATION_INFO}>:-fopt-info-vec> -fuse-linker-plugin>>
       $<BUILD_INTERFACE:$<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Debug>>:-O0 -g>>
       $<BUILD_INTERFACE:$<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:RelWithDebInfo>>:-Og -g>>
       $<BUILD_INTERFACE:$<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Asan>>:-O3>>
