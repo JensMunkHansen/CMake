@@ -55,7 +55,5 @@ if(NOT TARGET vkwave::shaderc)
   endif()
 
   add_library(vkwave::shaderc ALIAS vkwave_shaderc)
-  unset(_SHADERC_SHARED CACHE)
-  unset(_SHADERC_INC CACHE)
   unset(_SHADERC_EXT)
 endif()
