@@ -33,12 +33,13 @@ if (TARGET build)
     )
 
     # MSVC-only flags (not supported by clang-cl)
+    # Note: /GL (whole program optimization) is NOT set globally — use
+    # sps_link_optimization(<target>) to opt in per target, which pairs
+    # /GL with the matching /LTCG linker flag.
     if(IS_REAL_MSVC)
       target_compile_options(build INTERFACE
-        $<BUILD_INTERFACE:$<$<CONFIG:Release>:/GL /Qpar>>
+        $<BUILD_INTERFACE:$<$<CONFIG:Release>:/Qpar>>
       )
-      # Linker flags needed by Microsoft (build-specific)
-      set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} /LTCG")
     endif()
 
     # Compatibility flags - propagate to consumers (needed for correct __cplusplus value)
@@ -139,6 +140,9 @@ function(sps_link_optimization target)
         $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Release>>:-flto=full>)
     endif()
   else()
+    # MSVC: /GL (whole program optimization) + /LTCG (link-time code generation)
+    target_compile_options(${target} PRIVATE
+      $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:Release>>:/GL>)
     target_link_options(${target} PRIVATE
       $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:Release>>:/LTCG>)
   endif()
