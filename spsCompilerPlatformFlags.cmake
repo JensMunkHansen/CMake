@@ -51,7 +51,12 @@ if (TARGET build)
     message(STATUS "Emscripten detected - skipping architecture-specific flags")
   else()
     # Determine architecture flags based on SPS_DISABLE_AVX512 option
-    if(SPS_DISABLE_AVX512)
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|arm64|ARM64")
+      # ARM64: NEON is baseline; x86 -march flags do not apply
+      set(_ARCH_FLAGS "")
+      set(_ARCH_FLAGS_CLANG "")
+      message(STATUS "ARM64 detected - NEON is baseline, skipping x86 architecture flags")
+    elseif(SPS_DISABLE_AVX512)
       set(_ARCH_FLAGS "-march=skylake;-mtune=native")  # Skylake has AVX2 but no AVX-512
       set(_ARCH_FLAGS_CLANG "-march=skylake")
       message(STATUS "AVX-512 disabled - using Skylake architecture (AVX2 max)")
